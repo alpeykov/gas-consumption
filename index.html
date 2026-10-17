@@ -72,23 +72,13 @@
     font-family: var(--font-body); font-size: 15px; line-height: 1.5;
   }
   .wrap {
-    max-width: 1040px; margin: 0 auto;
+    max-width: 720px; margin: 0 auto;
     padding-block: 28px 48px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     display: grid; gap: 20px;
-    grid-template-columns: 320px minmax(0, 1fr); align-items: start;
-    column-gap: 28px;
   }
-  .main { border-left: 1px solid var(--rule); padding-left: 28px; }
-  .wrap > header { grid-column: 1 / -1; }
-  .side, .main { display: grid; gap: 20px; min-width: 0; }
-  .side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
-  @media (max-width: 820px) {
-    .wrap { grid-template-columns: minmax(0, 1fr); }
-    .side { position: static; }
-    .main { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 20px; }
-  }
+  .main { display: grid; gap: 20px; min-width: 0; }
   header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
   header p { margin: 4px 0 0; color: var(--muted); }
   .label {
@@ -308,7 +298,43 @@
     </div>
   </header>
 
-  <aside class="side">
+
+  <div class="main">
+  <section class="bill" aria-live="polite">
+    <div class="bill-row">
+      <div class="figure">
+        <span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
+        <span class="eur num" id="out-now-eur">–</span>
+        <span class="bgn num" id="out-now-bgn">–</span>
+      </div>
+      <div class="figure forecast">
+        <span class="label" id="out-forecast-label">Прогнозна сметка</span>
+        <span class="eur num" id="out-fc-eur">–</span>
+        <span class="bgn num" id="out-fc-bgn">–</span>
+      </div>
+    </div>
+    <div class="month">
+      <div class="bar"><span id="out-bar" style="width:0%"></span></div>
+      <div class="month-meta">
+        <span class="num" id="out-days">–</span>
+        <span class="num" id="out-rate">–</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="readings">
+    <div class="reading">
+      <span class="label" data-i18n="readingLast">Показание от последната сметка</span>
+      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingLastAria" aria-label="Показание на уреда от последната сметка"><span class="unit">m³</span></div>
+      <input class="date-input" id="start-date" type="date" value="2026-10-01" data-i18n-aria="readingLastDate" aria-label="Дата на показанието от сметката">
+    </div>
+    <div class="reading">
+      <span class="label" data-i18n="readingToday">Показание днес</span>
+      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingTodayAria" aria-label="Текущо показание на уреда"><span class="unit">m³</span></div>
+      <input class="date-input" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание">
+    </div>
+  </section>
+
   <section class="tariff" aria-labelledby="tariff-h">
     <h2 id="tariff-h" class="tariff-head">
       <button type="button" id="tariff-toggle" aria-expanded="true" aria-controls="tariff-body">
@@ -345,43 +371,6 @@
     </div>
     <p class="hint" data-i18n-html="sourceHint"></p>
     <p class="hint"><button type="button" class="ghost" id="reset" data-i18n="reset">Върни стандартна цена</button></p>
-    </div>
-  </section>
-  </aside>
-
-  <div class="main">
-  <section class="bill" aria-live="polite">
-    <div class="bill-row">
-      <div class="figure">
-        <span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
-        <span class="eur num" id="out-now-eur">–</span>
-        <span class="bgn num" id="out-now-bgn">–</span>
-      </div>
-      <div class="figure forecast">
-        <span class="label" id="out-forecast-label">Прогнозна сметка</span>
-        <span class="eur num" id="out-fc-eur">–</span>
-        <span class="bgn num" id="out-fc-bgn">–</span>
-      </div>
-    </div>
-    <div class="month">
-      <div class="bar"><span id="out-bar" style="width:0%"></span></div>
-      <div class="month-meta">
-        <span class="num" id="out-days">–</span>
-        <span class="num" id="out-rate">–</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="readings">
-    <div class="reading">
-      <span class="label" data-i18n="readingLast">Показание от последната сметка</span>
-      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingLastAria" aria-label="Показание на уреда от последната сметка"><span class="unit">m³</span></div>
-      <input class="date-input" id="start-date" type="date" value="2026-10-01" data-i18n-aria="readingLastDate" aria-label="Дата на показанието от сметката">
-    </div>
-    <div class="reading">
-      <span class="label" data-i18n="readingToday">Показание днес</span>
-      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingTodayAria" aria-label="Текущо показание на уреда"><span class="unit">m³</span></div>
-      <input class="date-input" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание">
     </div>
   </section>
 
