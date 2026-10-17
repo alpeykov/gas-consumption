@@ -250,17 +250,18 @@
   .lang button[aria-pressed="true"] { background: var(--flame); color: var(--on-flame); }
   .lang button:focus-visible { outline: 2px solid var(--flame); outline-offset: -2px; }
   .prefs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .theme-pick {
-    display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
-    padding: 0 4px 0 12px; font-size: 0.85rem; font-weight: 600; color: var(--muted);
+  .themes { display: inline-flex; gap: 6px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+  .themes button {
+    width: 28px; height: 28px; padding: 0; border-radius: 6px; cursor: pointer;
+    border: 2px solid transparent; background: transparent; display: grid; place-items: center;
   }
-  .theme-pick select {
-    font: inherit; font-weight: 700; color: var(--fg); background: transparent;
-    border: 0; padding: 6px 4px; cursor: pointer;
+  .themes button span {
+    width: 20px; height: 20px; border-radius: 50%; display: block;
+    background: radial-gradient(circle at 50% 50%, var(--s-dot) 0 4px, var(--s-bg) 5px);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
-  .theme-pick select option { background: var(--panel); color: var(--fg); }
-  .theme-pick select:focus-visible { outline: 2px solid var(--flame); outline-offset: 0; border-radius: 4px; }
+  .themes button[aria-pressed="true"] { border-color: var(--flame); }
+  .themes button:focus-visible { outline: 2px solid var(--flame); outline-offset: 1px; }
 
   /* Update bar for the installed app */
   .update-bar {
@@ -298,15 +299,12 @@
         <button type="button" data-lang="bg" lang="bg">БГ</button>
         <button type="button" data-lang="en" lang="en">EN</button>
       </div>
-      <label class="theme-pick">
-        <span data-i18n="themeLabel">Тема</span>
-        <select id="theme">
-          <option value="dark" data-i18n="themeDark">Тъмна</option>
-          <option value="light" data-i18n="themeLight">Светла</option>
-          <option value="blue" data-i18n="themeBlue">Синя</option>
-          <option value="contrast" data-i18n="themeContrast">Висок контраст</option>
-        </select>
-      </label>
+      <div class="themes" role="group" data-i18n-aria="themeLabel" aria-label="Тема">
+        <button type="button" data-theme-choice="dark" data-i18n-aria="themeDark" data-i18n-title="themeDark" aria-label="Тъмна"><span style="--s-bg:#0f141a;--s-dot:#6d9dff"></span></button>
+        <button type="button" data-theme-choice="light" data-i18n-aria="themeLight" data-i18n-title="themeLight" aria-label="Светла"><span style="--s-bg:#eef1f4;--s-dot:#1f5fd6"></span></button>
+        <button type="button" data-theme-choice="blue" data-i18n-aria="themeBlue" data-i18n-title="themeBlue" aria-label="Синя"><span style="--s-bg:#0a1a33;--s-dot:#4cc3ff"></span></button>
+        <button type="button" data-theme-choice="contrast" data-i18n-aria="themeContrast" data-i18n-title="themeContrast" aria-label="Висок контраст"><span style="--s-bg:#000000;--s-dot:#ffd400"></span></button>
+      </div>
     </div>
   </header>
 
@@ -573,6 +571,7 @@
     document.title = t("docTitle");
     document.querySelectorAll("[data-i18n]").forEach((el) => el.textContent = t(el.dataset.i18n));
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+    document.querySelectorAll("[data-i18n-title]").forEach((el) => el.title = t(el.dataset.i18nTitle));
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => el.placeholder = t(el.dataset.i18nPlaceholder));
     const link = '<a href="' + PAGE_URL + '" target="_blank" rel="noopener">' + t("sourceLinkText") + "</a>";
     document.querySelectorAll("[data-i18n-html]").forEach((el) => el.innerHTML = t(el.dataset.i18nHtml, { link }));
@@ -823,13 +822,16 @@
   // Theme picker; the head script already applied the saved theme before first paint.
   const THEME_KEY = "gas-bill-theme";
   const THEME_BG = { dark: "#0f141a", light: "#eef1f4", blue: "#0a1a33", contrast: "#000000" };
-  $("theme").value = document.documentElement.dataset.theme;
-  $("theme").addEventListener("change", () => {
-    const theme = $("theme").value;
+  const syncThemeButtons = () => document.querySelectorAll(".themes button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.themeChoice === document.documentElement.dataset.theme)));
+  document.querySelectorAll(".themes button").forEach((b) => b.addEventListener("click", () => {
+    const theme = b.dataset.themeChoice;
     document.documentElement.dataset.theme = theme;
     document.querySelector('meta[name="theme-color"]').content = THEME_BG[theme];
     try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
-  });
+    syncThemeButtons();
+  }));
+  syncThemeButtons();
 
   // Tariff panel folding (phones only); the choice is kept in this browser across updates.
   const COLLAPSE_KEY = "gas-bill-tariff-collapsed";
