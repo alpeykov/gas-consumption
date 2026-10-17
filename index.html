@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Сметка за газ</title>
+<title>Консумация на газ</title>
 <meta name="description" content="Потребление на газ и прогноза за месечната сметка към Овергаз в евро.">
 <meta name="theme-color" content="#0f141a">
 <link rel="manifest" href="manifest.webmanifest">
@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Сметка за газ">
+<meta name="apple-mobile-web-app-title" content="Консумация на газ">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
   // Apply the saved theme before first paint so the page never flashes the wrong colours.
@@ -291,8 +291,8 @@
 <div class="wrap">
   <header>
     <div class="head-text">
-      <h1 data-i18n="title">Сметка за газ</h1>
-      <p data-i18n="subtitle">Битов тариф на Овергаз · показания в m³ · цени в евро</p>
+      <h1 data-i18n="title">Консумация на газ</h1>
+      <p data-i18n="subtitle">Битова тарифа на Овергаз · показания в m³ · цени в евро</p>
     </div>
     <div class="prefs">
       <div class="lang" role="group" data-i18n-aria="langLabel" aria-label="Език">
@@ -322,7 +322,7 @@
       <select id="region"></select>
     </label>
     <div class="final">
-      <span class="label" data-i18n="finalPrice">Крайна цена на газа, без ДДС</span>
+      <span class="label" data-i18n="finalPrice">Крайна цена без ДДС</span>
       <span class="final-price num">
         <span id="final-price">–</span><small>€/MWh</small>
         <span class="info" id="stale-info" hidden>
@@ -338,13 +338,13 @@
     </div>
     <hr>
     <div class="settings">
-      <label class="field"><span class="label nocaps" data-i18n="override">Ръчна цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
+      <label class="field"><span class="label nocaps" data-i18n="override">Въведи цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
       <label class="field"><span class="label" data-i18n="vat">ДДС, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20" disabled></label>
       <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.01" inputmode="decimal" value="10.55"></label>
       <label class="field"><span class="label" data-i18n="rate">Лева за 1 евро</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583" disabled></label>
     </div>
     <p class="hint" data-i18n-html="sourceHint"></p>
-    <p class="hint"><button type="button" class="ghost" id="reset" data-i18n="reset">Върни стандартните</button></p>
+    <p class="hint"><button type="button" class="ghost" id="reset" data-i18n="reset">Върни стандартна цена</button></p>
     </div>
   </section>
   </aside>
@@ -353,12 +353,12 @@
   <section class="bill" aria-live="polite">
     <div class="bill-row">
       <div class="figure">
-        <span class="label" data-i18n="usedSoFar">Изразходвано досега</span>
+        <span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
         <span class="eur num" id="out-now-eur">–</span>
         <span class="bgn num" id="out-now-bgn">–</span>
       </div>
       <div class="figure forecast">
-        <span class="label" id="out-forecast-label">Прогноза за месеца</span>
+        <span class="label" id="out-forecast-label">Прогнозна сметка</span>
         <span class="eur num" id="out-fc-eur">–</span>
         <span class="bgn num" id="out-fc-bgn">–</span>
       </div>
@@ -441,9 +441,9 @@
   const LANG_KEY = "gas-bill-lang";
   const STR = {
     bg: {
-      docTitle: "Сметка за газ",
-      title: "Сметка за газ",
-      subtitle: "Битов тариф на Овергаз · показания в m³ · цени в евро",
+      docTitle: "Консумация на газ",
+      title: "Консумация на газ",
+      subtitle: "Битова тарифа на Овергаз · показания в m³ · цени в евро",
       langLabel: "Език",
       themeLabel: "Тема",
       themeDark: "Тъмна",
@@ -452,19 +452,19 @@
       themeContrast: "Висок контраст",
       tariffH: "Тарифни настройки",
       region: "Регион",
-      finalPrice: "Крайна цена на газа, без ДДС",
+      finalPrice: "Крайна цена без ДДС",
       aboutPrice: "За тази цена",
       refresh: "Провери за нови цени",
-      override: "Ръчна цена, €/MWh",
+      override: "Въведи цена, €/MWh",
       overrideHint: "Цена от Овергаз",
       vat: "ДДС, %",
       factor: "kWh за 1 m³",
       rate: "Лева за 1 евро",
-      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Ръчна цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ (10,55) е средна стойност; точната стойност за месеца е посочена в сметката ви от Овергаз и можете да я въведете.",
+      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Въведи цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ (10,55) е средна стойност; точната стойност за месеца е посочена в сметката ви от Овергаз и можете да я въведете.",
       sourceLinkText: "overgas.bg → Цени на природния газ",
-      reset: "Върни стандартните",
-      usedSoFar: "Изразходвано досега",
-      forecastTo: "Прогноза до {date}",
+      reset: "Върни стандартна цена",
+      usedSoFar: "Цена за текуща консумация",
+      forecastTo: "Прогнозна сметка до {date}",
       readingLast: "Показание от последната сметка",
       readingLastAria: "Показание на уреда от последната сметка",
       readingLastDate: "Дата на показанието от сметката",
@@ -487,7 +487,7 @@
       chipOverride: "Ваша цена",
       chipLive: "От overgas.bg",
       chipBuiltIn: "Вградена цена",
-      uploaded: "Качено на {d}",
+      uploaded: "Актуална цена – {d}",
       priceList: "ценова листа",
       checked: "проверено {d}",
       staleTip: "Овергаз все още не е качил цената за {cur} за този регион. Изчислението използва цената за {prev} (качена на {d}).",
@@ -500,8 +500,8 @@
       priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата приема същото дневно потребление до края на месеца.",
     },
     en: {
-      docTitle: "Gas Bill Forecast",
-      title: "Gas Bill Forecast",
+      docTitle: "Gas Consumption",
+      title: "Gas Consumption",
       subtitle: "Overgas household tariff · meter readings in m³ · prices in euro",
       langLabel: "Language",
       themeLabel: "Theme",
@@ -511,19 +511,19 @@
       themeContrast: "High contrast",
       tariffH: "Tariff settings",
       region: "Region",
-      finalPrice: "Final gas price, excl. VAT",
+      finalPrice: "Final price excl. VAT",
       aboutPrice: "About this price",
       refresh: "Check for new prices",
-      override: "Override price, €/MWh",
+      override: "Enter price, €/MWh",
       overrideHint: "Use Overgas price",
       vat: "VAT, %",
       factor: "kWh per m³",
       rate: "BGN per EUR",
-      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave the override empty to use them. VAT and the BGN rate are fixed. “kWh per m³” (10.55) is an average; the exact value for the month is printed on your Overgas bill and you can enter it.",
+      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” (10.55) is an average; the exact value for the month is printed on your Overgas bill and you can enter it.",
       sourceLinkText: "overgas.bg → Цени на природния газ",
-      reset: "Restore defaults",
-      usedSoFar: "Used so far",
-      forecastTo: "Forecast to {date}",
+      reset: "Restore default price",
+      usedSoFar: "Cost of consumption so far",
+      forecastTo: "Estimated bill to {date}",
       readingLast: "Reading on last bill",
       readingLastAria: "Meter reading on last bill",
       readingLastDate: "Date of last bill reading",
@@ -546,7 +546,7 @@
       chipOverride: "Your override",
       chipLive: "From overgas.bg",
       chipBuiltIn: "Built-in price",
-      uploaded: "Uploaded {d}",
+      uploaded: "Current price – {d}",
       priceList: "price list",
       checked: "checked {d}",
       staleTip: "Overgas hasn't uploaded the {cur} price for this region yet. This calculation uses the {prev} price (uploaded {d}).",
@@ -621,6 +621,17 @@
   const DAY = 86400000;
   // Bulgarian short months render as "1.10", so spell the month out there.
   const fmtDate = (ms) => new Date(ms).toLocaleDateString(locale(), { day: "numeric", month: lang === "bg" ? "long" : "short", timeZone: "UTC" });
+  // Bulgarian ordinal day for the forecast label: "1-ви ноември", "2-ри", "7-ми", "11-ти".
+  const bgOrdinal = (n) => {
+    const t10 = n % 100, u = n % 10;
+    if (t10 >= 11 && t10 <= 19) return n + "-ти";
+    return n + (u === 1 ? "-ви" : u === 2 ? "-ри" : u === 7 || u === 8 ? "-ми" : "-ти");
+  };
+  const fcDate = (ms) => {
+    if (lang !== "bg") return fmtDate(ms);
+    const d = new Date(ms);
+    return bgOrdinal(d.getUTCDate()) + " " + d.toLocaleDateString("bg-BG", { month: "long", timeZone: "UTC" });
+  };
   const bgDate = (iso) => iso.split("-").reverse().join(".");
 
   // Pure calculation, kept separate from the DOM.
@@ -688,7 +699,7 @@
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
     $("t-vat-label").textContent = t("vatRow", { v: isFinite(v.vat) ? num(v.vat, 0, 2) : "–" });
-    $("out-forecast-label").textContent = t("forecastTo", { date: fmtDate(Date.UTC(today.getFullYear(), today.getMonth() + 1, 1)) });
+    $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(Date.UTC(today.getFullYear(), today.getMonth() + 1, 1)) });
 
     // Blank every result so numbers from earlier input never linger next to a message.
     const clear = (html) => {
@@ -711,7 +722,7 @@
     $("out-now-bgn").textContent = bgn(r.now.bgn) + " · " + n1(r.now.m3, "m³");
     $("out-fc-eur").textContent = eur(r.fc.gross);
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
-    $("out-forecast-label").textContent = t("forecastTo", { date: fmtDate(r.end) });
+    $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(r.end) });
     $("out-bar").style.width = Math.min(100, (r.elapsed / r.periodDays) * 100) + "%";
     $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays, s: fmtDate(r.start), end: fmtDate(r.end) });
     $("out-rate").textContent = t("perDay", { m3: n1(r.perDay, "m³"), money: eur(r.perDay * r.perM3) });
@@ -812,9 +823,9 @@
   ids.forEach((id) => $(id).addEventListener("input", render));
   $("region").addEventListener("change", render);
   $("refresh").addEventListener("click", refreshPrices);
+  // Restores only the price settings; meter readings, dates and the region stay as entered.
   $("reset").addEventListener("click", () => {
-    ids.forEach((id) => { if (id !== "region") $(id).value = DEFAULTS[id]; });
-    $("region").value = DEFAULTS.region;
+    ["override", "factor"].forEach((id) => { $(id).value = DEFAULTS[id]; });
     render();
   });
   document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
