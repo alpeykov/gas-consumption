@@ -78,13 +78,28 @@
     font-family: var(--font-body); font-size: 15px; line-height: 1.5;
   }
   .wrap {
-    max-width: 720px; margin: 0 auto;
+    max-width: 1040px; margin: 0 auto;
     padding-block: 28px 48px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     display: grid; gap: 20px;
   }
+  /* Phones: one column, tariff settings after the readings (DOM order).
+     Computers: tariff settings in a left column, with a rule between it and the bill. */
   .main { display: grid; gap: 20px; min-width: 0; }
+  @media (min-width: 821px) {
+    .main {
+      grid-template-columns: 320px minmax(0, 1fr);
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: "tariff bill" "tariff readings" "tariff breakdown";
+      column-gap: 57px; align-items: start;
+      background: linear-gradient(var(--rule), var(--rule)) no-repeat 348px 0 / 1px 100%;
+    }
+    .main > .bill { grid-area: bill; }
+    .main > .readings { grid-area: readings; }
+    .main > .breakdown { grid-area: breakdown; }
+    .main > .tariff { grid-area: tariff; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+  }
   header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
   header p { margin: 4px 0 0; color: var(--muted); }
   .label {
