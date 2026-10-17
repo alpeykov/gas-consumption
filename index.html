@@ -80,6 +80,8 @@
   * { box-sizing: border-box; }
   :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); }
   [hidden] { display: none !important; }
+  /* Nothing (not even an invisible tooltip at the screen edge) may make the page scroll sideways. */
+  html, body { overflow-x: clip; }
   body {
     margin: 0;
     background: var(--bg); color: var(--fg);
@@ -360,6 +362,7 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
     padding: 16px 20px; display: grid; gap: 12px; min-width: 0;
   }
+  .chart-panel { overflow: hidden; }
   .chart-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding-right: 32px; }
   .chart-head h2 { margin: 0; font-size: 1.05rem; }
   .chart-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
@@ -370,13 +373,13 @@
     border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
   }
   .chart-close {
-    position: absolute; top: -4px; right: -8px; width: 32px; height: 32px;
+    position: absolute; top: -6px; right: -6px; width: 32px; height: 32px;
     font: inherit; font-size: 1.4rem; line-height: 1; color: var(--muted); background: transparent; border: 0; cursor: pointer;
   }
   @media (max-width: 460px) {
     .chart-head { padding-right: 0; }
     .chart-head > div:first-of-type { padding-right: 32px; }
-    .chart-controls { width: 100%; flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
+    .chart-controls { width: 100%; gap: 8px 12px; }
   }
   .chart-box { position: relative; min-width: 0; }
   #chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
@@ -387,10 +390,10 @@
     font-size: 0.8rem; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums;
   }
   .chart-tip b { font-size: 0.95rem; }
-  .chart-note { margin: 0; color: var(--muted); font-size: 0.8rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .chart-note { margin: 0; color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; }
   .key-solid, .key-dash { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--flame); }
   .key-dash { border-top-style: dashed; }
-  .chart-keys { gap: 6px 16px; }
+  .chart-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
   .key { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
   .toast {

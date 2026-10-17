@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.8.8",
+      "date": "2026-10-17",
+      "bg": [
+        "Графиката с архивните цени се събира на екрана на телефона и при увеличен шрифт."
+      ],
+      "en": [
+        "The price archive chart fits the phone screen, also with enlarged text."
+      ]
+    },
+    {
       "version": "1.8.7",
       "date": "2026-10-17",
       "bg": [
