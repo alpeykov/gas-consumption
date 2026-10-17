@@ -319,15 +319,24 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
     padding: 16px 20px; display: grid; gap: 12px; min-width: 0;
   }
-  .chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .chart-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding-right: 32px; }
   .chart-head h2 { margin: 0; font-size: 1.05rem; }
   .chart-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
-  .chart-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .chart-controls { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .chart-controls label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
   .chart-controls select, .chart-controls > select {
     font: inherit; font-weight: 600; color: var(--fg); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
   }
-  .chart-close { font: inherit; font-size: 1.3rem; line-height: 1; color: var(--muted); background: transparent; border: 0; cursor: pointer; padding: 0 4px; }
+  .chart-close {
+    position: absolute; top: -4px; right: -8px; width: 32px; height: 32px;
+    font: inherit; font-size: 1.4rem; line-height: 1; color: var(--muted); background: transparent; border: 0; cursor: pointer;
+  }
+  @media (max-width: 460px) {
+    .chart-head { padding-right: 0; }
+    .chart-head > div:first-of-type { padding-right: 32px; }
+    .chart-controls { width: 100%; flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
+  }
   .chart-box { position: relative; min-width: 0; }
   #chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
   #chart-svg text { fill: var(--muted); font: 11px var(--font-body); font-variant-numeric: tabular-nums; }
@@ -339,7 +348,9 @@
   .chart-tip b { font-size: 0.95rem; }
   .chart-note { margin: 0; color: var(--muted); font-size: 0.8rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .key-solid, .key-dash { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--flame); }
-  .key-dash { border-top-style: dashed; margin-left: 10px; }
+  .key-dash { border-top-style: dashed; }
+  .chart-keys { gap: 6px 16px; }
+  .key { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30;
@@ -448,6 +459,7 @@
 
   <section class="chart-panel" id="chart-panel" aria-labelledby="chart-h" hidden>
     <div class="chart-head">
+      <button type="button" class="chart-close" id="chart-close" data-i18n-aria="close" aria-label="Затвори">×</button>
       <div>
         <h2 id="chart-h" data-i18n="chartTitle">Исторически цени на газа</h2>
         <p class="chart-sub" id="chart-sub"></p>
@@ -459,14 +471,13 @@
         </select>
         <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
         <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
-        <button type="button" class="chart-close" id="chart-close" data-i18n-aria="close" aria-label="Затвори">×</button>
       </div>
     </div>
     <div class="chart-box" id="chart-box">
       <svg id="chart-svg" role="img"></svg>
       <div class="chart-tip" id="chart-tip" hidden></div>
     </div>
-    <p class="chart-note"><span class="key-solid"></span> <span data-i18n="chartKeySolid">месечни ценови листи</span> <span class="key-dash"></span> <span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></p>
+    <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
     <p class="chart-note" data-i18n="chartNote"></p>
   </section>
   <div class="toast" id="toast" role="status" hidden></div>
@@ -645,7 +656,7 @@
       toYear: "До",
       chartKeySolid: "месечни ценови листи",
       chartKeyDash: "приблизително (блог на Овергаз)",
-      chartNote: "Крайна цена на природния газ за битови клиенти в €/MWh с ДДС. Където Овергаз е обявил цената без ДДС (от май 2022 г.), е добавен 20% ДДС. Цените до 31.12.2025 г. са обявени в лева, а след това в евро; за избраната валута са превърнати по фиксирания курс 1,95583 лв. за 1 евро. До април 2022 г. цените не включват пренос и достъп през мрежата на Булгартрансгаз; месечната такса снабдяване не е включена.",
+      chartNote: "Крайна цена на природния газ за битови клиенти за MWh, с ДДС. Където Овергаз е обявил цената без ДДС (от май 2022 г.), е добавен 20% ДДС. Цените до 31.12.2025 г. са обявени в лева, а след това в евро; за избраната валута са превърнати по фиксирания курс 1,95583 лв. за 1 евро. До април 2022 г. цените не включват пренос и достъп през мрежата на Булгартрансгаз; месечната такса снабдяване не е включена.",
       chartLoading: "Зареждане…",
       chartEmpty: "Няма данни за избрания период.",
       tipApprox: "приблизително, по блога на Овергаз",
@@ -739,7 +750,7 @@
       toYear: "To",
       chartKeySolid: "monthly price lists",
       chartKeyDash: "approximate (Overgas blog)",
-      chartNote: "Final household natural gas price in €/MWh incl. VAT. Where Overgas published the price without VAT (from May 2022), 20% VAT was added. Prices were published in leva up to 31.12.2025 and in euro after that; they are converted to the chosen currency at the fixed rate of 1.95583 leva per euro. Until April 2022 prices exclude Bulgartransgaz transmission and access; the monthly supply fee is not included.",
+      chartNote: "Final household natural gas price per MWh, incl. VAT. Where Overgas published the price without VAT (from May 2022), 20% VAT was added. Prices were published in leva up to 31.12.2025 and in euro after that; they are converted to the chosen currency at the fixed rate of 1.95583 leva per euro. Until April 2022 prices exclude Bulgartransgaz transmission and access; the monthly supply fee is not included.",
       chartLoading: "Loading…",
       chartEmpty: "No data for the chosen period.",
       tipApprox: "approximate, from the Overgas blog",
