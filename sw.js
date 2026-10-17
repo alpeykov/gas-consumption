@@ -1,5 +1,5 @@
 // Bump VERSION on every release: a changed sw.js is what makes installed apps show "Update available".
-const VERSION = "1.5.2";
+const VERSION = "1.6.1";
 const CACHE = "gas-bill-" + VERSION;
 const SHELL = [
   "./",
@@ -10,9 +10,11 @@ const SHELL = [
   "./icons/icon-maskable-512-v2.png",
   "./icons/apple-touch-icon-v2.png",
   "./icons/favicon-64-v2.png",
+  "./icons/bill-new-reading.png",
   "./data/prices.json",
   "./data/gcv.json",
   "./data/price-history.json",
+  "./data/price-chart.json",
 ];
 
 self.addEventListener("install", (event) => {

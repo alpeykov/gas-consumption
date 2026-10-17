@@ -120,8 +120,8 @@ def btg_representative() -> dict:
     if not links:
         raise RuntimeError("No representative calorific value files found on bulgartransgaz.bg")
     months, sources = {}, []
-    # Gas year 2022-2023 onwards, so the price history (from September 2023) has a value for every month.
-    for start_year, url in [link for link in links if link[0] >= 2022]:
+    # Every published gas year, so the price chart can show prices per m³ for every month.
+    for start_year, url in links:
         sources.append(url)
         for row in xlsx_rows(get(url)):
             if len(row) < 2:

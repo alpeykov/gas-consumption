@@ -299,6 +299,53 @@
   .help-btn[aria-expanded="true"] { background: var(--flame); color: var(--on-flame); border-color: var(--flame); }
   .help-btn:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
 
+  /* Chart and share buttons with a hover tooltip */
+  .icon-btn {
+    position: relative; width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
+    display: grid; place-items: center; color: var(--flame); background: var(--panel); border: 1px solid var(--line);
+  }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn[aria-expanded="true"] { background: var(--flame); color: var(--on-flame); border-color: var(--flame); }
+  .icon-btn:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+  .icon-btn::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    white-space: nowrap; padding: 5px 9px; border-radius: 6px; font: 600 0.78rem/1.2 var(--font-body);
+    background: var(--tip-bg); color: var(--tip-fg); pointer-events: none; opacity: 0; transition: opacity .12s; z-index: 6;
+  }
+  .icon-btn:hover::after, .icon-btn:focus-visible::after { opacity: 1; }
+
+  /* Historical price chart */
+  .chart-panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 20px; display: grid; gap: 12px; min-width: 0;
+  }
+  .chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .chart-head h2 { margin: 0; font-size: 1.05rem; }
+  .chart-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
+  .chart-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .chart-controls select {
+    font: inherit; font-weight: 600; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
+  }
+  .chart-close { font: inherit; font-size: 1.3rem; line-height: 1; color: var(--muted); background: transparent; border: 0; cursor: pointer; padding: 0 4px; }
+  .chart-box { position: relative; min-width: 0; }
+  #chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+  #chart-svg text { fill: var(--muted); font: 11px var(--font-body); font-variant-numeric: tabular-nums; }
+  .chart-tip {
+    position: absolute; top: 0; pointer-events: none; z-index: 4;
+    background: var(--tip-bg); color: var(--tip-fg); border-radius: 8px; padding: 8px 10px;
+    font-size: 0.8rem; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  .chart-tip b { font-size: 0.95rem; }
+  .chart-note { margin: 0; color: var(--muted); font-size: 0.8rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .key-solid, .key-dash { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--flame); }
+  .key-dash { border-top-style: dashed; margin-left: 10px; }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+    background: var(--tip-bg); color: var(--tip-fg); border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 0.9rem;
+  }
+
   /* Install button (phones, browser only) */
   .install-btn {
     font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--on-flame); background: var(--flame);
@@ -309,7 +356,12 @@
     flex-basis: 100%; display: flex; align-items: flex-start; gap: 12px;
     background: var(--tip-bg); color: var(--tip-fg); border-radius: 10px; padding: 12px 14px; font-size: 0.9rem;
   }
+  .ios-help { flex-wrap: wrap; }
   .ios-help span { flex: 1; min-width: 0; }
+  .ios-help a { color: inherit; font-weight: 700; }
+  .bill-example { flex-basis: 100%; margin: 4px 0 0; display: grid; gap: 6px; }
+  .bill-example img { width: 100%; height: auto; max-width: 720px; border-radius: 6px; background: #ffffff; }
+  .bill-example figcaption { font-size: 0.85rem; }
   .ios-help button {
     font: inherit; font-size: 1.2rem; line-height: 1; color: inherit; background: transparent;
     border: 0; padding: 0 4px; cursor: pointer;
@@ -371,18 +423,49 @@
         <button type="button" data-theme-choice="blue" data-i18n-aria="themeBlue" data-i18n-title="themeBlue" aria-label="Синя"><span style="--s-bg:#0a1a33;--s-dot:#4cc3ff"></span></button>
         <button type="button" data-theme-choice="contrast" data-i18n-aria="themeContrast" data-i18n-title="themeContrast" aria-label="Висок контраст"><span style="--s-bg:#000000;--s-dot:#ffd400"></span></button>
       </div>
+      <button type="button" class="icon-btn" id="chart-btn" aria-expanded="false" aria-controls="chart-panel" data-i18n-aria="chartBtn" data-i18n-tip="chartBtn" aria-label="Исторически цени" data-tip="Исторически цени">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="share-btn" data-i18n-aria="shareBtn" data-i18n-tip="shareBtn" aria-label="Сподели" data-tip="Сподели">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
       <button type="button" class="help-btn" id="help-btn" aria-expanded="false" aria-controls="about" data-i18n-aria="helpLabel" aria-label="За приложението">?</button>
       <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
     </div>
     <div class="ios-help" id="about" role="note" hidden>
-      <span data-i18n="about"></span>
+      <span data-i18n-html="about"></span>
       <button type="button" id="about-close" data-i18n-aria="close" aria-label="Затвори">×</button>
+      <figure class="bill-example" id="bill-example" hidden>
+        <img src="icons/bill-new-reading.png" width="954" height="86" data-i18n-alt="billAlt" alt="">
+        <figcaption data-i18n="billCaption"></figcaption>
+      </figure>
     </div>
     <div class="ios-help" id="ios-help" role="note" hidden>
       <span data-i18n="iosHelp"></span>
       <button type="button" id="ios-help-close" data-i18n-aria="close" aria-label="Затвори">×</button>
     </div>
   </header>
+
+  <section class="chart-panel" id="chart-panel" aria-labelledby="chart-h" hidden>
+    <div class="chart-head">
+      <div>
+        <h2 id="chart-h" data-i18n="chartTitle">Исторически цени на газа</h2>
+        <p class="chart-sub" data-i18n="chartSub">Овергаз Мрежи, битови клиенти · €/m³ с ДДС</p>
+      </div>
+      <div class="chart-controls">
+        <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
+        <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
+        <button type="button" class="chart-close" id="chart-close" data-i18n-aria="close" aria-label="Затвори">×</button>
+      </div>
+    </div>
+    <div class="chart-box" id="chart-box">
+      <svg id="chart-svg" role="img"></svg>
+      <div class="chart-tip" id="chart-tip" hidden></div>
+    </div>
+    <p class="chart-note"><span class="key-solid"></span> <span data-i18n="chartKeySolid">месечни ценови листи</span> <span class="key-dash"></span> <span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></p>
+    <p class="chart-note" data-i18n="chartNote"></p>
+  </section>
+  <div class="toast" id="toast" role="status" hidden></div>
 
 
   <div class="main">
@@ -490,6 +573,7 @@
   const PRICES_URL = "data/prices.json";
   const GCV_URL = "data/gcv.json";
   const HISTORY_URL = "data/price-history.json";
+  const CHART_URL = "data/price-chart.json";
 
   // Bulgartransgaz representative calorific value (kWh per m³) by month, used until data/gcv.json loads.
   // This is the value Overgas prints on the bill ("коефициент на преобразуване").
@@ -541,7 +625,27 @@
       themeContrast: "Висок контраст",
       install: "Инсталирай",
       helpLabel: "За приложението",
-      about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете днешното показание на уреда и показанието от последната сметка. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона в „Тарифни настройки“.",
+      chartBtn: "Исторически цени",
+      billLink: "последната сметка",
+      billAlt: "Таблицата с показанията в сметката на Овергаз; колоната „Ново“ е оградена",
+      billCaption: "От сметката на Овергаз вземете числото в колона „Ново“ – с него започва текущият месец. Въведете го в „Показание от последната сметка“.",
+      shareBtn: "Сподели",
+      shareText: "Изчислете сметката си за газ от Овергаз",
+      shareCopied: "Линкът е копиран",
+      chartTitle: "Исторически цени на газа",
+      chartSub: "Овергаз Мрежи, битови клиенти · €/m³ с ДДС",
+      fromYear: "От",
+      toYear: "До",
+      chartKeySolid: "месечни ценови листи",
+      chartKeyDash: "приблизително (блог на Овергаз)",
+      chartNote: "Цена за m³ с ДДС = цена за MWh с ДДС × представителната калоричност на Булгартрансгаз за месеца ÷ 1000; където цената е обявена без ДДС, е добавен 20% ДДС. До април 2022 г. цените не включват пренос и достъп през мрежата на Булгартрансгаз; месечната такса снабдяване не е включена.",
+      chartLoading: "Зареждане…",
+      chartEmpty: "Няма данни за избрания период.",
+      tipApprox: "приблизително, по блога на Овергаз",
+      tipOld: "без пренос и достъп",
+      tipGcvApprox: "kWh/m³ от {when}",
+      chartAria: "Цена на природния газ за m³ с ДДС, {from} – {to}: от {min} до {max}.",
+      about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете днешното показание на уреда и показанието от {bill}. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона в „Тарифни настройки“. Ако смените датата на последната сметка с по-стар месец, приложението зарежда цената и kWh за 1 m³ за този месец. Иконата с графиката показва историческите цени.",
       iosHelp: "За да инсталирате приложението: натиснете бутона „Сподели“ (квадрат със стрелка нагоре) и изберете „Добави към началния екран“.",
       close: "Затвори",
       tariffH: "Тарифни настройки",
@@ -613,7 +717,27 @@
       themeContrast: "High contrast",
       install: "Install",
       helpLabel: "About this app",
-      about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter today’s reading from the meter and the meter’s reading from your last bill. The Overgas price and kWh per m³ update automatically; choose your region under “Tariff settings”.",
+      chartBtn: "Historical prices",
+      billLink: "last bill",
+      billAlt: "The meter table on an Overgas bill with the “Ново” (new) column circled",
+      billCaption: "On your Overgas bill, take the number in the “Ново” (new) column – the current month starts from it. Enter it as “Reading on last bill”.",
+      shareBtn: "Share",
+      shareText: "Work out your Overgas gas bill",
+      shareCopied: "Link copied",
+      chartTitle: "Historical gas prices",
+      chartSub: "Overgas Мрежи, households · €/m³ incl. VAT",
+      fromYear: "From",
+      toYear: "To",
+      chartKeySolid: "monthly price lists",
+      chartKeyDash: "approximate (Overgas blog)",
+      chartNote: "Price per m³ incl. VAT = price per MWh incl. VAT × the Bulgartransgaz representative calorific value for the month ÷ 1000; where a price was published without VAT, 20% VAT was added. Until April 2022 prices exclude Bulgartransgaz transmission and access; the monthly supply fee is not included.",
+      chartLoading: "Loading…",
+      chartEmpty: "No data for the chosen period.",
+      tipApprox: "approximate, from the Overgas blog",
+      tipOld: "excl. transmission and access",
+      tipGcvApprox: "kWh/m³ from {when}",
+      chartAria: "Natural gas price per m³ incl. VAT, {from} – {to}: from {min} to {max}.",
+      about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter today’s reading from the meter and the meter’s reading from your {bill}. The Overgas price and kWh per m³ update automatically; choose your region under “Tariff settings”. If you change the date of your last bill to an earlier month, the app loads that month’s price and kWh per m³. The chart icon shows historical prices.",
       iosHelp: "To install the app: tap the Share button (square with an arrow pointing up) and choose “Add to Home Screen”.",
       close: "Close",
       tariffH: "Tariff settings",
@@ -687,9 +811,12 @@
     document.querySelectorAll("[data-i18n]").forEach((el) => el.textContent = t(el.dataset.i18n));
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
     document.querySelectorAll("[data-i18n-title]").forEach((el) => el.title = t(el.dataset.i18nTitle));
+    document.querySelectorAll("[data-i18n-tip]").forEach((el) => el.dataset.tip = t(el.dataset.i18nTip));
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => el.placeholder = t(el.dataset.i18nPlaceholder));
     const link = '<a href="' + PAGE_URL + '" target="_blank" rel="noopener">' + t("sourceLinkText") + "</a>";
-    document.querySelectorAll("[data-i18n-html]").forEach((el) => el.innerHTML = t(el.dataset.i18nHtml, { link }));
+    const bill = '<a href="#bill-example" class="bill-link">' + t("billLink") + "</a>";
+    document.querySelectorAll("[data-i18n-html]").forEach((el) => el.innerHTML = t(el.dataset.i18nHtml, { link, bill }));
+    document.querySelectorAll("[data-i18n-alt]").forEach((el) => el.alt = t(el.dataset.i18nAlt));
     document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
     if (swVersion) $("app-version").textContent = t("version", { v: swVersion });
   }
@@ -699,6 +826,7 @@
     try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
     applyStatic();
     render();
+    if (typeof chartData !== "undefined" && chartData && !$("chart-panel").hidden) drawChart();
   }
 
   let saved = {};
@@ -740,7 +868,7 @@
   const num = (v, min, max = min) => v.toLocaleString(locale(), { minimumFractionDigits: min, maximumFractionDigits: max });
   // Bulgarian writes "26,17 €"; English "€26.17".
   const eur = (v, digits = 2) => (lang === "bg" ? num(v, digits) + " €" : "€" + num(v, digits));
-  const bgn = (v) => num(v, 2) + " лв.";
+  const bgn = (v) => num(v, 2) + (lang === "bg" ? " лв." : " BGN");
   const n1 = (v, unit) => num(v, 0, 1) + " " + unit;
   const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
   const DAY = 86400000;
@@ -800,7 +928,7 @@
   function gcvFor(month) {
     if (gcv.months[month]) return { value: gcv.months[month], month, exact: true };
     const all = Object.keys(gcv.months).sort();
-    const earlier = all.filter((m) => m < month).pop() || all[all.length - 1];
+    const earlier = all.filter((m) => m < month).pop() || all[0];
     return { value: gcv.months[earlier], month: earlier, exact: false };
   }
   const isGcvStale = () => !gcv.months[billedMonth()];
@@ -1026,10 +1154,175 @@
   if (isStale(selectedRegion())) refreshPrices();
   if (isGcvStale()) refreshGcv();
 
+  // ---- Historical prices chart (€/m³ incl. VAT) ----
+  let chartData = null;
+  let chartPoints = [];
+  async function ensureChartData() {
+    if (chartData) return;
+    const [old, hist, g] = await Promise.all([getJson(CHART_URL), getJson(HISTORY_URL), getJson(GCV_URL)]);
+    history = hist;
+    gcv = { months: g.months, sources: g.sources || [] };
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); localStorage.setItem(GCV_KEY, JSON.stringify(gcv)); } catch (e) {}
+    chartData = old;
+  }
+  // One point per month: older notices from price-chart.json, newer months from price-history.json (+20% VAT).
+  function chartSeries() {
+    const byMonth = {};
+    Object.entries(chartData.months).forEach(([m, r]) => { byMonth[m] = { m, mwh: r.eurMwhVat, basis: r.basis, src: r.src }; });
+    Object.entries(history.months).forEach(([m, r]) => { byMonth[m] = { m, mwh: r.priceEur * 1.2, basis: "full", src: r.pdf }; });
+    return Object.values(byMonth).sort((a, b) => (a.m < b.m ? -1 : 1)).map((p) => {
+      const g = gcvFor(p.m);
+      return { ...p, kwh: g.value, gcvMonth: g.month, gcvExact: g.exact, m3: p.mwh * g.value / 1000 };
+    });
+  }
+  function fillYearSelects() {
+    const years = [...new Set(chartPoints.map((p) => +p.m.slice(0, 4)))];
+    const fill = (sel, val) => {
+      sel.innerHTML = years.map((y) => '<option value="' + y + '">' + y + "</option>").join("");
+      sel.value = String(val);
+    };
+    const last = years[years.length - 1];
+    fill($("chart-from"), years.includes(2018) ? 2018 : years[0]);
+    fill($("chart-to"), last);
+  }
+  const niceStep = (range) => {
+    const raw = range / 5, pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    return [1, 2, 2.5, 5, 10].map((k) => k * pow).find((s) => s >= raw);
+  };
+  function drawChart() {
+    const svg = $("chart-svg");
+    $("chart-tip").hidden = true;
+    let from = +$("chart-from").value, to = +$("chart-to").value;
+    if (from > to) { [from, to] = [to, from]; }
+    // Every calendar month in the chosen years, up to the latest month with data; gaps stay empty.
+    const lastData = chartPoints[chartPoints.length - 1].m;
+    const byMonth = Object.fromEntries(chartPoints.map((p) => [p.m, p]));
+    const months = [];
+    for (let y = from; y <= to; y++) for (let mo = 1; mo <= 12; mo++) {
+      const key = y + "-" + pad2(mo);
+      if (key <= lastData) months.push(key);
+    }
+    const pts = months.map((k) => byMonth[k] || null);
+    const vals = pts.filter(Boolean).map((p) => p.m3);
+    const W = Math.max(280, $("chart-box").clientWidth), H = Math.round(Math.min(340, Math.max(220, W * 0.45)));
+    const M = { l: 44, r: 14, t: 14, b: 26 };
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    if (!vals.length) {
+      svg.innerHTML = '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + t("chartEmpty") + "</text>";
+      return;
+    }
+    const step = niceStep(Math.max(...vals));
+    const yMax = Math.ceil(Math.max(...vals) / step) * step;
+    const x = (i) => M.l + (months.length === 1 ? (W - M.l - M.r) / 2 : i * (W - M.l - M.r) / (months.length - 1));
+    const y = (v) => M.t + (1 - v / yMax) * (H - M.t - M.b);
+    let out = "";
+    for (let v = 0; v <= yMax + 1e-9; v += step) {
+      out += '<line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"/>';
+      out += '<text x="' + (M.l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + num(v, step < 0.1 ? 2 : 1) + "</text>";
+    }
+    const yearEvery = Math.ceil((to - from + 1) / Math.max(1, Math.floor((W - M.l - M.r) / 48)));
+    months.forEach((k, i) => {
+      if (k.endsWith("-01") && (+k.slice(0, 4) - from) % yearEvery === 0) {
+        out += '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="' + (H - M.b) + '" y2="' + (H - M.b + 4) + '" stroke="var(--line)"/>';
+        out += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + k.slice(0, 4) + "</text>";
+      }
+    });
+    // Solid line for monthly price lists, dashed where either end is an approximate blog value;
+    // a month without data leaves a gap.
+    const path = (approx) => {
+      let d = "", penAt = -1;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1];
+        if (!a || !b || (a.basis === "blog" || b.basis === "blog") !== approx) continue;
+        if (penAt !== i) d += "M" + x(i).toFixed(1) + " " + y(a.m3).toFixed(1);
+        d += "L" + x(i + 1).toFixed(1) + " " + y(b.m3).toFixed(1);
+        penAt = i + 1;
+      }
+      return d;
+    };
+    out += '<path d="' + path(false) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-linejoin="round"/>';
+    out += '<path d="' + path(true) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-dasharray="5 4"/>';
+    out += '<line id="chart-cross" y1="' + M.t + '" y2="' + (H - M.b) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>';
+    out += '<circle id="chart-dot" r="4.5" fill="var(--flame)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>';
+    out += '<rect x="' + M.l + '" y="' + M.t + '" width="' + (W - M.l - M.r) + '" height="' + (H - M.t - M.b) + '" fill="transparent" id="chart-hit"/>';
+    svg.innerHTML = out;
+    const first = pts.find(Boolean), last = [...pts].reverse().find(Boolean);
+    svg.setAttribute("aria-label", t("chartAria", { from: monthLabel(first.m), to: monthLabel(last.m), min: eur(Math.min(...vals), 2) + "/m³", max: eur(Math.max(...vals), 2) + "/m³" }));
+
+    // Crosshair + tooltip on the nearest month with data.
+    const hit = $("chart-hit"), tip = $("chart-tip");
+    const show = (evt) => {
+      const r = svg.getBoundingClientRect();
+      const px = (evt.clientX - r.left) * (W / r.width);
+      let best = -1, dist = Infinity;
+      pts.forEach((p, i) => { if (p && Math.abs(x(i) - px) < dist) { dist = Math.abs(x(i) - px); best = i; } });
+      if (best < 0) return;
+      const p = pts[best];
+      $("chart-cross").setAttribute("x1", x(best)); $("chart-cross").setAttribute("x2", x(best));
+      $("chart-cross").setAttribute("visibility", "visible");
+      $("chart-dot").setAttribute("cx", x(best)); $("chart-dot").setAttribute("cy", y(p.m3)); $("chart-dot").setAttribute("visibility", "visible");
+      const notes = [];
+      if (p.basis === "blog") notes.push(t("tipApprox"));
+      if (p.basis === "old") notes.push(t("tipOld"));
+      if (!p.gcvExact) notes.push(t("tipGcvApprox", { when: monthLabel(p.gcvMonth) }));
+      tip.innerHTML = monthLabel(p.m) + "<br><b>" + eur(p.m3, 3) + "/m³</b><br>" + eur(p.mwh, 2) + "/MWh · " + num(p.kwh, 3) + " kWh/m³" +
+        (notes.length ? "<br>" + notes.join(" · ") : "");
+      tip.hidden = false;
+      // Beside the crosshair, on whichever side has room, so the tooltip never covers the line at that month.
+      const scale = r.width / W, left = x(best) * scale, tw = tip.offsetWidth;
+      tip.style.left = (left + 12 + tw <= r.width ? left + 12 : Math.max(0, left - 12 - tw)) + "px";
+      tip.style.top = (M.t * scale) + "px";
+    };
+    const hide = () => { tip.hidden = true; $("chart-cross").setAttribute("visibility", "hidden"); $("chart-dot").setAttribute("visibility", "hidden"); };
+    hit.addEventListener("pointermove", show);
+    hit.addEventListener("pointerdown", show);
+    hit.addEventListener("pointerleave", hide);
+  }
+  async function openChart(open) {
+    $("chart-panel").hidden = !open;
+    $("chart-btn").setAttribute("aria-expanded", String(open));
+    if (!open) return;
+    if (!chartData) {
+      $("chart-svg").innerHTML = '<text x="20" y="30">' + t("chartLoading") + "</text>";
+      try { await ensureChartData(); } catch (e) { $("chart-svg").innerHTML = '<text x="20" y="30">' + t("chartEmpty") + "</text>"; return; }
+      chartPoints = chartSeries();
+      fillYearSelects();
+      render();
+    }
+    drawChart();
+  }
+  $("chart-btn").addEventListener("click", () => openChart($("chart-panel").hidden));
+  $("chart-close").addEventListener("click", () => openChart(false));
+  $("chart-from").addEventListener("change", drawChart);
+  $("chart-to").addEventListener("change", drawChart);
+  addEventListener("resize", () => { if (!$("chart-panel").hidden && chartData) drawChart(); });
+
+  // ---- Share: the phone's share menu, otherwise copy the link ----
+  const APP_URL = "https://alpeykov.github.io/gas-consumption/";
+  let toastTimer;
+  const toast = (msg) => {
+    $("toast").textContent = msg; $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, 2200);
+  };
+  $("share-btn").addEventListener("click", async () => {
+    const data = { title: t("docTitle"), text: t("shareText"), url: APP_URL };
+    if (navigator.share) {
+      try { await navigator.share(data); return; } catch (e) { if (e.name === "AbortError") return; }
+    }
+    try { await navigator.clipboard.writeText(APP_URL); toast(t("shareCopied")); }
+    catch (e) { toast(APP_URL); }
+  });
+
   // "?" button: a few sentences about the app, in the current language.
-  const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); };
+  const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); if (!open) $("bill-example").hidden = true; };
   $("help-btn").addEventListener("click", () => setAbout($("about").hidden));
   $("about-close").addEventListener("click", () => setAbout(false));
+  // "last bill" link: show where on the bill the reading is.
+  $("about").addEventListener("click", (e) => {
+    if (!e.target.closest(".bill-link")) return;
+    e.preventDefault();
+    $("bill-example").hidden = !$("bill-example").hidden;
+  });
 
   // ---- "Install" button: phones only, and only while the app is open in the browser ----
   const isInstalled = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
