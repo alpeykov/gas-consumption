@@ -120,7 +120,8 @@ def btg_representative() -> dict:
     if not links:
         raise RuntimeError("No representative calorific value files found on bulgartransgaz.bg")
     months, sources = {}, []
-    for start_year, url in links[:2]:  # current and previous gas year
+    # Gas year 2022-2023 onwards, so the price history (from September 2023) has a value for every month.
+    for start_year, url in [link for link in links if link[0] >= 2022]:
         sources.append(url)
         for row in xlsx_rows(get(url)):
             if len(row) < 2:
@@ -147,6 +148,25 @@ def write_if_changed(path: Path, data: dict, now: str) -> bool:
     return True
 
 
+HISTORY_REGION = "Овергаз Мрежи"
+
+
+def add_to_history(regions: list[dict]) -> bool:
+    """Record this month's Овергаз Мрежи price in data/price-history.json (months are never rewritten)."""
+    path = DATA / "price-history.json"
+    history = json.loads(path.read_text(encoding="utf-8"))
+    main_region = next((r for r in regions if r["name"] == HISTORY_REGION), None)
+    if not main_region:
+        return False
+    month = main_region["uploaded"][:7]
+    if month in history["months"]:
+        return False
+    history["months"][month] = {"priceEur": main_region["price"], "pdf": main_region["pdf"]}
+    history["months"] = dict(sorted(history["months"].items()))
+    path.write_text(json.dumps(history, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return True
+
+
 def main() -> int:
     DATA.mkdir(exist_ok=True)
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
@@ -156,6 +176,8 @@ def main() -> int:
         try:
             data = fetch()
             print(f"{path.name}: {'updated' if write_if_changed(path, data, now) else 'unchanged'}")
+            if path.name == "prices.json":
+                print(f"price-history.json: {'month added' if add_to_history(data['regions']) else 'unchanged'}")
         except Exception as e:  # keep the other file's update even if one source breaks
             failed = True
             print(f"{path.name}: FAILED: {e}", file=sys.stderr)

@@ -469,6 +469,7 @@
           <tr><td data-i18n="gasUsed">Изразходван газ</td><td id="t-m3-now">–</td><td id="t-m3-fc">–</td></tr>
           <tr><td id="t-energy-label"></td><td id="t-kwh-now">–</td><td id="t-kwh-fc">–</td></tr>
           <tr><td data-i18n="netCost">Цена на газа без ДДС</td><td id="t-net-now">–</td><td id="t-net-fc">–</td></tr>
+          <tr id="t-fee-row" hidden><td data-i18n="feeRow">Месечна такса снабдяване</td><td id="t-fee-now">–</td><td id="t-fee-fc">–</td></tr>
           <tr><td id="t-vat-label"></td><td id="t-vat-now">–</td><td id="t-vat-fc">–</td></tr>
           <tr class="total"><td data-i18n="totalEur">Общо, евро</td><td id="t-tot-now">–</td><td id="t-tot-fc">–</td></tr>
           <tr><td data-i18n="totalBgn">Общо, лева</td><td id="t-bgn-now">–</td><td id="t-bgn-fc">–</td></tr>
@@ -487,6 +488,7 @@
   // Refreshed daily by .github/workflows/update-data.yml from overgas.bg and bulgartransgaz.bg.
   const PRICES_URL = "data/prices.json";
   const GCV_URL = "data/gcv.json";
+  const HISTORY_URL = "data/price-history.json";
 
   // Bulgartransgaz representative calorific value (kWh per m³) by month, used until data/gcv.json loads.
   // This is the value Overgas prints on the bill ("коефициент на преобразуване").
@@ -520,6 +522,7 @@
   const KEY = "gas-bill-forecast-v1";
   const PRICE_KEY = "gas-bill-prices-v1";
   const GCV_KEY = "gas-bill-gcv-v2";
+  const HISTORY_KEY = "gas-bill-history-v1";
   const ids = Object.keys(DEFAULTS);
   const $ = (id) => document.getElementById(id);
   // ---- Language: Bulgarian by default; a chosen language is kept in this browser across updates ----
@@ -581,6 +584,10 @@
       chipOverride: "Ваша цена",
       chipLive: "От overgas.bg",
       chipBuiltIn: "Вградена цена",
+      chipHistory: "Цена за {when}",
+      priceListFor: "ценова листа за {when}",
+      noHistory: "Няма запазена цена за {when} за този регион; ползва се текущата цена.",
+      feeRow: "Месечна такса снабдяване",
       uploaded: "Актуална цена – {d}",
       priceList: "ценова листа",
       checked: "проверено {d}",
@@ -649,6 +656,10 @@
       chipOverride: "Your override",
       chipLive: "From overgas.bg",
       chipBuiltIn: "Built-in price",
+      chipHistory: "Price for {when}",
+      priceListFor: "price list for {when}",
+      noHistory: "No saved price for {when} for this region; using the current price.",
+      feeRow: "Monthly supply fee",
       uploaded: "Current price – {d}",
       priceList: "price list",
       checked: "checked {d}",
@@ -760,9 +771,11 @@
     const grossPerKwh = pricePerKwh * (1 + v.vat / 100);
     const perDay = elapsed > 0 ? used / elapsed : 0;
     const fcM3 = elapsed > 0 ? perDay * periodDays : used;
+    // Until November 2024 Overgas also charged a fixed supply fee once per monthly bill.
     const part = (m3) => {
-      const kwh = m3 * v.factor, net = kwh * pricePerKwh, gross = kwh * grossPerKwh;
-      return { m3, kwh, net, vat: gross - net, gross, bgn: gross * v.rate };
+      const kwh = m3 * v.factor, gas = kwh * pricePerKwh, net = gas + v.fee;
+      const vat = net * v.vat / 100, gross = net + vat;
+      return { m3, kwh, gas, net, vat, gross, bgn: gross * v.rate };
     };
     return { start, end, periodDays, elapsed, perDay, perM3: v.factor * grossPerKwh, grossPerKwh, now: part(used), fc: part(fcM3) };
   }
@@ -804,38 +817,72 @@
     else $("gcv-source").innerHTML = t("gcvMissing", { want: monthLabel(want), when: monthLabel(g.month) }) + link;
   }
 
+  // Past prices for Овергаз Мрежи (data/price-history.json), loaded the first time an earlier month is billed.
+  let history = null;
+  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "null"); } catch (e) {}
+  let historyRequested = false;
+  async function loadHistory() {
+    historyRequested = true;
+    try {
+      history = await getJson(HISTORY_URL);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch (e) {}
+    } catch (e) {
+      console.warn("Couldn't load the price history:", e);
+    }
+    render();
+  }
+  const historyFor = (month, region) =>
+    history && history.region === region.name && history.months[month] ? history.months[month] : null;
+
   function renderTariff() {
     const region = selectedRegion();
     const override = parseFloat($("override").value);
     const useOverride = isFinite(override) && override > 0;
-    $("final-price").textContent = num(useOverride ? override : region.price, 2);
+    // A bill for a month before the current price list uses that month's price, if we have it.
+    const month = billedMonth();
+    const past = month < region.uploaded.slice(0, 7);
+    const hist = past && !useOverride ? historyFor(month, region) : null;
+    if (past && !useOverride && !hist && !historyRequested) loadHistory();
+    const price = useOverride ? override : hist ? hist.priceEur : region.price;
+    const fee = hist && hist.feeEur ? hist.feeEur : 0;
+    $("final-price").textContent = num(price, 2);
 
     const now = new Date();
     const um = Number(region.uploaded.split("-")[1]);
-    const stale = !useOverride && isStale(region);
-    $("stale-info").hidden = !stale;
+    const stale = !useOverride && !past && isStale(region);
+    const missing = !useOverride && past && !hist;
+    $("stale-info").hidden = !(stale || missing);
     if (stale) {
       $("stale-tip").textContent = t("staleTip", { cur: monthName(now.getMonth()), prev: monthName(um - 1), d: bgDate(region.uploaded) });
+    } else if (missing) {
+      $("stale-tip").textContent = t("noHistory", { when: monthLabel(month) });
     }
 
-    $("tariff-summary").textContent = region.name + " · " + num(useOverride ? override : region.price, 2) + " €/MWh";
+    $("tariff-summary").textContent = region.name + " · " + num(price, 2) + " €/MWh";
 
     const chip = $("source-chip");
-    chip.classList.toggle("offline", !prices.live);
-    chip.textContent = refreshing ? t("checking") : useOverride ? t("chipOverride") : prices.live ? t("chipLive") : t("chipBuiltIn");
-    const pdfLink = '<a href="' + region.pdf + '" target="_blank" rel="noopener">' + t("priceList") + "</a>";
-    $("source-text").innerHTML = useOverride ? "" : t("uploaded", { d: bgDate(region.uploaded) }) + " · " + pdfLink +
-      (prices.checkedAt ? " · " + t("checked", { d: bgDate(prices.checkedAt.slice(0, 10)) }) : "");
-    return useOverride ? override : region.price;
+    chip.classList.toggle("offline", !prices.live && !hist);
+    chip.textContent = refreshing ? t("checking") : useOverride ? t("chipOverride") : hist ? t("chipHistory", { when: monthLabel(month) })
+      : prices.live ? t("chipLive") : t("chipBuiltIn");
+    if (useOverride) {
+      $("source-text").innerHTML = "";
+    } else if (hist) {
+      $("source-text").innerHTML = '<a href="' + hist.pdf + '" target="_blank" rel="noopener">' + t("priceListFor", { when: monthLabel(month) }) + "</a>";
+    } else {
+      const pdfLink = '<a href="' + region.pdf + '" target="_blank" rel="noopener">' + t("priceList") + "</a>";
+      $("source-text").innerHTML = t("uploaded", { d: bgDate(region.uploaded) }) + " · " + pdfLink +
+        (prices.checkedAt ? " · " + t("checked", { d: bgDate(prices.checkedAt.slice(0, 10)) }) : "");
+    }
+    return { price, fee };
   }
 
   function render() {
-    const price = renderTariff();
+    const { price, fee } = renderTariff();
     renderGcv();
     const v = {
       startReading: parseFloat($("start-reading").value), startDate: $("start-date").value,
       curReading: parseFloat($("cur-reading").value), curDate: $("cur-date").value,
-      price, vat: parseFloat($("vat").value),
+      price, fee, vat: parseFloat($("vat").value),
       factor: factorInUse(), rate: parseFloat($("rate").value),
     };
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
@@ -871,7 +918,9 @@
 
     $("t-m3-now").textContent = n1(r.now.m3, "m³"); $("t-m3-fc").textContent = n1(r.fc.m3, "m³");
     $("t-kwh-now").textContent = n1(r.now.kwh, "kWh"); $("t-kwh-fc").textContent = n1(r.fc.kwh, "kWh");
-    $("t-net-now").textContent = eur(r.now.net); $("t-net-fc").textContent = eur(r.fc.net);
+    $("t-net-now").textContent = eur(r.now.gas); $("t-net-fc").textContent = eur(r.fc.gas);
+    $("t-fee-row").hidden = !v.fee;
+    $("t-fee-now").textContent = eur(v.fee); $("t-fee-fc").textContent = eur(v.fee);
     $("t-vat-now").textContent = eur(r.now.vat); $("t-vat-fc").textContent = eur(r.fc.vat);
     $("t-tot-now").textContent = eur(r.now.gross); $("t-tot-fc").textContent = eur(r.fc.gross);
     $("t-bgn-now").textContent = bgn(r.now.bgn); $("t-bgn-fc").textContent = bgn(r.fc.bgn);
@@ -925,7 +974,7 @@
 
   ids.forEach((id) => $(id).addEventListener("input", render));
   $("region").addEventListener("change", render);
-  $("start-date").addEventListener("change", () => { if (isGcvStale()) refreshGcv(); });
+  $("start-date").addEventListener("change", () => { if (isGcvStale()) refreshGcv(); historyRequested = false; render(); });
   $("refresh").addEventListener("click", () => { refreshPrices(); refreshGcv(); });
   // Restores only the price settings; meter readings, dates and the region stay as entered.
   $("reset").addEventListener("click", () => {

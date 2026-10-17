@@ -1,0 +1,225 @@
+{
+  "region": "Овергаз Мрежи",
+  "note": "Final household price excl. VAT per MWh. feeEur: fixed monthly supply fee per bill (until 2024-11).",
+  "months": {
+    "2023-09": {
+      "priceEur": 47.3661,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2023/09/TSENA-SAJT_red.pdf",
+      "priceBgn": 92.64,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2023-10": {
+      "priceEur": 46.4049,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2023/10/TSENA-SAJT_red.pdf",
+      "priceBgn": 90.76,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2023-11": {
+      "priceEur": 57.505,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2023/11/TSENA-SAJT_red.pdf",
+      "priceBgn": 112.47,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2023-12": {
+      "priceEur": 60.2557,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2023/12/TSENA-SAJT_red.pdf",
+      "priceBgn": 117.85,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-01": {
+      "priceEur": 55.5212,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/01/TSENA-SAJT_red.pdf",
+      "priceBgn": 108.59,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-02": {
+      "priceEur": 52.1876,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/02/TSENA-SAJT_red.pdf",
+      "priceBgn": 102.07,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-03": {
+      "priceEur": 45.2902,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/03/TSENA-SAJT_red.pdf",
+      "priceBgn": 88.58,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-04": {
+      "priceEur": 45.2749,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/04/TSENA-SAJT_red.pdf",
+      "priceBgn": 88.55,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-05": {
+      "priceEur": 43.1581,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/05/TSENA-SAJT_red.pdf",
+      "priceBgn": 84.41,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-06": {
+      "priceEur": 45.6379,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/06/TSENA-SAJT_red.pdf",
+      "priceBgn": 89.26,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-07": {
+      "priceEur": 44.7432,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/07/TSENA-SAJT_red.pdf",
+      "priceBgn": 87.51,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-08": {
+      "priceEur": 46.0981,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/08/TSENA-SAJT_red.pdf",
+      "priceBgn": 90.16,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-09": {
+      "priceEur": 46.6912,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/09/TSENA-SAJT_red.pdf",
+      "priceBgn": 91.32,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-10": {
+      "priceEur": 48.2762,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/10/TSENA-SAJT_red.pdf",
+      "priceBgn": 94.42,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-11": {
+      "priceEur": 50.8173,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/11/TSENA-SAI-T_red.pdf",
+      "priceBgn": 99.39,
+      "feeEur": 1.6003,
+      "feeBgn": 3.13
+    },
+    "2024-12": {
+      "priceEur": 57.1778,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2024/12/TSENA-SAJT_red.pdf",
+      "priceBgn": 111.83
+    },
+    "2025-01": {
+      "priceEur": 67.1582,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/01/TSENA-SAJT_red.pdf",
+      "priceBgn": 131.35
+    },
+    "2025-02": {
+      "priceEur": 68.4109,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/02/TSENA-SAJT_red.pdf",
+      "priceBgn": 133.8
+    },
+    "2025-03": {
+      "priceEur": 70.0981,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/03/TSENA-SAJT_red.pdf",
+      "priceBgn": 137.1
+    },
+    "2025-04": {
+      "priceEur": 62.9247,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/04/TSENA-SAJT_red.pdf",
+      "priceBgn": 123.07
+    },
+    "2025-05": {
+      "priceEur": 57.3567,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/04/price_red_2025-04-30.pdf",
+      "priceBgn": 112.18
+    },
+    "2025-06": {
+      "priceEur": 57.3158,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/06/TSENA-SAJT_red.pdf",
+      "priceBgn": 112.1
+    },
+    "2025-07": {
+      "priceEur": 57.2851,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/07/TSENA-SAJT_red.pdf",
+      "priceBgn": 112.04
+    },
+    "2025-08": {
+      "priceEur": 56.0018,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/08/TSENA-SAJT_red.pdf",
+      "priceBgn": 109.53
+    },
+    "2025-09": {
+      "priceEur": 55.1837,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/09/TSENA-SAJT_red.pdf",
+      "priceBgn": 107.93
+    },
+    "2025-10": {
+      "priceEur": 55.6695,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/10/TSENA-SAJT_red.pdf",
+      "priceBgn": 108.88
+    },
+    "2025-11": {
+      "priceEur": 58.1799,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/10/TSENA-SAJT_red-1.pdf",
+      "priceBgn": 113.79
+    },
+    "2025-12": {
+      "priceEur": 56.7125,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2025/12/TSENA-SAJT_red.pdf",
+      "priceBgn": 110.92
+    },
+    "2026-01": {
+      "priceEur": 55.9558,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/01/TSENA_SAJT.pdf",
+      "priceBgn": 109.44
+    },
+    "2026-02": {
+      "priceEur": 57.1318,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/02/TSENA-SAJT_red.pdf",
+      "priceBgn": 111.74
+    },
+    "2026-03": {
+      "priceEur": 57.4334,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/03/TSENA-SAJT_red.pdf",
+      "priceBgn": 112.33
+    },
+    "2026-04": {
+      "priceEur": 58.6196,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/04/TSENA-SAJT_red.pdf",
+      "priceBgn": 114.65
+    },
+    "2026-05": {
+      "priceEur": 60.358,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/05/TSENA-SAJT_red.pdf",
+      "priceBgn": 118.05
+    },
+    "2026-06": {
+      "priceEur": 59.9899,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/06/TSENA-SAJT_red.pdf",
+      "priceBgn": 117.33
+    },
+    "2026-07": {
+      "priceEur": 61.9072,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/07/TSENA-SAJT_red.pdf",
+      "priceBgn": 121.08
+    },
+    "2026-08": {
+      "priceEur": 63.6763,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/08/TSENA-SAJT_red.pdf",
+      "priceBgn": 124.54
+    },
+    "2026-09": {
+      "priceEur": 65.8902,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/09/TSENA-SAJT_red.pdf",
+      "priceBgn": 128.87
+    },
+    "2026-10": {
+      "priceEur": 68.9,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red.pdf"
+    }
+  }
+}
