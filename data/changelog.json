@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.8.2",
+      "date": "2026-10-17",
+      "bg": [
+        "Ако затворите лентата за нова версия, тя се показва отново, когато се върнете в приложението."
+      ],
+      "en": [
+        "If you close the new-version bar, it comes back when you return to the app."
+      ]
+    },
+    {
       "version": "1.8.1",
       "date": "2026-10-17",
       "bg": [

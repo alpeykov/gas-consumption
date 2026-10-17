@@ -1546,7 +1546,7 @@
 
   // ---- Update bar: "What's new?" notes and dismiss ----
   let updateDismissed = false;
-  $("update-dismiss").addEventListener("click", () => { updateDismissed = true; $("update-bar").hidden = true; });
+  $("update-dismiss").addEventListener("click", () => { updateDismissed = true; $("update-bar").hidden = true; $("update-notes").hidden = true; $("update-notes-link").setAttribute("aria-expanded", "false"); });
   // Numeric version compare: "1.10.0" > "1.9.2".
   const newer = (a, b) => {
     const x = a.split(".").map(Number), y = (b || "0").split(".").map(Number);
@@ -1586,7 +1586,7 @@
     });
 
     navigator.serviceWorker.register("sw.js").then((reg) => {
-      // Closed with ×: stays closed while the app is in use, and is offered again the next time the app is opened.
+      // Closed with ×: stays closed while the app is in use, and is offered again when the app is opened or brought back.
       const offer = (worker) => {
         if (updateDismissed) return;
         $("update-bar").hidden = false;
@@ -1602,8 +1602,12 @@
       });
       navigator.serviceWorker.controller?.postMessage("version");
       // Phones keep the app open for days; check again whenever it comes back to the screen.
+      // Leaving the app ends a "closed with ×"; coming back to it counts as opening it again,
+      // so a waiting update is offered again (phones usually resume the app instead of restarting it).
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") reg.update().catch(() => {});
+        if (document.visibilityState === "hidden") { updateDismissed = false; return; }
+        if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+        reg.update().catch(() => {});
       });
     }).catch((e) => console.warn("Service worker not registered:", e));
   }
