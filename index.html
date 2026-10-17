@@ -245,7 +245,18 @@
   tr:first-child td { border-top: 0; }
   td:nth-child(2), td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
   td:first-child { color: var(--muted); }
-  thead td { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--muted); }
+  thead td { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--muted); vertical-align: bottom; }
+  thead td:nth-child(n) { white-space: normal; }
+  /* Phones: the table always fits the screen — smaller text, labels wrap, figures stay on one line */
+  .breakdown, .bill, .readings, .tariff, .chart-panel { min-width: 0; max-width: 100%; }
+  @media (max-width: 460px) {
+    .breakdown { padding: 14px 14px; }
+    .breakdown table { table-layout: fixed; font-size: 0.88rem; }
+    .breakdown td:first-child { width: 36%; }
+    .breakdown td:nth-child(2), .breakdown td:nth-child(3) { padding-left: 8px; }
+    .breakdown thead td { font-size: 0.64rem; letter-spacing: 0.04em; }
+    .breakdown .hint { font-size: 0.8rem; overflow-wrap: anywhere; }
+  }
   tr.total td { font-weight: 700; color: var(--fg); }
   tr.total-bgn td { border-bottom: 2px solid var(--line); padding-bottom: 10px; }
   .table-scroll { overflow-x: auto; }
