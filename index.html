@@ -868,7 +868,7 @@
   const num = (v, min, max = min) => v.toLocaleString(locale(), { minimumFractionDigits: min, maximumFractionDigits: max });
   // Bulgarian writes "26,17 €"; English "€26.17".
   const eur = (v, digits = 2) => (lang === "bg" ? num(v, digits) + " €" : "€" + num(v, digits));
-  const bgn = (v) => num(v, 2) + (lang === "bg" ? " лв." : " BGN");
+  const bgn = (v) => num(v, 2) + (lang === "bg" ? " лв." : " lv.");
   const n1 = (v, unit) => num(v, 0, 1) + " " + unit;
   const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
   const DAY = 86400000;
