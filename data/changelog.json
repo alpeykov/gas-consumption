@@ -2,7 +2,7 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
-      "version": "1.8.4",
+      "version": "1.8.5",
       "date": "2026-10-17",
       "bg": [
         "В „?“ има бутон „Провери за обновление“."
