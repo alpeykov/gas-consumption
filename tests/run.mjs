@@ -1,5 +1,5 @@
-// Test suite for Gas Consumption: smoke, sanity and regression.
-// Run before every push:  npm test   (or: node tests/run.mjs [smoke|sanity|regression])
+// Test suite for Gas Consumption: smoke, sanity, ui (themes/language/layout on desktop and phone) and regression.
+// Run before every push:  npm test   (or: node tests/run.mjs [smoke|sanity|ui|regression])
 // Serves the project locally and drives the installed Chrome in headless mode (puppeteer-core).
 import http from "node:http";
 import fs from "node:fs";
@@ -339,14 +339,173 @@ async function regression() {
   }
 }
 
+// ======================================================================
+// UI — themes, language and layout, each on desktop and on a phone
+// ======================================================================
+const DEVICES = [["desktop", 1280], ["phone", 390]];
+const THEMES = { dark: "rgb(15, 20, 26)", light: "rgb(238, 241, 244)", blue: "rgb(10, 26, 51)", contrast: "rgb(0, 0, 0)" };
+
+// WCAG contrast of every visible text element against the background behind it.
+const lowContrast = (page, min) => page.evaluate((min) => {
+  const rgb = (c) => (c.match(/[\d.]+/g) || []).map(Number);
+  const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+  const bgOf = (el) => { for (let e = el; e; e = e.parentElement) { const c = rgb(getComputedStyle(e).backgroundColor); if (c.length >= 3 && (c[3] === undefined || c[3] > 0.5)) return c; } return rgb(getComputedStyle(document.body).backgroundColor); };
+  const bad = [];
+  for (const el of document.querySelectorAll("h1, h2, .label, .num, td, p, button, a, .date-text, option, .chip, .tariff-summary span")) {
+    if (!el.getClientRects().length || !el.textContent.trim() || el.closest("[hidden]") || el.disabled || el.closest("svg")) continue;
+    const s = getComputedStyle(el); if (s.visibility === "hidden" || +s.opacity < 0.5) continue;
+    const a = lum(rgb(s.color)), b = lum(bgOf(el)), ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    if (ratio < min) bad.push(`${el.id || el.className || el.tagName} "${el.textContent.trim().slice(0, 20)}" ${ratio.toFixed(2)}`);
+  }
+  return bad;
+}, min);
+
+async function ui() {
+  for (const [dev, w] of DEVICES) {
+    // ---- themes ----
+    await test("ui", `T1 each theme paints the page and is remembered (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      for (const [th, bg] of Object.entries(THEMES)) {
+        await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(60);
+        const r = await page.evaluate(() => ({
+          bg: getComputedStyle(document.body).backgroundColor,
+          meta: document.querySelector('meta[name="theme-color"]').content,
+          pressed: [...document.querySelectorAll(".themes button")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.dataset.themeChoice),
+        }));
+        expect(r.bg === bg, `${th}: page background ${r.bg}, expected ${bg}`);
+        expect(r.pressed.length === 1 && r.pressed[0] === th, `${th}: marked as selected`);
+        expect(/^#/.test(r.meta), `${th}: phone status bar colour set`);
+      }
+      await page.click('.themes button[data-theme-choice="light"]');
+      await page.reload({ waitUntil: "networkidle0" });
+      expect((await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === THEMES.light, "last chosen theme (light) remembered");
+      await page.close2();
+    });
+    await test("ui", `T2 update bar and help follow the theme (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      await page.click("#help-btn");
+      await page.evaluate(() => { document.getElementById("update-bar").hidden = false; });
+      for (const th of Object.keys(THEMES)) {
+        await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(60);
+        const c = await page.evaluate(() => ["#update-bar", "#about", ".bill"].map((s) => getComputedStyle(document.querySelector(s)).backgroundColor));
+        expect(c[0] === c[2] && c[1] === c[2], `${th}: update bar ${c[0]}, help ${c[1]}, cards ${c[2]}`);
+      }
+      await page.close2();
+    });
+    await test("ui", `T3 text is readable in every theme (contrast, ${dev})`, async () => {
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1" } });
+      await page.click("#help-btn"); await page.click("#chart-btn"); await settle(1000);
+      for (const th of Object.keys(THEMES)) {
+        await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(60);
+        const bad = await lowContrast(page, 3);
+        expect(!bad.length, `${th}: low contrast: ${bad.slice(0, 4).join("; ")}`);
+      }
+      await page.close2();
+    });
+
+    // ---- language ----
+    for (const lang of ["bg", "en"]) {
+      await test("ui", `L1 ${lang === "bg" ? "Bulgarian" : "English"}: every text, number and date in the right language (${dev})`, async () => {
+        const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang } });
+        const r = await page.evaluate(() => ({
+          lang: document.documentElement.lang, title: document.title,
+          empty: [...document.querySelectorAll("[data-i18n]")].filter((el) => !el.textContent.trim()).map((el) => el.dataset.i18n),
+          now: document.getElementById("out-now-eur").textContent, bgn: document.getElementById("out-now-bgn").textContent,
+          date: document.getElementById("cur-date-text").textContent, label: document.getElementById("out-forecast-label").textContent,
+          pressed: document.querySelector('.lang button[aria-pressed="true"]')?.dataset.lang,
+        }));
+        expect(r.lang === lang && r.pressed === lang, `page language ${r.lang}, selected flag ${r.pressed}`);
+        expect(!r.empty.length, "empty texts: " + r.empty.join(", "));
+        if (lang === "bg") {
+          expect(r.title === "Консумация на газ", "title " + r.title);
+          expect(r.now === "26,79 €" && r.bgn.startsWith("52,39 лв."), `money ${r.now} / ${r.bgn}`);
+          expect(r.date.startsWith("17 октомври 2026") && r.label.includes("1-ви ноември"), `dates ${r.date} / ${r.label}`);
+        } else {
+          expect(r.title === "Gas Consumption", "title " + r.title);
+          expect(r.now === "€26.79" && r.bgn.startsWith("52.39 lv."), `money ${r.now} / ${r.bgn}`);
+          expect(r.date === "17 October 2026" && r.label.includes("1st Nov"), `dates ${r.date} / ${r.label}`);
+        }
+        await page.close2();
+      });
+    }
+    await test("ui", `L2 switching language updates open panels and is remembered (${dev})`, async () => {
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1" } });
+      await page.click("#chart-btn"); await page.click("#help-btn"); await settle(1000);
+      await page.click('.lang button[data-lang="en"]'); await settle(200);
+      const en = await page.evaluate(() => [document.getElementById("chart-h").textContent, document.getElementById("tariff-toggle").textContent, document.getElementById("check-update").textContent]);
+      expect(en.join("|") === "Historical gas prices|Hide|Check for updates", "open panels in English: " + en.join(" | "));
+      await page.reload({ waitUntil: "networkidle0" });
+      expect((await page.evaluate(() => document.documentElement.lang)) === "en", "English remembered");
+      await page.click('.lang button[data-lang="bg"]');
+      expect((await text(page, "#tariff-toggle")) === "Скрий", "back to Bulgarian");
+      await page.close2();
+    });
+
+    // ---- UI ----
+    await test("ui", `U1 layout order is right (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      const box = await page.evaluate(() => Object.fromEntries([".bill", ".readings", ".tariff", ".breakdown"].map((s) => {
+        const r = document.querySelector(s).getBoundingClientRect(); return [s, { x: Math.round(r.left), y: Math.round(r.top) }];
+      })));
+      if (dev === "desktop") {
+        expect(box[".tariff"].x < box[".bill"].x, "tariff in the left column");
+        expect(box[".bill"].y < box[".readings"].y && box[".readings"].y < box[".breakdown"].y, "bill → readings → breakdown on the right");
+      } else {
+        const ys = [".bill", ".readings", ".tariff", ".breakdown"].map((s) => box[s].y);
+        expect(ys.every((y, i) => i === 0 || y > ys[i - 1]), "phone order: bill → readings → tariff → breakdown");
+        const order = await page.$$eval(".readings .label", (l) => l.map((x) => x.textContent));
+        expect(order[0] === "Показание днес", "today's reading first");
+      }
+      await page.close2();
+    });
+    await test("ui", `U2 every button has a name and is big enough to tap (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      await page.click("#help-btn");
+      const r = await page.evaluate(() => [...document.querySelectorAll("button, select, a[href]")].filter((el) => el.getClientRects().length && !el.closest("[hidden]")).map((el) => {
+        const b = el.getBoundingClientRect();
+        return { id: el.id || el.className || el.textContent.trim().slice(0, 15), named: !!(el.getAttribute("aria-label") || el.textContent.trim() || el.labels?.length), w: b.width, h: b.height, inline: el.tagName === "A" };
+      }));
+      const unnamed = r.filter((x) => !x.named).map((x) => x.id);
+      expect(!unnamed.length, "no name: " + unnamed.join(", "));
+      const small = r.filter((x) => !x.inline && (x.w < 24 || x.h < 22)).map((x) => `${x.id} ${Math.round(x.w)}×${Math.round(x.h)}`);
+      expect(!small.length, "too small to tap: " + small.join(", "));
+      await page.close2();
+    });
+    await test("ui", `U3 panels open and close: tariff, chart, help, bill example (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      const hidden = (s) => page.$eval(s, (el) => el.hidden || el.classList.contains("collapsed"));
+      await page.click("#tariff-toggle"); expect(!(await hidden(".tariff")), "tariff opens");
+      await page.click("#tariff-toggle"); expect(await hidden(".tariff"), "tariff closes");
+      await page.click("#chart-btn"); await settle(800); expect(!(await hidden("#chart-panel")), "chart opens");
+      await page.click("#chart-btn"); expect(await hidden("#chart-panel"), "chart closes with its button");
+      await page.click("#help-btn"); expect(!(await hidden("#about")), "help opens");
+      await page.click(".bill-link"); expect(!(await hidden("#bill-example")), "bill example opens");
+      await page.click("#about-close"); expect(await hidden("#about"), "help closes with ×");
+      expect(await hidden("#bill-example"), "bill example closes with the help");
+      expect(!page.errors.length, page.errors.join(" | "));
+      await page.close2();
+    });
+    await test("ui", `U4 header controls sit on one line, '?' last (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      const r = await page.evaluate(() => {
+        const els = [...document.querySelectorAll(".prefs > :not([hidden])")].map((el) => { const b = el.getBoundingClientRect(); return { id: el.id || el.className, mid: b.top + b.height / 2, left: b.left }; });
+        return { spread: Math.max(...els.map((e) => e.mid)) - Math.min(...els.map((e) => e.mid)), last: els.sort((a, b) => a.left - b.left).pop().id };
+      });
+      expect(r.spread < 4, "controls on more than one line");
+      expect(r.last === "help-btn", "last control is " + r.last);
+      await page.close2();
+    });
+  }
+}
+
 // ---------- run ----------
 server.listen(PORT, "127.0.0.1", async () => {
   if (!CHROME) { console.error("Chrome not found; set CHROME_PATH"); process.exit(2); }
   browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--no-first-run", "--disable-gpu"] });
-  try { await smoke(); await sanity(); await regression(); }
+  try { await smoke(); await sanity(); await ui(); await regression(); }
   finally { await browser.close(); server.close(); }
   let failed = 0;
-  for (const s of ["smoke", "sanity", "regression"]) {
+  for (const s of ["smoke", "sanity", "ui", "regression"]) {
     const rs = results.filter((r) => r.suite === s);
     if (!rs.length) continue;
     console.log(`\n${s.toUpperCase()}  ${rs.filter((r) => r.ok).length}/${rs.length} passed`);

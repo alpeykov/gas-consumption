@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.0",
+      "date": "2026-10-17",
+      "bg": [
+        "По-четлив текст върху сините бутони в тъмната тема.",
+        "По-голям бутон × за затваряне на помощта."
+      ],
+      "en": [
+        "More readable text on blue buttons in the dark theme.",
+        "A larger × to close the help."
+      ]
+    },
+    {
       "version": "1.8.9",
       "date": "2026-10-17",
       "bg": [

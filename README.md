@@ -22,6 +22,6 @@ Change the app, bump `VERSION` in `sw.js`, add an entry (Bulgarian and English) 
 
 ## Tests
 
-`npm install` once, then `npm test` runs the smoke, sanity and regression suites in headless Chrome (`tests/run.mjs`).
+`npm install` once, then `npm test` runs the smoke, sanity, UI (themes, language and layout on desktop and phone) and regression suites in headless Chrome (`tests/run.mjs`).
 The git pre-push hook in `.githooks/` runs them before every push and stops the push if anything fails
 (enable it in a fresh clone with `git config core.hooksPath .githooks`).
