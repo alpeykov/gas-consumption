@@ -445,12 +445,13 @@
     .icon-btn::after { display: none; }
   }
 
-  /* Update bar for the installed app */
+  /* Update bar for the installed app: fixed at the top of the screen */
   .update-bar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    position: fixed; left: 0; right: 0; top: 0; z-index: 20;
     display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px;
-    padding-top: 12px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-bottom: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     background: var(--tip-bg); color: var(--tip-fg); font-weight: 600;
