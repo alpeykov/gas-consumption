@@ -173,6 +173,28 @@
   .bar span { display: block; height: 100%; background: var(--flame); border-radius: 4px; }
   .month-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 0.85rem; }
 
+  /* Forecast-first card: the month's forecast leads, cost so far underneath, then a timeline of the period */
+  .bill { gap: 10px; }
+  .fc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .fc-big { font-size: 2.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--flame); }
+  .fc-sub { color: var(--muted); font-size: 0.95rem; }
+  .sofar { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .sofar-main { display: grid; gap: 2px; }
+  .sofar-val b { font-size: 1.45rem; font-weight: 700; color: var(--fg); }
+  .sofar-val .bgn { color: var(--muted); font-size: 0.9rem; }
+  .muted-sm { color: var(--muted); font-size: 0.85rem; }
+  .tl { position: relative; margin-top: 30px; }
+  .tl-track { height: 8px; background: var(--flame-soft); border-radius: 4px; overflow: hidden; }
+  .tl-fill { display: block; height: 100%; background: var(--flame); border-radius: 4px; }
+  .tl-today { position: absolute; top: -6px; width: 2px; height: 20px; background: var(--fg); border-radius: 1px; }
+  .tl-today-label {
+    position: absolute; bottom: calc(100% + 4px); transform: translateX(-50%); white-space: nowrap;
+    font-size: 0.75rem; font-weight: 700; color: var(--fg); font-variant-numeric: tabular-nums;
+  }
+  .tl-ends { display: flex; justify-content: space-between; gap: 10px; font-size: 0.8rem; color: var(--muted); }
+  .tl-ends b { color: var(--fg); font-family: var(--font-mono); font-weight: 700; }
+  @media (max-width: 460px) { .fc-big { font-size: 2.5rem; } }
+
   /* Meter inputs */
   .readings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .reading {
@@ -192,6 +214,22 @@
   }
   .dial .unit { color: var(--dial-red); font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; }
   input:focus-visible, select:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+  /* The date shows as text in the app's language; the browser's date input sits invisibly on top to open its picker. */
+  .date-row { display: flex; gap: 8px; }
+  .date-field {
+    position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 0.95rem; color: var(--fg);
+  }
+  .date-field:focus-within { outline: 2px solid var(--flame); outline-offset: 2px; }
+  .date-cal { display: grid; color: var(--flame); }
+  .date-cal svg { width: 17px; height: 17px; }
+  .date-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .date-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; }
+  .today-btn {
+    font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--flame); background: transparent;
+    border: 1px solid var(--line); border-radius: 6px; padding: 0 12px; cursor: pointer;
+  }
+  .today-btn:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   .date-input {
     font: inherit; font-size: 0.9rem; color: var(--fg); background: transparent;
     border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 100%;
@@ -243,26 +281,16 @@
   }
   @media (prefers-reduced-motion: reduce) { .tip { transition: none; } }
 
-  /* Collapsible tariff panel: always open on wide screens, foldable on phones */
+  /* Tariff: one summary line by default; "Промени" opens the details (every screen size) */
   .tariff-body { display: grid; gap: 16px; }
-  .tariff-head { margin: 0; }
-  #tariff-toggle {
-    all: unset; box-sizing: border-box; width: 100%;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    font-size: 1rem; font-weight: 600; color: var(--fg); cursor: default;
-  }
-  .tariff-title { display: grid; gap: 2px; min-width: 0; }
-  .tariff-summary { display: none; font-size: 0.85rem; font-weight: 500; color: var(--muted); }
-  .chev { display: none; width: 10px; height: 10px; flex: none; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: 0 4px 4px 0; transition: transform .15s; }
-  @media (max-width: 820px) {
-    #tariff-toggle { cursor: pointer; }
-    #tariff-toggle:focus-visible { outline: 2px solid var(--flame); outline-offset: 4px; border-radius: 4px; }
-    .chev { display: block; }
-    .tariff.collapsed .chev { transform: rotate(-45deg); margin: 0 6px 0 0; }
-    .tariff.collapsed .tariff-body { display: none; }
-    .tariff.collapsed .tariff-summary { display: block; }
-  }
-  @media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+  .tariff-head { margin: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 1rem; font-weight: 600; }
+  .tariff-title { display: grid; gap: 6px; min-width: 0; }
+  .tariff-summary { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+  .tariff-summary b { color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tariff-summary .stale-note { color: var(--amber); font-weight: 600; }
+  #tariff-toggle { flex: none; }
+  .tariff.collapsed .tariff-body { display: none; }
+  .tariff:not(.collapsed) .tariff-summary { display: none; }
 
   /* Header with language switch */
   header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
@@ -511,46 +539,48 @@
 
   <div class="main">
   <section class="bill" aria-live="polite">
-    <div class="bill-row">
-      <div class="figure">
-        <span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
-        <span class="eur num" id="out-now-eur">–</span>
-        <span class="bgn num" id="out-now-bgn">–</span>
-      </div>
-      <div class="figure forecast">
-        <span class="label" id="out-forecast-label">Прогнозна сметка</span>
-        <span class="eur num" id="out-fc-eur">–</span>
-        <span class="bgn num" id="out-fc-bgn">–</span>
-      </div>
+    <div class="fc-head">
+      <span class="label" id="out-forecast-label">Прогнозна сметка</span>
     </div>
-    <div class="month">
-      <div class="bar"><span id="out-bar" style="width:0%"></span></div>
-      <div class="month-meta">
-        <span class="num" id="out-days">–</span>
-        <span class="num" id="out-rate">–</span>
-      </div>
+    <div class="fc-big eur num" id="out-fc-eur">–</div>
+    <div class="fc-sub bgn num" id="out-fc-bgn">–</div>
+    <div class="sofar">
+      <span class="sofar-main"><span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
+        <span class="sofar-val"><b class="eur num" id="out-now-eur">–</b> <span class="bgn num" id="out-now-bgn">–</span></span></span>
+      <span class="num muted-sm" id="out-rate">–</span>
     </div>
+    <div class="tl" aria-hidden="true">
+      <div class="tl-track"><span class="tl-fill" id="out-bar" style="width:0%"></span></div>
+      <span class="tl-today" id="tl-today" hidden><span class="tl-today-label" id="tl-today-label"></span></span>
+    </div>
+    <div class="tl-ends num"><span id="tl-start"></span><span id="tl-end"></span></div>
+    <span class="num muted-sm" id="out-days">–</span>
   </section>
 
   <section class="readings">
     <div class="reading">
       <span class="label" data-i18n="readingToday">Показание днес</span>
       <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingTodayAria" aria-label="Текущо показание на уреда"><span class="unit">m³</span></div>
-      <input class="date-input" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание">
+      <div class="date-row">
+        <label class="date-field"><span class="date-cal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="date-text" id="cur-date-text"></span>
+          <input class="date-native" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание"></label>
+        <button type="button" class="today-btn" id="today-btn" data-i18n="today">Днес</button>
+      </div>
     </div>
     <div class="reading">
       <span class="label" data-i18n="readingLast">Показание от последната сметка</span>
       <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingLastAria" aria-label="Показание на уреда от последната сметка"><span class="unit">m³</span></div>
-      <input class="date-input" id="start-date" type="date" value="2026-10-01" data-i18n-aria="readingLastDate" aria-label="Дата на показанието от сметката">
+      <div class="date-row">
+        <label class="date-field"><span class="date-cal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="date-text" id="start-date-text"></span>
+          <input class="date-native" id="start-date" type="date" value="2026-10-01" data-i18n-aria="readingLastDate" aria-label="Дата на показанието от сметката"></label>
+      </div>
     </div>
   </section>
 
   <section class="tariff" aria-labelledby="tariff-h">
     <h2 id="tariff-h" class="tariff-head">
-      <button type="button" id="tariff-toggle" aria-expanded="true" aria-controls="tariff-body">
-        <span class="tariff-title"><span data-i18n="tariffH">Тарифни настройки</span><span class="tariff-summary" id="tariff-summary"></span></span>
-        <span class="chev" aria-hidden="true"></span>
-      </button>
+      <span class="tariff-title"><span data-i18n="tariffH">Тарифни настройки</span><span class="tariff-summary" id="tariff-summary"></span></span>
+      <button type="button" class="ghost" id="tariff-toggle" aria-expanded="false" aria-controls="tariff-body">Промени</button>
     </h2>
     <div class="tariff-body" id="tariff-body">
     <label class="field">
@@ -667,6 +697,11 @@
       install: "Инсталирай",
       helpLabel: "За приложението",
       chartBtn: "Архив Цени",
+      today: "Днес",
+      tariffEdit: "Промени",
+      tariffHide: "Скрий",
+      staleShort: "цената е от {prev}",
+      staleShortNoHistory: "текуща цена",
       billLink: "последната сметка",
       billAlt: "Таблицата с показанията в сметката на Овергаз; колоната „Ново“ е оградена",
       billCaption: "От сметката на Овергаз вземете числото в колона „Ново“ – с него започва текущият месец. Въведете го в „Показание от последната сметка“.",
@@ -744,7 +779,7 @@
       msgFill: "Попълнете двете дати и тарифните настройки.",
       msgLower: "Днешното показание е по-малко от показанието в сметката.",
       msgDate: "Днешната дата трябва да е след датата на сметката.",
-      dayOf: "Ден {e} от {p} · {s} – {end}",
+      dayOf: "Ден {e} от {p} от периода на сметката",
       perDay: "{m3}/ден · {money}/ден",
       priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата приема същото дневно потребление до края на месеца.",
     },
@@ -761,6 +796,11 @@
       install: "Install",
       helpLabel: "About this app",
       chartBtn: "Historical prices",
+      today: "Today",
+      tariffEdit: "Change",
+      tariffHide: "Hide",
+      staleShort: "price from {prev}",
+      staleShortNoHistory: "current price",
       billLink: "last bill",
       billAlt: "The meter table on an Overgas bill with the “Ново” (new) column circled",
       billCaption: "On your Overgas bill, take the number in the “Ново” (new) column – the current month starts from it. Enter it as “Reading on last bill”.",
@@ -838,7 +878,7 @@
       msgFill: "Fill in both dates and the tariff settings.",
       msgLower: "Today’s reading is lower than the bill reading.",
       msgDate: "Today’s date must be after the bill date.",
-      dayOf: "Day {e} of {p} · {s} – {end}",
+      dayOf: "Day {e} of {p} of the billing period",
       perDay: "{m3}/day · {money}/day",
       priceLine: "Price with VAT: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Forecast assumes the same daily use for the rest of the month.",
     },
@@ -872,6 +912,7 @@
     applyStatic();
     render();
     if (typeof chartData !== "undefined" && chartData && !$("chart-panel").hidden) drawChart();
+    syncTariffPanel();
   }
 
   let saved = {};
@@ -1012,6 +1053,7 @@
   const historyFor = (month, region) =>
     history && history.region === region.name && history.months[month] ? history.months[month] : null;
 
+  let tariffSummary = null;
   function renderTariff() {
     const region = selectedRegion();
     const override = parseFloat($("override").value);
@@ -1036,7 +1078,7 @@
       $("stale-tip").textContent = t("noHistory", { when: monthLabel(month) });
     }
 
-    $("tariff-summary").textContent = region.name + " · " + num(price, 2) + " €/MWh";
+    tariffSummary = { region: region.name, price, stale: stale || missing, prev: stale ? monthName(um - 1) : "" };
 
     const chip = $("source-chip");
     chip.classList.toggle("offline", !prices.live && !hist);
@@ -1065,6 +1107,14 @@
     };
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
+    const ts = tariffSummary;
+    $("tariff-summary").innerHTML = "<span>" + ts.region + "</span><span><b>" + num(ts.price, 2) + "</b> €/MWh " + t("vatExcl") +
+      "</span><span><b>" + num(v.factor, 2, 3) + "</b> kWh/m³</span><span>" + t("vatRow", { v: num(v.vat, 0, 2) }) + "</span>" +
+      (ts.stale ? '<span class="stale-note">' + (ts.prev ? t("staleShort", { prev: ts.prev }) : t("staleShortNoHistory")) + "</span>" : "");
+    // Dates as text in the app's language.
+    const longDate = (iso) => iso ? new Date(parseDate(iso)).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "–";
+    $("cur-date-text").textContent = longDate(v.curDate);
+    $("start-date-text").textContent = longDate(v.startDate);
     $("t-vat-label").textContent = t("vatRow", { v: isFinite(v.vat) ? num(v.vat, 0, 2) : "–" });
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(Date.UTC(today.getFullYear(), today.getMonth() + 1, 1)) });
 
@@ -1072,6 +1122,7 @@
     const clear = (html) => {
       document.querySelectorAll(".bill .eur, .bill .bgn, .breakdown td[id], #out-rate").forEach((el) => el.textContent = "–");
       $("out-bar").style.width = "0%";
+      $("tl-today").hidden = true; $("tl-start").textContent = ""; $("tl-end").textContent = "";
       $("t-price-line").textContent = "";
       $("out-days").innerHTML = html;
     };
@@ -1090,8 +1141,18 @@
     $("out-fc-eur").textContent = eur(r.fc.gross);
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(r.end) });
-    $("out-bar").style.width = Math.min(100, (r.elapsed / r.periodDays) * 100) + "%";
-    $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays, s: fcDate(r.start), end: fcDate(r.end) });
+    // Timeline of the billing period: last bill reading at the start, today's reading at its marker.
+    const pct = Math.min(100, (r.elapsed / r.periodDays) * 100);
+    $("out-bar").style.width = pct + "%";
+    $("tl-today").hidden = false;
+    $("tl-today").style.left = "calc(" + pct + "% - 1px)";
+    $("tl-today-label").textContent = fcDate(parseDate(v.curDate)) + " · " + v.curReading;
+    $("tl-today-label").style.left = pct < 18 ? "0" : pct > 82 ? "auto" : "50%";
+    $("tl-today-label").style.right = pct > 82 ? "0" : "auto";
+    $("tl-today-label").style.transform = pct < 18 || pct > 82 ? "none" : "translateX(-50%)";
+    $("tl-start").innerHTML = fcDate(r.start) + " · <b>" + v.startReading + "</b>";
+    $("tl-end").textContent = fcDate(r.end);
+    $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays });
     $("out-rate").textContent = t("perDay", { m3: n1(r.perDay, "m³"), money: eur(r.perDay * r.perM3) });
 
     $("t-m3-now").textContent = n1(r.now.m3, "m³"); $("t-m3-fc").textContent = n1(r.fc.m3, "m³");
@@ -1154,6 +1215,12 @@
   $("region").addEventListener("change", render);
   $("start-date").addEventListener("change", () => { if (isGcvStale()) refreshGcv(); historyRequested = false; render(); });
   $("refresh").addEventListener("click", () => { refreshPrices(); refreshGcv(); });
+  $("today-btn").addEventListener("click", () => {
+    $("cur-date").value = todayIso;
+    $("cur-date").dispatchEvent(new Event("input"));
+  });
+  // Desktop browsers only open the calendar from its own icon; open it on any click of the date field.
+  document.querySelectorAll(".date-native").forEach((el) => el.addEventListener("click", () => { try { el.showPicker(); } catch (e) {} }));
   // Restores only the price settings; meter readings, dates and the region stay as entered.
   $("reset").addEventListener("click", () => {
     ["override", "factor"].forEach((id) => { $(id).value = DEFAULTS[id]; });
@@ -1175,22 +1242,20 @@
   }));
   syncThemeButtons();
 
-  // Tariff panel folding (phones only); the choice is kept in this browser across updates.
-  const COLLAPSE_KEY = "gas-bill-tariff-collapsed";
-  const narrow = matchMedia("(max-width: 820px)");
-  let collapsed = false;
-  try { collapsed = localStorage.getItem(COLLAPSE_KEY) === "1"; } catch (e) {}
+  // Tariff panel: closed to one line by default; "Промени" opens it. The choice is kept in this browser.
+  const TARIFF_OPEN_KEY = "gas-bill-tariff-open";
+  let tariffOpen = false;
+  try { tariffOpen = localStorage.getItem(TARIFF_OPEN_KEY) === "1"; } catch (e) {}
   const syncTariffPanel = () => {
-    $("tariff-toggle").closest(".tariff").classList.toggle("collapsed", collapsed);
-    $("tariff-toggle").setAttribute("aria-expanded", String(!(collapsed && narrow.matches)));
+    $("tariff-toggle").closest(".tariff").classList.toggle("collapsed", !tariffOpen);
+    $("tariff-toggle").setAttribute("aria-expanded", String(tariffOpen));
+    $("tariff-toggle").textContent = t(tariffOpen ? "tariffHide" : "tariffEdit");
   };
   $("tariff-toggle").addEventListener("click", () => {
-    if (!narrow.matches) return;
-    collapsed = !collapsed;
-    try { localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0"); } catch (e) {}
+    tariffOpen = !tariffOpen;
+    try { localStorage.setItem(TARIFF_OPEN_KEY, tariffOpen ? "1" : "0"); } catch (e) {}
     syncTariffPanel();
   });
-  narrow.addEventListener("change", syncTariffPanel);
   syncTariffPanel();
   applyStatic();
   render();
