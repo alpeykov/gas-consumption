@@ -2,46 +2,90 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.8.1",
+      "date": "2026-10-17",
+      "bg": [
+        "Тестово обновяване: проверка на новата лента с „Какво ново?“ и бутона за затваряне."
+      ],
+      "en": [
+        "Test update: checking the new bar with “What's new?” and the close button."
+      ]
+    },
+    {
       "version": "1.8.0",
       "date": "2026-10-17",
-      "bg": ["Лентата за нова версия вече показва какво е новото и може да се затвори; ако я затворите, тя се показва отново при следващото отваряне на приложението."],
-      "en": ["The new-version bar now shows what's new and can be closed; if you close it, it comes back the next time you open the app."]
+      "bg": [
+        "Лентата за нова версия вече показва какво е новото и може да се затвори; ако я затворите, тя се показва отново при следващото отваряне на приложението."
+      ],
+      "en": [
+        "The new-version bar now shows what's new and can be closed; if you close it, it comes back the next time you open the app."
+      ]
     },
     {
       "version": "1.7.9",
       "date": "2026-10-17",
-      "bg": ["Лентата „Обнови сега“ е в горната част на екрана."],
-      "en": ["The “Update now” bar is at the top of the screen."]
+      "bg": [
+        "Лентата „Обнови сега“ е в горната част на екрана."
+      ],
+      "en": [
+        "The “Update now” bar is at the top of the screen."
+      ]
     },
     {
       "version": "1.7.8",
       "date": "2026-10-17",
-      "bg": ["Тарифните настройки показват от коя дата е цената."],
-      "en": ["Tariff settings show the date the price applies from."]
+      "bg": [
+        "Тарифните настройки показват от коя дата е цената."
+      ],
+      "en": [
+        "Tariff settings show the date the price applies from."
+      ]
     },
     {
       "version": "1.7.7",
       "date": "2026-10-17",
-      "bg": ["На английски регионите се изписват на латиница."],
-      "en": ["In English, region names are written in Latin letters."]
+      "bg": [
+        "На английски регионите се изписват на латиница."
+      ],
+      "en": [
+        "In English, region names are written in Latin letters."
+      ]
     },
     {
       "version": "1.7.6",
       "date": "2026-10-17",
-      "bg": ["Помощта „?“ се отваря сама само при първото отваряне на приложението."],
-      "en": ["The “?” help opens by itself only the first time the app is opened."]
+      "bg": [
+        "Помощта „?“ се отваря сама само при първото отваряне на приложението."
+      ],
+      "en": [
+        "The “?” help opens by itself only the first time the app is opened."
+      ]
     },
     {
       "version": "1.7.4",
       "date": "2026-10-17",
-      "bg": ["Таблицата „Как се получава сумата“ се събира изцяло на екрана на телефона.", "Сборовете са най-отгоре, колоната се казва „Прогнозна сметка“."],
-      "en": ["The “How it adds up” table always fits the phone screen.", "Totals come first; the column is called “Forecast bill”."]
+      "bg": [
+        "Таблицата „Как се получава сумата“ се събира изцяло на екрана на телефона.",
+        "Сборовете са най-отгоре, колоната се казва „Прогнозна сметка“."
+      ],
+      "en": [
+        "The “How it adds up” table always fits the phone screen.",
+        "Totals come first; the column is called “Forecast bill”."
+      ]
     },
     {
       "version": "1.7.0",
       "date": "2026-10-17",
-      "bg": ["Прогнозната сметка е най-отгоре, с линия на периода на сметката.", "Датите се изписват на езика на приложението; бутон „Днес“.", "Тарифните настройки са събрани в един ред; „Промени“ отваря подробностите."],
-      "en": ["The forecast bill leads the main card, with a timeline of the billing period.", "Dates are written in the app's language; a “Today” button.", "Tariff settings fit on one line; “Change” opens the details."]
+      "bg": [
+        "Прогнозната сметка е най-отгоре, с линия на периода на сметката.",
+        "Датите се изписват на езика на приложението; бутон „Днес“.",
+        "Тарифните настройки са събрани в един ред; „Промени“ отваря подробностите."
+      ],
+      "en": [
+        "The forecast bill leads the main card, with a timeline of the billing period.",
+        "Dates are written in the app's language; a “Today” button.",
+        "Tariff settings fit on one line; “Change” opens the details."
+      ]
     }
   ]
 }
