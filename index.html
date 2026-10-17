@@ -247,6 +247,7 @@
   td:first-child { color: var(--muted); }
   thead td { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--muted); }
   tr.total td { font-weight: 700; color: var(--fg); }
+  tr.total-bgn td { border-bottom: 2px solid var(--line); padding-bottom: 10px; }
   .table-scroll { overflow-x: auto; }
 
   .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -619,15 +620,15 @@
     <h2 data-i18n="howH">Как се получава сумата</h2>
     <div class="table-scroll">
       <table>
-        <thead><tr><td></td><td data-i18n="soFar">Досега</td><td data-i18n="fullMonth">Цял месец</td></tr></thead>
+        <thead><tr><td></td><td data-i18n="soFar">Досега</td><td data-i18n="fullMonth">Прогнозна сметка</td></tr></thead>
         <tbody>
+          <tr class="total"><td data-i18n="totalEur">Общо, евро</td><td id="t-tot-now">–</td><td id="t-tot-fc">–</td></tr>
+          <tr class="total-bgn"><td data-i18n="totalBgn">Общо, лева</td><td id="t-bgn-now">–</td><td id="t-bgn-fc">–</td></tr>
           <tr><td data-i18n="gasUsed">Изразходван газ</td><td id="t-m3-now">–</td><td id="t-m3-fc">–</td></tr>
           <tr><td id="t-energy-label"></td><td id="t-kwh-now">–</td><td id="t-kwh-fc">–</td></tr>
           <tr><td data-i18n="netCost">Цена на газа без ДДС</td><td id="t-net-now">–</td><td id="t-net-fc">–</td></tr>
           <tr id="t-fee-row" hidden><td data-i18n="feeRow">Месечна такса снабдяване</td><td id="t-fee-now">–</td><td id="t-fee-fc">–</td></tr>
           <tr><td id="t-vat-label"></td><td id="t-vat-now">–</td><td id="t-vat-fc">–</td></tr>
-          <tr class="total"><td data-i18n="totalEur">Общо, евро</td><td id="t-tot-now">–</td><td id="t-tot-fc">–</td></tr>
-          <tr><td data-i18n="totalBgn">Общо, лева</td><td id="t-bgn-now">–</td><td id="t-bgn-fc">–</td></tr>
         </tbody>
       </table>
     </div>
@@ -753,7 +754,7 @@
       readingTodayDate: "Дата на текущото показание",
       howH: "Как се получава сумата",
       soFar: "Досега",
-      fullMonth: "Цял месец",
+      fullMonth: "Прогнозна сметка",
       gasUsed: "Изразходван газ",
       energy: "Енергия (× {f} kWh/m³)",
       netCost: "Цена на газа без ДДС",
@@ -852,7 +853,7 @@
       readingTodayDate: "Date of current reading",
       howH: "How it adds up",
       soFar: "So far",
-      fullMonth: "Full month",
+      fullMonth: "Forecast bill",
       gasUsed: "Gas used",
       energy: "Energy (× {f} kWh/m³)",
       netCost: "Gas cost, excl. VAT",
