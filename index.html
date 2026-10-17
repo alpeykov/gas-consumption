@@ -821,7 +821,7 @@
       shareText: "Work out your Overgas gas bill",
       shareCopied: "Link copied",
       chartTitle: "Historical gas prices",
-      chartSub: "Overgas Мрежи, households · price in {unit}",
+      chartSub: "Overgas Mrezhi, households · price in {unit}",
       vatExcl: "excl. VAT",
       vatIncl: "incl. VAT",
       currencyLabel: "Currency",
@@ -852,8 +852,8 @@
       gcvAuto: "Bulgartransgaz representative calorific value for {when}",
       gcvMissing: "Bulgartransgaz has not published {want} yet; using {when}",
       gcvTyped: "Using your value. Bulgartransgaz for {when}: {v}. Clear the field to use it.",
-      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” is the Bulgartransgaz representative calorific value for the billed month, the same conversion factor Overgas uses on the bill.",
-      sourceLinkText: "overgas.bg → Цени на природния газ",
+      sourceHint: "Prices are the “Final gas price” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” is the Bulgartransgaz representative calorific value for the billed month, the same conversion factor Overgas uses on the bill.",
+      sourceLinkText: "overgas.bg → Natural gas prices",
       reset: "Restore default price",
       usedSoFar: "Cost of consumption so far",
       forecastTo: "Estimated bill to {date}",
@@ -924,6 +924,7 @@
     try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
     applyStatic();
     render();
+    fillRegions();
     if (typeof chartData !== "undefined" && chartData && !$("chart-panel").hidden) drawChart();
     syncTariffPanel();
   }
@@ -940,13 +941,29 @@
     if (cached && Array.isArray(cached.regions) && cached.regions.length) prices = cached;
   } catch (e) {}
 
+  // Region names come from Overgas in Bulgarian; in English they are shown in Latin letters.
+  const REGION_EN = {
+    "Овергаз Мрежи": "Overgas Mrezhi",
+    "Общини Банско и Разлог": "Bansko and Razlog municipalities",
+    "Община Бяла": "Byala municipality",
+    "Община Карнобат": "Karnobat municipality",
+  };
+  const LATIN = { а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ж: "zh", з: "z", и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p",
+    р: "r", с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sht", ъ: "a", ь: "y", ю: "yu", я: "ya" };
+  // Official Bulgarian transliteration, for regions Overgas may add later.
+  const toLatin = (text) => text.replace(/[а-яА-Я]/g, (c) => {
+    const l = LATIN[c.toLowerCase()];
+    return c === c.toLowerCase() ? l : l.charAt(0).toUpperCase() + l.slice(1);
+  });
+  const regionLabel = (name) => (lang === "bg" ? name : REGION_EN[name] || toLatin(name));
+
   function fillRegions() {
     const sel = $("region");
     const current = sel.value || saved.region || DEFAULTS.region;
     sel.innerHTML = "";
     prices.regions.forEach((r) => {
       const o = document.createElement("option");
-      o.value = r.name; o.textContent = r.name;
+      o.value = r.name; o.textContent = regionLabel(r.name);
       sel.appendChild(o);
     });
     sel.value = prices.regions.some((r) => r.name === current) ? current : prices.regions[0].name;
@@ -1123,7 +1140,7 @@
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
     const ts = tariffSummary;
-    $("tariff-summary").innerHTML = "<span>" + ts.region + "</span><span><b>" + num(ts.price, 2) + "</b> €/MWh " + t("vatExcl") +
+    $("tariff-summary").innerHTML = "<span>" + regionLabel(ts.region) + "</span><span><b>" + num(ts.price, 2) + "</b> €/MWh " + t("vatExcl") +
       "</span><span><b>" + num(v.factor, 2, 3) + "</b> kWh/m³</span><span>" + t("vatRow", { v: num(v.vat, 0, 2) }) + "</span>" +
       (ts.stale ? '<span class="stale-note">' + (ts.prev ? t("staleShort", { prev: ts.prev }) : t("staleShortNoHistory")) + "</span>" : "");
     // Dates as text in the app's language.
