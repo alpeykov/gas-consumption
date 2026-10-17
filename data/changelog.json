@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.8.7",
+      "date": "2026-10-17",
+      "bg": [
+        "Помощта „?“ следва избраната тема."
+      ],
+      "en": [
+        "The “?” help follows the chosen theme."
+      ]
+    },
+    {
       "version": "1.8.6",
       "date": "2026-10-17",
       "bg": [
