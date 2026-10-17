@@ -1,5 +1,5 @@
 // Bump VERSION on every release: a changed sw.js is what makes installed apps show "Update available".
-const VERSION = "1.2.2";
+const VERSION = "1.3.0";
 const CACHE = "gas-bill-" + VERSION;
 const SHELL = [
   "./",
@@ -10,6 +10,8 @@ const SHELL = [
   "./icons/icon-maskable-512-v2.png",
   "./icons/apple-touch-icon-v2.png",
   "./icons/favicon-64-v2.png",
+  "./data/prices.json",
+  "./data/gcv.json",
 ];
 
 self.addEventListener("install", (event) => {
@@ -34,8 +36,8 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
-  // Always fetch the manifest fresh so Chrome sees a new app icon or name; the cached copy is only an offline fallback.
-  if (url.pathname.endsWith("/manifest.webmanifest")) {
+  // Always fetch the manifest and the price/kWh data fresh; the cached copy is only an offline fallback.
+  if (url.pathname.endsWith("/manifest.webmanifest") || url.pathname.includes("/data/")) {
     event.respondWith(fetch(event.request).catch(() => caches.match(event.request, { ignoreSearch: true })));
     return;
   }

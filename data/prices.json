@@ -1,0 +1,29 @@
+{
+  "updated": "2026-10-17T08:41:30+00:00",
+  "regions": [
+    {
+      "name": "Овергаз Мрежи",
+      "price": 68.9,
+      "uploaded": "2026-10-01",
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red.pdf"
+    },
+    {
+      "name": "Общини Банско и Разлог",
+      "price": 85.41,
+      "uploaded": "2026-10-01",
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Bansko-i-Razlog.pdf"
+    },
+    {
+      "name": "Община Бяла",
+      "price": 90.7,
+      "uploaded": "2026-10-01",
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Byala.pdf"
+    },
+    {
+      "name": "Община Карнобат",
+      "price": 86.43,
+      "uploaded": "2026-10-01",
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Karnobat.pdf"
+    }
+  ]
+}

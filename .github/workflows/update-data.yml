@@ -1,0 +1,38 @@
+name: Update prices and kWh per m³
+
+on:
+  schedule:
+    - cron: "30 5 * * *"   # every day 05:30 UTC (08:30 in Bulgaria, summer time)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pdftotext
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
+      - name: Fetch Overgas prices and Bulgartransgaz values
+        run: python3 scripts/update_data.py
+
+      - name: Commit changed data
+        if: always()
+        run: |
+          if git diff --quiet -- data; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git commit -m "Update gas prices / kWh per m³ data"
+          git push

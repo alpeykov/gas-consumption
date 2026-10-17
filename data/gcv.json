@@ -1,0 +1,85 @@
+{
+  "updated": "2026-10-17T08:41:30+00:00",
+  "zones": [
+    {
+      "id": 1,
+      "name": "Зона 1 – Варна",
+      "kwhPerM3": 10.835,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_1_Varna_September.pdf"
+    },
+    {
+      "id": 2,
+      "name": "Зона 2 – Бургас",
+      "kwhPerM3": 10.835,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_2_Bourgas_September.pdf"
+    },
+    {
+      "id": 3,
+      "name": "Зона 3 – Стара Загора/Пловдив",
+      "kwhPerM3": 10.835,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_3_StZag_Plovdiv_September.pdf"
+    },
+    {
+      "id": 4,
+      "name": "Зона 4 – София 1/Пазарджик",
+      "kwhPerM3": 10.835,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_4_Sofia1_Paz_September.pdf"
+    },
+    {
+      "id": 5,
+      "name": "Зона 5 – София2,3,4",
+      "kwhPerM3": 10.839,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_5_Sofia2_3_September.pdf"
+    },
+    {
+      "id": 6,
+      "name": "Зона 6 – Ботевград",
+      "kwhPerM3": 10.82,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_6_Botevgrad_September.pdf"
+    },
+    {
+      "id": 7,
+      "name": "Зона 7 – Враца-Монтана",
+      "kwhPerM3": 10.82,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_7_Vratsa_Montana_September.pdf"
+    },
+    {
+      "id": 8,
+      "name": "Зона 8 – Плевен",
+      "kwhPerM3": 10.82,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_8_Pleven_September.pdf"
+    },
+    {
+      "id": 9,
+      "name": "Зона 9 – Русе",
+      "kwhPerM3": 10.835,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_9_Rousse_September.pdf"
+    },
+    {
+      "id": 10,
+      "name": "Зона 10 – Югозападна България",
+      "kwhPerM3": 10.89,
+      "month": "2026-09",
+      "days": 30,
+      "pdf": "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_10_SW_Bulgaria_September.pdf"
+    }
+  ]
+}

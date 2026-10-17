@@ -203,7 +203,13 @@
   .table-scroll { overflow-x: auto; }
 
   .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .settings .field:first-child { grid-column: 1 / -1; }
+  .settings .field:first-child, .settings .wide, .settings .gcv-source { grid-column: 1 / -1; }
+  .settings select {
+    font: inherit; color: var(--fg); background: var(--panel);
+    border: 1px solid var(--side-line); border-radius: 6px; padding: 6px 8px; width: 100%;
+  }
+  .gcv-source { margin: -4px 0 0; font-size: 0.8rem; color: var(--muted); }
+  .gcv-source a { color: var(--flame); }
   .field { display: grid; gap: 4px; }
   .field input {
     font: inherit; color: var(--fg); background: var(--bg);
@@ -425,7 +431,9 @@
     <div class="settings">
       <label class="field"><span class="label nocaps" data-i18n="override">Въведи цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
       <label class="field"><span class="label" data-i18n="vat">ДДС, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20" disabled></label>
-      <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.01" inputmode="decimal" value="10.55"></label>
+      <label class="field wide"><span class="label" data-i18n="zone">Газова зона</span><select id="zone"></select></label>
+      <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.001" inputmode="decimal" value=""></label>
+      <p class="gcv-source" id="gcv-source"></p>
       <label class="field"><span class="label" data-i18n="rate">Лева за 1 евро</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583" disabled></label>
     </div>
     <p class="hint" data-i18n-html="sourceHint"></p>
@@ -457,9 +465,25 @@
 <script>
 (() => {
   const PAGE_URL = "https://www.overgas.bg/za-overgaz/produkti-i-uslugi/tseni-na-prirodniya-gaz/";
-  const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  // Refreshed daily by .github/workflows/update-data.yml from overgas.bg and bulgartransgaz.bg.
+  const PRICES_URL = "data/prices.json";
+  const GCV_URL = "data/gcv.json";
 
-  // Household prices built into the page, used when overgas.bg can't be reached.
+  // Bulgartransgaz kWh per m³ per zone, used until data/gcv.json has been loaded once.
+  const BUILT_IN_GCV = [
+    { id: 1, name: "Зона 1 – Варна", kwhPerM3: 10.835, month: "2026-09" },
+    { id: 2, name: "Зона 2 – Бургас", kwhPerM3: 10.835, month: "2026-09" },
+    { id: 3, name: "Зона 3 – Стара Загора/Пловдив", kwhPerM3: 10.835, month: "2026-09" },
+    { id: 4, name: "Зона 4 – София 1/Пазарджик", kwhPerM3: 10.835, month: "2026-09", pdf: "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_4_Sofia1_Paz_September.pdf" },
+    { id: 5, name: "Зона 5 – София2,3,4", kwhPerM3: 10.839, month: "2026-09" },
+    { id: 6, name: "Зона 6 – Ботевград", kwhPerM3: 10.82, month: "2026-09" },
+    { id: 7, name: "Зона 7 – Враца-Монтана", kwhPerM3: 10.82, month: "2026-09" },
+    { id: 8, name: "Зона 8 – Плевен", kwhPerM3: 10.82, month: "2026-09" },
+    { id: 9, name: "Зона 9 – Русе", kwhPerM3: 10.835, month: "2026-09" },
+    { id: 10, name: "Зона 10 – Югозападна България", kwhPerM3: 10.89, month: "2026-09" },
+  ];
+
+  // Household prices built into the page, used until data/prices.json has been loaded once.
   const BUILT_IN = [
     { name: "Овергаз Мрежи", price: 68.90, uploaded: "2026-10-01", pdf: "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red.pdf" },
     { name: "Общини Банско и Разлог", price: 85.41, uploaded: "2026-10-01", pdf: "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Bansko-i-Razlog.pdf" },
@@ -479,11 +503,12 @@
     region: "Овергаз Мрежи",
     "start-reading": "", "start-date": monthStartIso,
     "cur-reading": "", "cur-date": todayIso,
-    override: "", vat: "20", factor: "10.55", rate: "1.95583",
+    override: "", vat: "20", factor: "", rate: "1.95583", zone: "4",
   };
   const KEY = "gas-bill-forecast-v1";
   const PRICE_KEY = "gas-bill-prices-v1";
-  const ids = Object.keys(DEFAULTS).filter((id) => id !== "region").concat("region");
+  const GCV_KEY = "gas-bill-gcv-v1";
+  const ids = Object.keys(DEFAULTS);
   const $ = (id) => document.getElementById(id);
   // ---- Language: Bulgarian by default; a chosen language is kept in this browser across updates ----
   const LANG_KEY = "gas-bill-lang";
@@ -511,7 +536,11 @@
       vat: "ДДС, %",
       factor: "kWh за 1 m³",
       rate: "Лева за 1 евро",
-      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Въведи цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ (10,55) е средна стойност; точната стойност за месеца е посочена в сметката ви от Овергаз и можете да я въведете.",
+      zone: "Газова зона",
+      certificate: "сертификат",
+      gcvAuto: "Автоматично от Булгартрансгаз · {when}",
+      gcvTyped: "Ползва се вашата стойност. Булгартрансгаз за зоната: {v} ({when}). Изтрийте полето, за да се ползва тя.",
+      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Въведи цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ се взема от сертификатите за качество на Булгартрансгаз за избраната газова зона, последния публикуван месец, както в сметката на Овергаз. Ако в сметката ви стойността е различна, въведете я.",
       sourceLinkText: "overgas.bg → Цени на природния газ",
       reset: "Върни стандартна цена",
       usedSoFar: "Цена за текуща консумация",
@@ -573,7 +602,11 @@
       vat: "VAT, %",
       factor: "kWh per m³",
       rate: "BGN per EUR",
-      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” (10.55) is an average; the exact value for the month is printed on your Overgas bill and you can enter it.",
+      zone: "Gas zone",
+      certificate: "certificate",
+      gcvAuto: "Automatic from Bulgartransgaz · {when}",
+      gcvTyped: "Using your value. Bulgartransgaz for this zone: {v} ({when}). Clear the field to use it.",
+      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” comes from the Bulgartransgaz gas quality certificates for the chosen gas zone, using the latest published month, as on the Overgas bill. If your bill shows a different value, enter it.",
       sourceLinkText: "overgas.bg → Цени на природния газ",
       reset: "Restore default price",
       usedSoFar: "Cost of consumption so far",
@@ -662,9 +695,31 @@
     sel.value = prices.regions.some((r) => r.name === current) ? current : prices.regions[0].name;
   }
   fillRegions();
+
+  // Zone list: { zones: [...] } from data/gcv.json, cached per browser.
+  let gcv = { zones: BUILT_IN_GCV };
+  try {
+    const cached = JSON.parse(localStorage.getItem(GCV_KEY) || "null");
+    if (cached && Array.isArray(cached.zones) && cached.zones.length) gcv = cached;
+  } catch (e) {}
+  function fillZones() {
+    const sel = $("zone");
+    const current = sel.value || saved.zone || DEFAULTS.zone;
+    sel.innerHTML = "";
+    gcv.zones.forEach((z) => {
+      const o = document.createElement("option");
+      o.value = String(z.id); o.textContent = z.name;
+      sel.appendChild(o);
+    });
+    sel.value = gcv.zones.some((z) => String(z.id) === current) ? current : String(gcv.zones[0].id);
+  }
+  fillZones();
+
   // VAT and the BGN rate are fixed by law, so older saved values never override them.
   const FIXED = ["vat", "rate"];
-  ids.forEach((id) => { if (id !== "region" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
+  ids.forEach((id) => { if (id !== "region" && id !== "zone" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
+  // 10.55 was the old fixed default; switch those users to the automatic Bulgartransgaz value.
+  if ($("factor").value === "10.55") $("factor").value = "";
 
   const num = (v, min, max = min) => v.toLocaleString(locale(), { minimumFractionDigits: min, maximumFractionDigits: max });
   // Bulgarian writes "26,17 €"; English "€26.17".
@@ -717,6 +772,30 @@
     return uy < now.getFullYear() || (uy === now.getFullYear() && um - 1 < now.getMonth());
   }
 
+  const selectedZone = () => gcv.zones.find((z) => String(z.id) === $("zone").value) || gcv.zones[0];
+  // Bulgartransgaz certifies a month after it ends, so last month's value is the newest there can be.
+  function isGcvStale(zone) {
+    const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const want = prev.getFullYear() + "-" + pad2(prev.getMonth() + 1);
+    return !zone.month || zone.month < want;
+  }
+  // kWh per m³: what the user typed, otherwise the zone's latest certified value.
+  function factorInUse() {
+    const typed = parseFloat($("factor").value);
+    return isFinite(typed) && typed > 0 ? typed : selectedZone().kwhPerM3;
+  }
+  function renderGcv() {
+    const zone = selectedZone();
+    $("factor").placeholder = num(zone.kwhPerM3, 3);
+    const [y, m] = (zone.month || "").split("-").map(Number);
+    const when = y ? monthName(m - 1) + " " + y : "";
+    const typed = parseFloat($("factor").value);
+    const link = zone.pdf ? ' · <a href="' + zone.pdf + '" target="_blank" rel="noopener">' + t("certificate") + "</a>" : "";
+    $("gcv-source").innerHTML = isFinite(typed) && typed > 0
+      ? t("gcvTyped", { v: num(zone.kwhPerM3, 3), when })
+      : t("gcvAuto", { when }) + link;
+  }
+
   function renderTariff() {
     const region = selectedRegion();
     const override = parseFloat($("override").value);
@@ -744,11 +823,12 @@
 
   function render() {
     const price = renderTariff();
+    renderGcv();
     const v = {
       startReading: parseFloat($("start-reading").value), startDate: $("start-date").value,
       curReading: parseFloat($("cur-reading").value), curDate: $("cur-date").value,
       price, vat: parseFloat($("vat").value),
-      factor: parseFloat($("factor").value), rate: parseFloat($("rate").value),
+      factor: factorInUse(), rate: parseFloat($("rate").value),
     };
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
@@ -790,59 +870,12 @@
     $("t-price-line").textContent = t("priceLine", { mwh: eur(r.grossPerKwh * 1000), kwh: eur(r.grossPerKwh, 5), m3: eur(r.perM3, 4) });
   }
 
-  // ---- Live prices from overgas.bg ----
+  // ---- Prices and kWh per m³ from this site's data files (refreshed daily on GitHub) ----
 
-  // Household section only: region headings followed by their "битови потребители за разпределение и снабдяване" PDF.
-  function parsePricePage(html) {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const out = [];
-    let inHome = false, region = null;
-    doc.querySelectorAll("h1, h2, h3, h4, h5, h6, .documents li").forEach((el) => {
-      if (/^H\d$/.test(el.tagName)) {
-        const t = el.textContent.trim();
-        if (t === "За моя Дом") inHome = true;
-        else if (t === "За моя Бизнес") inHome = false;
-        else if (inHome) region = t;
-        return;
-      }
-      if (!inHome || !region) return;
-      const a = el.querySelector("a[href$='.pdf']");
-      if (!a || !/битови потребители за разпределение и снабдяване/i.test(a.textContent)) return;
-      const m = (el.querySelector("i")?.textContent || "").match(/(\d{2})\.(\d{2})\.(\d{4})/);
-      if (!m || out.some((r) => r.name === region)) return;
-      out.push({ name: region, pdf: a.href, uploaded: m[3] + "-" + m[2] + "-" + m[1] });
-    });
-    return out;
-  }
-
-  let pdfjsReady;
-  function loadPdfJs() {
-    pdfjsReady ??= new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = PDFJS + "pdf.min.js";
-      s.onload = () => {
-        const lib = window.pdfjsLib;
-        // Cross-origin worker scripts can't start directly; wrap in a same-origin blob.
-        const blob = new Blob(["importScripts('" + PDFJS + "pdf.worker.min.js');"], { type: "text/javascript" });
-        lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
-        resolve(lib);
-      };
-      s.onerror = () => reject(new Error("pdf.js failed to load"));
-      document.head.appendChild(s);
-    });
-    return pdfjsReady;
-  }
-
-  // The final price is the last column of the table, so the last two-decimal number on the page.
-  async function readFinalPrice(pdfUrl) {
-    const lib = await loadPdfJs();
-    const data = await (await fetch(pdfUrl)).arrayBuffer();
-    const pdf = await lib.getDocument({ data }).promise;
-    const page = await pdf.getPage(1);
-    const text = (await page.getTextContent()).items.map((i) => i.str).join(" ");
-    const nums = text.match(/\d{1,3}[.,]\d{2}(?!\d)/g);
-    if (!nums) throw new Error("No price found in " + pdfUrl);
-    return parseFloat(nums[nums.length - 1].replace(",", "."));
+  async function getJson(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(url + ": HTTP " + res.status);
+    return res.json();
   }
 
   let refreshing = false;
@@ -852,22 +885,31 @@
     refreshing = true;
     $("source-chip").textContent = t("checking");
     try {
-      const res = await fetch(PAGE_URL, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const found = parsePricePage(await res.text());
-      if (!found.length) throw new Error("No household price lists found");
-      const known = new Map((prices.regions || []).map((r) => [r.pdf, r.price]));
-      for (const r of found) r.price = known.has(r.pdf) ? known.get(r.pdf) : await readFinalPrice(r.pdf);
-      prices = { regions: found, live: true, checkedAt: new Date().toISOString() };
+      const data = await getJson(PRICES_URL);
+      if (!Array.isArray(data.regions) || !data.regions.length) throw new Error("No regions in " + PRICES_URL);
+      prices = { regions: data.regions, live: true, checkedAt: new Date().toISOString() };
       try { localStorage.setItem(PRICE_KEY, JSON.stringify(prices)); } catch (e) {}
       fillRegions();
     } catch (e) {
-      // Blocked (e.g. inside the claude.ai viewer) or offline: keep cached or built-in prices.
+      // Offline or the claude.ai viewer: keep cached or built-in prices.
       prices = { ...prices, live: false };
-      console.warn("Couldn't refresh Overgas prices:", e);
+      console.warn("Couldn't refresh prices:", e);
     }
     btn.disabled = false;
     refreshing = false;
+    render();
+  }
+
+  async function refreshGcv() {
+    try {
+      const data = await getJson(GCV_URL);
+      if (!Array.isArray(data.zones) || !data.zones.length) throw new Error("No zones in " + GCV_URL);
+      gcv = { zones: data.zones };
+      try { localStorage.setItem(GCV_KEY, JSON.stringify(gcv)); } catch (e) {}
+      fillZones();
+    } catch (e) {
+      console.warn("Couldn't refresh kWh per m³:", e);
+    }
     render();
   }
 
@@ -876,7 +918,8 @@
 
   ids.forEach((id) => $(id).addEventListener("input", render));
   $("region").addEventListener("change", render);
-  $("refresh").addEventListener("click", refreshPrices);
+  $("zone").addEventListener("change", () => { render(); if (isGcvStale(selectedZone())) refreshGcv(); });
+  $("refresh").addEventListener("click", () => { refreshPrices(); refreshGcv(); });
   // Restores only the price settings; meter readings, dates and the region stay as entered.
   $("reset").addEventListener("click", () => {
     ["override", "factor"].forEach((id) => { $(id).value = DEFAULTS[id]; });
@@ -917,8 +960,10 @@
   syncTariffPanel();
   applyStatic();
   render();
-  // Only look for a new price when the selected region's price isn't from this month yet.
+  // Only ask for new data when what we have is out of date: the price isn't from this month,
+  // or the kWh per m³ isn't from last month (the newest Bulgartransgaz certifies).
   if (isStale(selectedRegion())) refreshPrices();
+  if (isGcvStale(selectedZone())) refreshGcv();
 
   // ---- "Install" button: phones only, and only while the app is open in the browser ----
   const isInstalled = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
