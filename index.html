@@ -456,10 +456,24 @@
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     background: var(--tip-bg); color: var(--tip-fg); font-weight: 600;
   }
-  .update-bar button {
+  .update-bar { flex-direction: column; }
+  .update-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px; }
+  .update-bar #update-btn {
     font: inherit; font-weight: 700; color: var(--on-flame); background: var(--flame);
     border: 0; border-radius: 6px; padding: 7px 16px; cursor: pointer;
   }
+  .update-link { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .update-x {
+    font: inherit; font-size: 1.3rem; line-height: 1; color: inherit; background: transparent;
+    border: 0; padding: 2px 6px; cursor: pointer; opacity: .75;
+  }
+  .update-notes {
+    width: 100%; max-width: 640px; max-height: 50vh; overflow-y: auto;
+    font-weight: 400; font-size: 0.9rem; line-height: 1.45; text-align: left;
+    border-top: 1px solid currentColor; padding-top: 10px;
+  }
+  .update-notes h3 { font-size: 0.85rem; margin: 0 0 4px; }
+  .update-notes ul { margin: 0 0 10px; padding-left: 18px; }
   .update-bar button:focus-visible { outline: 2px solid var(--tip-fg); outline-offset: 2px; }
   .app-version { color: var(--muted); font-size: 0.8rem; text-align: center; grid-column: 1 / -1; }
 </style>
@@ -467,8 +481,13 @@
 <body>
 
 <div class="update-bar" id="update-bar" role="status" hidden>
-  <span data-i18n="updateMsg">Има нова версия на приложението.</span>
-  <button type="button" id="update-btn" data-i18n="updateBtn">Обнови сега</button>
+  <div class="update-row">
+    <span data-i18n="updateMsg">Има нова версия на приложението.</span>
+    <a href="#update-notes" class="update-link" id="update-notes-link" aria-expanded="false" aria-controls="update-notes" data-i18n="updateWhatsNew">Какво ново?</a>
+    <button type="button" id="update-btn" data-i18n="updateBtn">Обнови сега</button>
+    <button type="button" class="update-x" id="update-dismiss" data-i18n-aria="close" aria-label="Затвори">×</button>
+  </div>
+  <div class="update-notes" id="update-notes" hidden></div>
 </div>
 
 <div class="wrap">
@@ -777,6 +796,9 @@
       totalBgn: "Общо, лева",
       updateMsg: "Има нова версия на приложението.",
       updateBtn: "Обнови сега",
+      updateWhatsNew: "Какво ново?",
+      updateVersion: "Версия {v} · {d}",
+      updateNoNotes: "Подобрения и поправки.",
       version: "Версия {v}",
       checking: "Проверка в overgas.bg…",
       chipOverride: "Ваша цена",
@@ -877,6 +899,9 @@
       totalBgn: "Total, BGN",
       updateMsg: "A new version of the app is available.",
       updateBtn: "Update now",
+      updateWhatsNew: "What's new?",
+      updateVersion: "Version {v} · {d}",
+      updateNoNotes: "Improvements and fixes.",
       version: "Version {v}",
       checking: "Checking overgas.bg…",
       chipOverride: "Your override",
@@ -905,6 +930,7 @@
   const locale = () => (lang === "bg" ? "bg-BG" : "en-GB");
   const monthName = (m) => new Date(Date.UTC(2000, m, 1)).toLocaleDateString(locale(), { month: "long", timeZone: "UTC" });
   let swVersion = null;
+  let renderNotes = () => {};
 
   function applyStatic() {
     document.documentElement.lang = lang;
@@ -928,6 +954,7 @@
     applyStatic();
     render();
     fillRegions();
+    if (!$("update-notes").hidden) renderNotes();
     if (typeof chartData !== "undefined" && chartData && !$("chart-panel").hidden) drawChart();
     syncTariffPanel();
   }
@@ -1517,6 +1544,37 @@
     window.addEventListener("appinstalled", () => { btn.hidden = true; $("ios-help").hidden = true; });
   }
 
+  // ---- Update bar: "What's new?" notes and dismiss ----
+  let updateDismissed = false;
+  $("update-dismiss").addEventListener("click", () => { updateDismissed = true; $("update-bar").hidden = true; });
+  // Numeric version compare: "1.10.0" > "1.9.2".
+  const newer = (a, b) => {
+    const x = a.split(".").map(Number), y = (b || "0").split(".").map(Number);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+    return false;
+  };
+  let noteEntries = [];
+  // Drawn in the current language; redrawn when the language changes.
+  renderNotes = () => {
+    $("update-notes").innerHTML = noteEntries.length
+      ? noteEntries.map((v) => "<h3>" + t("updateVersion", { v: v.version, d: bgDate(v.date) }) + "</h3><ul>" +
+          (v[lang] || v.en).map((line) => "<li>" + line + "</li>").join("") + "</ul>").join("")
+      : "<p>" + t("updateNoNotes") + "</p>";
+  };
+  $("update-notes-link").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const box = $("update-notes"), link = $("update-notes-link");
+    if (!box.hidden) { box.hidden = true; link.setAttribute("aria-expanded", "false"); return; }
+    try {
+      const log = await getJson("data/changelog.json");
+      // Changes since the version this phone is running; the latest entry if that is unknown.
+      noteEntries = swVersion ? log.versions.filter((v) => newer(v.version, swVersion)) : log.versions.slice(0, 1);
+    } catch (err) { console.warn("Couldn't load the change notes:", err); }
+    renderNotes();
+    box.hidden = false;
+    link.setAttribute("aria-expanded", "true");
+  });
+
   // ---- Installed app: offline cache and "Update now" button ----
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     let reloading = false;
@@ -1528,7 +1586,9 @@
     });
 
     navigator.serviceWorker.register("sw.js").then((reg) => {
+      // Closed with ×: stays closed while the app is in use, and is offered again the next time the app is opened.
       const offer = (worker) => {
+        if (updateDismissed) return;
         $("update-bar").hidden = false;
         $("update-btn").onclick = () => { $("update-btn").disabled = true; worker.postMessage("skipWaiting"); };
       };

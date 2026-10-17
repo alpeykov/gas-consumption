@@ -18,4 +18,4 @@ Open the app link, then **Share → Add to Home Screen** (iPhone, Safari) or **�
 
 ## Releasing an update
 
-Change the app, bump `VERSION` in `sw.js`, commit and push. Installed apps show **“Update now”** the next time they're opened.
+Change the app, bump `VERSION` in `sw.js`, add an entry (Bulgarian and English) at the top of `data/changelog.json`, commit and push. Installed apps show **“Update now”** with a **“What's new?”** link listing the changes since their version; closing the bar hides it until the app is opened again.
