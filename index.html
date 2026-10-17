@@ -23,6 +23,12 @@
     document.documentElement.setAttribute("data-theme", t);
     document.querySelector('meta[name="theme-color"]').setAttribute("content", themes[t]);
   })();
+  // Chrome can offer installation before the page script runs; keep the offer for the Install button.
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    window.__installPrompt = e;
+    window.dispatchEvent(new Event("installprompt-ready"));
+  });
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -253,6 +259,22 @@
   .themes button[aria-pressed="true"] { border-color: var(--flame); }
   .themes button:focus-visible { outline: 2px solid var(--flame); outline-offset: 1px; }
 
+  /* Install button (phones, browser only) */
+  .install-btn {
+    font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--on-flame); background: var(--flame);
+    border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  }
+  .install-btn:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  .ios-help {
+    flex-basis: 100%; display: flex; align-items: flex-start; gap: 12px;
+    background: var(--tip-bg); color: var(--tip-fg); border-radius: 10px; padding: 12px 14px; font-size: 0.9rem;
+  }
+  .ios-help span { flex: 1; min-width: 0; }
+  .ios-help button {
+    font: inherit; font-size: 1.2rem; line-height: 1; color: inherit; background: transparent;
+    border: 0; padding: 0 4px; cursor: pointer;
+  }
+
   /* Update bar for the installed app */
   .update-bar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -295,6 +317,11 @@
         <button type="button" data-theme-choice="blue" data-i18n-aria="themeBlue" data-i18n-title="themeBlue" aria-label="Синя"><span style="--s-bg:#0a1a33;--s-dot:#4cc3ff"></span></button>
         <button type="button" data-theme-choice="contrast" data-i18n-aria="themeContrast" data-i18n-title="themeContrast" aria-label="Висок контраст"><span style="--s-bg:#000000;--s-dot:#ffd400"></span></button>
       </div>
+      <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
+    </div>
+    <div class="ios-help" id="ios-help" role="note" hidden>
+      <span data-i18n="iosHelp"></span>
+      <button type="button" id="ios-help-close" data-i18n-aria="close" aria-label="Затвори">×</button>
     </div>
   </header>
 
@@ -439,6 +466,9 @@
       themeLight: "Светла",
       themeBlue: "Синя",
       themeContrast: "Висок контраст",
+      install: "Инсталирай",
+      iosHelp: "За да инсталирате приложението: натиснете бутона „Сподели“ (квадрат със стрелка нагоре) и изберете „Добави към началния екран“.",
+      close: "Затвори",
       tariffH: "Тарифни настройки",
       region: "Регион",
       finalPrice: "Крайна цена без ДДС",
@@ -498,6 +528,9 @@
       themeLight: "Light",
       themeBlue: "Blue",
       themeContrast: "High contrast",
+      install: "Install",
+      iosHelp: "To install the app: tap the Share button (square with an arrow pointing up) and choose “Add to Home Screen”.",
+      close: "Close",
       tariffH: "Tariff settings",
       region: "Region",
       finalPrice: "Final price excl. VAT",
@@ -854,6 +887,32 @@
   render();
   // Only look for a new price when the selected region's price isn't from this month yet.
   if (isStale(selectedRegion())) refreshPrices();
+
+  // ---- "Install" button: phones only, and only while the app is open in the browser ----
+  const isInstalled = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isPhone = isIOS || (navigator.userAgentData?.mobile ?? /Android|Mobi/i.test(navigator.userAgent));
+  if (!isInstalled && isPhone) {
+    const btn = $("install-btn");
+    // iOS has no install prompt for websites, so the button explains the Share menu instead.
+    if (isIOS) btn.hidden = false;
+    const ready = () => { btn.hidden = false; };
+    if (window.__installPrompt) ready();
+    window.addEventListener("installprompt-ready", ready);
+    btn.addEventListener("click", async () => {
+      const prompt = window.__installPrompt;
+      if (prompt) {
+        window.__installPrompt = null;
+        prompt.prompt();
+        const { outcome } = await prompt.userChoice;
+        if (outcome === "accepted") btn.hidden = true;
+      } else if (isIOS) {
+        $("ios-help").hidden = !$("ios-help").hidden;
+      }
+    });
+    $("ios-help-close").addEventListener("click", () => { $("ios-help").hidden = true; });
+    window.addEventListener("appinstalled", () => { btn.hidden = true; $("ios-help").hidden = true; });
+  }
 
   // ---- Installed app: offline cache and "Update now" button ----
   if ("serviceWorker" in navigator && location.protocol === "https:") {
