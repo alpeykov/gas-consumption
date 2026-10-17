@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.1",
+      "date": "2026-10-17",
+      "bg": [
+        "„Как се получава сумата“ е скрито по подразбиране – докоснете заглавието, за да го отворите. Изборът се запомня."
+      ],
+      "en": [
+        "“How it adds up” is closed by default – tap the heading to open it. The choice is remembered."
+      ]
+    },
+    {
       "version": "1.9.0",
       "date": "2026-10-17",
       "bg": [

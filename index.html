@@ -241,7 +241,19 @@
   .breakdown {
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px;
   }
-  .breakdown h2 { font-size: 1rem; font-weight: 600; margin: 0 0 8px; }
+  .breakdown h2 { font-size: 1rem; font-weight: 600; margin: 0; }
+  /* "How it adds up": closed by default; the heading opens it. The choice is kept in this browser. */
+  #breakdown-toggle {
+    font: inherit; color: var(--fg); background: transparent; border: 0; padding: 4px 0; margin: -4px 0;
+    width: 100%; min-height: 32px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    text-align: left; cursor: pointer;
+  }
+  #breakdown-toggle:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; border-radius: 4px; }
+  #breakdown-toggle .chev { flex: none; width: 9px; height: 9px; margin-right: 4px; border: solid var(--flame); border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform 0.15s; }
+  .breakdown:not(.collapsed) #breakdown-toggle .chev { transform: translateY(2px) rotate(-135deg); }
+  .breakdown-body { margin-top: 8px; }
+  .breakdown.collapsed .breakdown-body { display: none; }
+  @media (prefers-reduced-motion: reduce) { #breakdown-toggle .chev { transition: none; } }
   table { width: 100%; border-collapse: collapse; }
   td { padding: 7px 0; border-top: 1px solid var(--line); vertical-align: baseline; }
   tr:first-child td { border-top: 0; }
@@ -689,8 +701,9 @@
     </div>
   </section>
 
-  <section class="breakdown">
-    <h2 data-i18n="howH">Как се получава сумата</h2>
+  <section class="breakdown collapsed">
+    <h2><button type="button" id="breakdown-toggle" aria-expanded="false" aria-controls="breakdown-body"><span data-i18n="howH">Как се получава сумата</span><span class="chev" aria-hidden="true"></span></button></h2>
+    <div class="breakdown-body" id="breakdown-body">
     <div class="table-scroll">
       <table>
         <thead><tr><td></td><td data-i18n="soFar">Досега</td><td data-i18n="fullMonth">Прогнозна сметка</td></tr></thead>
@@ -706,6 +719,7 @@
       </table>
     </div>
     <p class="hint" id="t-price-line"></p>
+    </div>
   </section>
   </div>
   <p class="app-version" id="app-version"></p>
@@ -1372,6 +1386,19 @@
     syncTariffPanel();
   });
   syncTariffPanel();
+  const BREAKDOWN_OPEN_KEY = "gas-bill-breakdown-open";
+  let breakdownOpen = false;
+  try { breakdownOpen = localStorage.getItem(BREAKDOWN_OPEN_KEY) === "1"; } catch (e) {}
+  const syncBreakdown = () => {
+    $("breakdown-toggle").closest(".breakdown").classList.toggle("collapsed", !breakdownOpen);
+    $("breakdown-toggle").setAttribute("aria-expanded", String(breakdownOpen));
+  };
+  $("breakdown-toggle").addEventListener("click", () => {
+    breakdownOpen = !breakdownOpen;
+    try { localStorage.setItem(BREAKDOWN_OPEN_KEY, breakdownOpen ? "1" : "0"); } catch (e) {}
+    syncBreakdown();
+  });
+  syncBreakdown();
   applyStatic();
   render();
   // Only ask for new data when what we have is out of date: the price isn't from this month,

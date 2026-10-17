@@ -177,6 +177,22 @@ async function sanity() {
     expect(!(await collapsed()), "stays open after reload");
     await page.close2();
   });
+  await test("sanity", "N10 'How it adds up' is closed by default, opens and is remembered", async () => {
+    const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    const shown = () => page.$eval(".breakdown table", (el) => el.getClientRects().length > 0);
+    expect(!(await shown()), "closed by default");
+    expect((await page.$eval("#breakdown-toggle", (b) => b.getAttribute("aria-expanded"))) === "false", "aria-expanded false");
+    expect(num(await text(page, "#t-tot-fc")) === 51.90, "totals still calculated while closed");
+    await page.click("#breakdown-toggle");
+    expect(await shown(), "opens");
+    expect((await page.$eval("#breakdown-toggle", (b) => b.getAttribute("aria-expanded"))) === "true", "aria-expanded true");
+    await page.reload({ waitUntil: "networkidle0" });
+    expect(await shown(), "stays open after reload");
+    await page.click("#breakdown-toggle");
+    await page.reload({ waitUntil: "networkidle0" });
+    expect(!(await shown()), "stays closed after reload");
+    await page.close2();
+  });
   await test("sanity", "N6 dates in the app's language and the Today button", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-10") });
     expect((await text(page, "#start-date-text")).startsWith("1 октомври 2026"), "Bulgarian date text");
@@ -298,14 +314,14 @@ async function regression() {
   const widths = [1280, 412, 360, 320, 277];
   for (const w of widths) for (const lang of ["bg", "en"]) {
     await test("regression", `R9 layout fits at ${w}px (${lang}, all themes, chart and panels open)`, async () => {
-      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang } });
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang, "gas-bill-breakdown-open": "1" } });
       await page.click("#chart-btn"); await page.click("#help-btn"); await page.click("#tariff-toggle"); await settle(1200);
       for (const th of ["dark", "light", "blue", "contrast"]) {
         await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(80);
         const r = await page.evaluate((phone) => {
           const W = document.documentElement.clientWidth;
           const out = { pageWide: document.documentElement.scrollWidth > W + 1 };
-          const sc = document.querySelector(".table-scroll"); out.tableScrolls = sc.scrollWidth > sc.clientWidth + 1;
+          const sc = document.querySelector(".table-scroll"); out.tableShown = sc.getClientRects().length > 0; out.tableScrolls = sc.scrollWidth > sc.clientWidth + 1;
           const cards = [".bill", ".readings", ".tariff", ".breakdown", "#chart-panel", "#about"];
           out.outside = [];
           for (const c of cards) {
@@ -326,6 +342,7 @@ async function regression() {
           return out;
         }, w < 500);
         expect(!r.pageWide, `${th}: page scrolls sideways`);
+        expect(r.tableShown, `${th}: breakdown table not shown`);
         expect(!r.tableScrolls, `${th}: breakdown table scrolls`);
         expect(!r.outside.length, `${th}: outside its card: ${r.outside.join(", ")}`);
         if (w < 500) {
@@ -393,7 +410,7 @@ async function ui() {
       await page.close2();
     });
     await test("ui", `T3 text is readable in every theme (contrast, ${dev})`, async () => {
-      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1" } });
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1", "gas-bill-breakdown-open": "1" } });
       await page.click("#help-btn"); await page.click("#chart-btn"); await settle(1000);
       for (const th of Object.keys(THEMES)) {
         await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(60);
@@ -471,11 +488,14 @@ async function ui() {
       expect(!small.length, "too small to tap: " + small.join(", "));
       await page.close2();
     });
-    await test("ui", `U3 panels open and close: tariff, chart, help, bill example (${dev})`, async () => {
+    await test("ui", `U3 panels open and close: tariff, breakdown, chart, help, bill example (${dev})`, async () => {
       const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
       const hidden = (s) => page.$eval(s, (el) => el.hidden || el.classList.contains("collapsed"));
       await page.click("#tariff-toggle"); expect(!(await hidden(".tariff")), "tariff opens");
       await page.click("#tariff-toggle"); expect(await hidden(".tariff"), "tariff closes");
+      expect(await hidden(".breakdown"), "breakdown closed by default");
+      await page.click("#breakdown-toggle"); expect(!(await hidden(".breakdown")), "breakdown opens");
+      await page.click("#breakdown-toggle"); expect(await hidden(".breakdown"), "breakdown closes");
       await page.click("#chart-btn"); await settle(800); expect(!(await hidden("#chart-panel")), "chart opens");
       await page.click("#chart-btn"); expect(await hidden("#chart-panel"), "chart closes with its button");
       await page.click("#help-btn"); expect(!(await hidden("#about")), "help opens");
