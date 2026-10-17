@@ -1,6 +1,6 @@
 {
-  "name": "Консумация на газ",
-  "short_name": "Консумация газ",
+  "name": "Gas Consumption",
+  "short_name": "Gas Consumption",
   "description": "Потребление на газ и прогноза за месечната сметка към Овергаз в евро.",
   "start_url": "./",
   "scope": "./",
