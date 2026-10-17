@@ -1,0 +1,24 @@
+{
+  "name": "gasconsumption",
+  "version": "1.0.0",
+  "description": "Gas Consumption app tests",
+  "scripts": {
+    "test": "node tests/run.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alpeykov/gas-consumption.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/alpeykov/gas-consumption/issues"
+  },
+  "homepage": "https://github.com/alpeykov/gas-consumption#readme",
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  },
+  "private": true
+}

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Runs the smoke, sanity and regression tests before every push; a failure stops the push.
+echo "Running tests before push..."
+npm test --silent
+status=$?
+if [ $status -ne 0 ]; then
+  echo "Tests failed - push stopped. Fix the failures and push again."
+  exit 1
+fi

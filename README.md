@@ -19,3 +19,9 @@ Open the app link, then **Share → Add to Home Screen** (iPhone, Safari) or **�
 ## Releasing an update
 
 Change the app, bump `VERSION` in `sw.js`, add an entry (Bulgarian and English) at the top of `data/changelog.json`, commit and push. Installed apps show **“Update now”** with a **“What's new?”** link listing the changes since their version; closing the bar hides it until the app is opened again.
+
+## Tests
+
+`npm install` once, then `npm test` runs the smoke, sanity and regression suites in headless Chrome (`tests/run.mjs`).
+The git pre-push hook in `.githooks/` runs them before every push and stops the push if anything fails
+(enable it in a fresh clone with `git config core.hooksPath .githooks`).

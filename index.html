@@ -251,6 +251,8 @@
   thead td:nth-child(n) { white-space: normal; }
   /* Phones: the table always fits the screen — smaller text, labels wrap, figures stay on one line */
   .breakdown, .bill, .readings, .tariff, .chart-panel { min-width: 0; max-width: 100%; }
+  /* Card contents may never be wider than the card itself (single-column cards). */
+  .reading, .bill, .tariff, .breakdown { grid-template-columns: minmax(0, 1fr); }
   @media (max-width: 460px) {
     .breakdown { padding: 14px 14px; }
     .breakdown table { table-layout: fixed; font-size: 0.88rem; }
@@ -258,6 +260,13 @@
     .breakdown td:nth-child(2), .breakdown td:nth-child(3) { padding-left: 8px; }
     .breakdown thead td { font-size: 0.64rem; letter-spacing: 0.04em; }
     .breakdown .hint { font-size: 0.8rem; overflow-wrap: anywhere; }
+  }
+  /* Very narrow screens, or phones with enlarged text */
+  @media (max-width: 340px) {
+    .breakdown { padding: 12px 10px; }
+    .breakdown table { font-size: 0.78rem; }
+    .breakdown td:first-child { width: 31%; }
+    .breakdown td:nth-child(2), .breakdown td:nth-child(3) { padding-left: 4px; }
   }
   tr.total td { font-weight: 700; color: var(--fg); }
   tr.total-bgn td { border-bottom: 2px solid var(--line); padding-bottom: 10px; }
@@ -362,12 +371,13 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
     padding: 16px 20px; display: grid; gap: 12px; min-width: 0;
   }
-  .chart-panel { overflow: hidden; }
+  .chart-panel { overflow: hidden; grid-template-columns: minmax(0, 1fr); }
   .chart-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding-right: 32px; }
   .chart-head h2 { margin: 0; font-size: 1.05rem; }
   .chart-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
   .chart-controls { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
   .chart-controls label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .cur-label { display: none; }
   .chart-controls select, .chart-controls > select {
     font: inherit; font-weight: 600; color: var(--fg); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
@@ -379,7 +389,12 @@
   @media (max-width: 460px) {
     .chart-head { padding-right: 0; }
     .chart-head > div:first-of-type { padding-right: 32px; }
-    .chart-controls { width: 100%; gap: 8px 12px; }
+    /* Phones: one row of three dropdowns, each with a small caption above it */
+    .chart-controls { width: 100%; max-width: 360px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .chart-controls label { display: grid; gap: 3px; min-width: 0; }
+    .chart-controls label > span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+    .chart-controls select { font-size: 0.9rem; padding: 4px 2px; width: 100%; min-width: 0; }
+    .cur-label { display: block; }
   }
   .chart-box { position: relative; min-width: 0; }
   #chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
@@ -394,7 +409,8 @@
   .key-solid, .key-dash { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--flame); }
   .key-dash { border-top-style: dashed; }
   .chart-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
-  .key { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .key { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+  .key-solid, .key-dash { flex: none; }
 
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30;
@@ -448,6 +464,16 @@
     .themes button { width: 24px; height: 24px; }
     .themes button span { width: 16px; height: 16px; }
     .icon-btn, .help-btn { width: 28px; height: 28px; }
+  }
+  /* Phones with enlarged text: the smallest size that still keeps the row on one line */
+  @media (max-width: 300px) {
+    .prefs { gap: 3px; }
+    .lang button { padding: 3px 4px; }
+    .lang .flag { width: 18px; height: 12px; }
+    .themes button { width: 22px; height: 22px; }
+    .themes button span { width: 14px; height: 14px; }
+    .icon-btn, .help-btn { width: 26px; height: 26px; }
+    .icon-btn svg { width: 15px; height: 15px; }
   }
   /* Touch screens: no hover tooltips (they would stay on screen after a tap) */
   @media (hover: none) {
@@ -566,10 +592,10 @@
         <p class="chart-sub" id="chart-sub"></p>
       </div>
       <div class="chart-controls">
-        <select id="chart-cur" data-i18n-aria="currencyLabel" aria-label="Валута">
+        <label><span class="cur-label" data-i18n="currencyLabel">Валута</span> <select id="chart-cur">
           <option value="EUR">EUR</option>
           <option value="BGN">BGN</option>
-        </select>
+        </select></label>
         <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
         <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
       </div>
