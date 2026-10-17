@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gas Bill Forecast</title>
+<meta name="description" content="Overgas household gas consumption and month-end bill forecast in euro.">
+<meta name="theme-color" content="#1f5fd6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gas Bill">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  /* Layout: one narrow column — meter readings in, bill summary up top, the arithmetic underneath. */
+  :root {
+    --bg: #eef1f4;
+    --panel: #ffffff;
+    --fg: #17202a;
+    --muted: #5b6875;
+    --line: #d5dce3;
+    --flame: #1f5fd6;
+    --flame-soft: #e3ecfb;
+    --amber: #b5650a;
+    --amber-soft: #fbefdf;
+    --tip-bg: #17202a;
+    --tip-fg: #f4f6f8;
+    --dial-bg: #17202a;
+    --dial-fg: #f4f6f8;
+    --dial-red: #c8352b;
+    --side: #e4ecf8;
+    --side-line: #bccce6;
+    --rule: #c3ccd6;
+    --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f141a; --panel: #18202a; --fg: #e8edf2; --muted: #93a1ae; --line: #2a3542;
+      --flame: #6d9dff; --flame-soft: #1c2b45; --amber: #f0a64a; --amber-soft: #3a2a14;
+      --tip-bg: #e8edf2; --tip-fg: #17202a;
+      --dial-bg: #05080b; --dial-fg: #f4f6f8; --dial-red: #e5574c;
+      --side: #182540; --side-line: #34507e; --rule: #3a4a5e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f141a; --panel: #18202a; --fg: #e8edf2; --muted: #93a1ae; --line: #2a3542;
+    --flame: #6d9dff; --flame-soft: #1c2b45; --amber: #f0a64a; --amber-soft: #3a2a14;
+    --tip-bg: #e8edf2; --tip-fg: #17202a;
+    --dial-bg: #05080b; --dial-fg: #f4f6f8; --dial-red: #e5574c;
+    --side: #182540; --side-line: #34507e; --rule: #3a4a5e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  }
+  .wrap {
+    max-width: 1040px; margin: 0 auto;
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: grid; gap: 20px;
+    grid-template-columns: 320px minmax(0, 1fr); align-items: start;
+    column-gap: 28px;
+  }
+  .main { border-left: 1px solid var(--rule); padding-left: 28px; }
+  .wrap > header { grid-column: 1 / -1; }
+  .side, .main { display: grid; gap: 20px; min-width: 0; }
+  .side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+  @media (max-width: 820px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); }
+    .side { position: static; }
+    .main { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 20px; }
+  }
+  header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); font-weight: 600;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Tariff strip: region + final price */
+  .tariff {
+    background: var(--side); border: 1px solid var(--side-line); border-radius: 10px;
+    padding: 16px 20px; display: grid; gap: 16px;
+  }
+  .tariff h2 { font-size: 1rem; font-weight: 600; margin: 0; }
+  .tariff .field { min-width: 0; }
+  .tariff hr { border: 0; border-top: 1px solid var(--side-line); margin: 0; }
+  .tariff select, .tariff .field input { background: var(--panel); border-color: var(--side-line); }
+  .tariff select {
+    font: inherit; font-weight: 600; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; width: 100%;
+  }
+  .final { display: grid; gap: 2px; }
+  .final-price { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 1.6rem; letter-spacing: -0.01em; }
+  .final-price small { font-weight: 500; font-size: 0.85rem; color: var(--muted); }
+  .source { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 0.85rem; color: var(--muted); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    background: var(--flame-soft); color: var(--flame);
+  }
+  .chip.offline { background: var(--amber-soft); color: var(--amber); }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Info tooltip */
+  .info { position: relative; display: inline-flex; }
+  .info-btn {
+    width: 20px; height: 20px; padding: 0; border-radius: 50%;
+    border: 0; background: var(--amber); color: var(--panel);
+    font: 700 0.75rem/20px var(--font-body); text-align: center; cursor: help;
+  }
+  .tip {
+    position: absolute; left: 0; top: calc(100% + 8px); z-index: 5;
+    width: min(260px, 80vw); padding: 10px 12px; border-radius: 8px;
+    background: var(--tip-bg); color: var(--tip-fg);
+    font-size: 0.82rem; font-weight: 400; line-height: 1.45; text-align: left;
+    visibility: hidden; opacity: 0; transition: opacity .12s;
+  }
+  .info:hover .tip, .info:focus-within .tip, .info.open .tip { visibility: visible; opacity: 1; }
+
+  /* Bill summary */
+  .bill {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px; display: grid; gap: 16px;
+  }
+  .bill-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .figure { display: grid; gap: 2px; min-width: 0; }
+  .figure .eur { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .figure .bgn { color: var(--muted); font-size: 0.9rem; }
+  .figure.forecast .eur { color: var(--flame); }
+  .month { display: grid; gap: 6px; }
+  .bar { height: 8px; background: var(--flame-soft); border-radius: 4px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--flame); border-radius: 4px; }
+  .month-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 0.85rem; }
+
+  /* Meter inputs */
+  .readings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .reading {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px; display: grid; gap: 8px; min-width: 0;
+  }
+  .dial {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--dial-bg); border-radius: 6px; padding: 6px 10px;
+  }
+  .dial input {
+    flex: 1; min-width: 0; width: 100%;
+    background: transparent; border: 0; color: var(--dial-fg);
+    font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem;
+    letter-spacing: 0.12em; font-variant-numeric: tabular-nums;
+  }
+  .dial .unit { color: var(--dial-red); font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; }
+  input:focus-visible, select:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+  .date-input {
+    font: inherit; font-size: 0.9rem; color: var(--fg); background: transparent;
+    border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 100%;
+  }
+
+  /* Breakdown */
+  .breakdown {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px;
+  }
+  .breakdown h2 { font-size: 1rem; font-weight: 600; margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 7px 0; border-top: 1px solid var(--line); vertical-align: baseline; }
+  tr:first-child td { border-top: 0; }
+  td:nth-child(2), td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+  td:first-child { color: var(--muted); }
+  thead td { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--muted); }
+  tr.total td { font-weight: 700; color: var(--fg); }
+  .table-scroll { overflow-x: auto; }
+
+  .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .settings .field:first-child { grid-column: 1 / -1; }
+  .field { display: grid; gap: 4px; }
+  .field input {
+    font: inherit; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .hint { color: var(--muted); font-size: 0.85rem; margin: 0; }
+  .breakdown .hint { margin-top: 10px; }
+  .hint a, .source a { color: var(--flame); }
+  .warn { color: var(--amber); font-weight: 600; }
+  button.ghost {
+    font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--flame); background: transparent;
+    border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: progress; }
+
+  @media (max-width: 460px) {
+    .bill-row, .readings { grid-template-columns: 1fr; }
+    .figure .eur { font-size: 1.8rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tip { transition: none; } }
+
+  /* Update bar for the installed app */
+  .update-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px;
+    padding-top: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--tip-bg); color: var(--tip-fg); font-weight: 600;
+  }
+  .update-bar button {
+    font: inherit; font-weight: 700; color: #fff; background: var(--flame);
+    border: 0; border-radius: 6px; padding: 7px 16px; cursor: pointer;
+  }
+  .update-bar button:focus-visible { outline: 2px solid var(--tip-fg); outline-offset: 2px; }
+  .app-version { color: var(--muted); font-size: 0.8rem; text-align: center; grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+
+<div class="update-bar" id="update-bar" role="status" hidden>
+  <span>A new version of the app is available.</span>
+  <button type="button" id="update-btn">Update now</button>
+</div>
+
+<div class="wrap">
+  <header>
+    <h1>Gas Bill Forecast</h1>
+    <p>Overgas household tariff · meter readings in m³ · prices in euro</p>
+  </header>
+
+  <aside class="side">
+  <section class="tariff" aria-labelledby="tariff-h">
+    <h2 id="tariff-h">Tariff settings</h2>
+    <label class="field">
+      <span class="label">Region</span>
+      <select id="region"></select>
+    </label>
+    <div class="final">
+      <span class="label">Final gas price, excl. VAT</span>
+      <span class="final-price num">
+        <span id="final-price">–</span><small>€/MWh</small>
+        <span class="info" id="stale-info" hidden>
+          <button type="button" class="info-btn" aria-describedby="stale-tip" aria-label="About this price">i</button>
+          <span class="tip" role="tooltip" id="stale-tip"></span>
+        </span>
+      </span>
+    </div>
+    <div class="source">
+      <span class="chip" id="source-chip">Checking overgas.bg…</span>
+      <span id="source-text"></span>
+      <button type="button" class="ghost" id="refresh">Check for new prices</button>
+    </div>
+    <hr>
+    <div class="settings">
+      <label class="field"><span class="label">Override price, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" placeholder="Use Overgas price"></label>
+      <label class="field"><span class="label">VAT, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20"></label>
+      <label class="field"><span class="label">kWh per m³</span><input id="factor" type="number" step="0.01" inputmode="decimal" value="10.55"></label>
+      <label class="field"><span class="label">BGN per EUR</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583"></label>
+    </div>
+    <p class="hint">
+      Prices are the “Крайна цена на ПГ” column of the household price list for each region on
+      <a href="https://www.overgas.bg/za-overgaz/produkti-i-uslugi/tseni-na-prirodniya-gaz/" target="_blank" rel="noopener">overgas.bg → Цени на природния газ</a>.
+      Leave the override empty to use them. The m³ → kWh factor (10.55) matches the calculat.org converter; your bill may use a slightly different calorific value each month.
+    </p>
+    <p class="hint"><button type="button" class="ghost" id="reset">Restore defaults</button></p>
+  </section>
+  </aside>
+
+  <div class="main">
+  <section class="bill" aria-live="polite">
+    <div class="bill-row">
+      <div class="figure">
+        <span class="label">Used so far</span>
+        <span class="eur num" id="out-now-eur">–</span>
+        <span class="bgn num" id="out-now-bgn">–</span>
+      </div>
+      <div class="figure forecast">
+        <span class="label" id="out-forecast-label">Forecast for the month</span>
+        <span class="eur num" id="out-fc-eur">–</span>
+        <span class="bgn num" id="out-fc-bgn">–</span>
+      </div>
+    </div>
+    <div class="month">
+      <div class="bar"><span id="out-bar" style="width:0%"></span></div>
+      <div class="month-meta">
+        <span class="num" id="out-days">–</span>
+        <span class="num" id="out-rate">–</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="readings">
+    <div class="reading">
+      <span class="label">Reading on last bill</span>
+      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="2445" aria-label="Meter reading on last bill"><span class="unit">m³</span></div>
+      <input class="date-input" id="start-date" type="date" value="2026-10-01" aria-label="Date of last bill reading">
+    </div>
+    <div class="reading">
+      <span class="label">Reading today</span>
+      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="2475" aria-label="Current meter reading"><span class="unit">m³</span></div>
+      <input class="date-input" id="cur-date" type="date" value="2026-10-17" aria-label="Date of current reading">
+    </div>
+  </section>
+
+  <section class="breakdown">
+    <h2>How it adds up</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><td></td><td>So far</td><td>Full month</td></tr></thead>
+        <tbody>
+          <tr><td>Gas used</td><td id="t-m3-now">–</td><td id="t-m3-fc">–</td></tr>
+          <tr><td>Energy (× <span id="t-factor">10.55</span> kWh/m³)</td><td id="t-kwh-now">–</td><td id="t-kwh-fc">–</td></tr>
+          <tr><td>Gas cost, excl. VAT</td><td id="t-net-now">–</td><td id="t-net-fc">–</td></tr>
+          <tr><td>VAT <span id="t-vat">20</span>%</td><td id="t-vat-now">–</td><td id="t-vat-fc">–</td></tr>
+          <tr class="total"><td>Total, EUR</td><td id="t-tot-now">–</td><td id="t-tot-fc">–</td></tr>
+          <tr><td>Total, BGN</td><td id="t-bgn-now">–</td><td id="t-bgn-fc">–</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint" id="t-price-line"></p>
+  </section>
+  </div>
+  <p class="app-version" id="app-version"></p>
+</div>
+
+<script>
+(() => {
+  const PAGE_URL = "https://www.overgas.bg/za-overgaz/produkti-i-uslugi/tseni-na-prirodniya-gaz/";
+  const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+
+  // Household prices built into the page, used when overgas.bg can't be reached.
+  const BUILT_IN = [
+    { name: "Овергаз Мрежи", price: 68.90, uploaded: "2026-10-01", pdf: "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red.pdf" },
+    { name: "Общини Банско и Разлог", price: 85.41, uploaded: "2026-10-01", pdf: "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Bansko-i-Razlog.pdf" },
+    { name: "Община Бяла", price: 90.70, uploaded: "2026-10-01", pdf: "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Byala.pdf" },
+    { name: "Община Карнобат", price: 86.43, uploaded: "2026-10-01", pdf: "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red-KPG-Karnobat.pdf" },
+  ];
+
+  // Dates default to the 1st of this month and today, so the app works for anyone opening it fresh.
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const today = new Date();
+  const todayIso = today.getFullYear() + "-" + pad2(today.getMonth() + 1) + "-" + pad2(today.getDate());
+  const monthStartIso = today.getFullYear() + "-" + pad2(today.getMonth() + 1) + "-01";
+  document.getElementById("start-date").value = monthStartIso;
+  document.getElementById("cur-date").value = todayIso;
+
+  const DEFAULTS = {
+    region: "Овергаз Мрежи",
+    "start-reading": "2445", "start-date": monthStartIso,
+    "cur-reading": "2475", "cur-date": todayIso,
+    override: "", vat: "20", factor: "10.55", rate: "1.95583",
+  };
+  const KEY = "gas-bill-forecast-v1";
+  const PRICE_KEY = "gas-bill-prices-v1";
+  const ids = Object.keys(DEFAULTS).filter((id) => id !== "region").concat("region");
+  const $ = (id) => document.getElementById(id);
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+
+  // Price list: { regions: [...], live: bool, checkedAt: ISO }
+  let prices = { regions: BUILT_IN, live: false, checkedAt: null };
+  try {
+    const cached = JSON.parse(localStorage.getItem(PRICE_KEY) || "null");
+    if (cached && Array.isArray(cached.regions) && cached.regions.length) prices = cached;
+  } catch (e) {}
+
+  function fillRegions() {
+    const sel = $("region");
+    const current = sel.value || saved.region || DEFAULTS.region;
+    sel.innerHTML = "";
+    prices.regions.forEach((r) => {
+      const o = document.createElement("option");
+      o.value = r.name; o.textContent = r.name;
+      sel.appendChild(o);
+    });
+    sel.value = prices.regions.some((r) => r.name === current) ? current : prices.regions[0].name;
+  }
+  fillRegions();
+  ids.forEach((id) => { if (id !== "region" && saved[id] != null) $(id).value = saved[id]; });
+
+  const eur = (v) => "€" + v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const bgn = (v) => v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " лв.";
+  const n1 = (v, unit) => v.toLocaleString("en-GB", { maximumFractionDigits: 1 }) + " " + unit;
+  const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+  const DAY = 86400000;
+  const fmtDate = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const bgDate = (iso) => iso.split("-").reverse().join(".");
+
+  // Pure calculation, kept separate from the DOM.
+  function calc(v) {
+    const start = parseDate(v.startDate), cur = parseDate(v.curDate);
+    const sd = new Date(start);
+    // Billing period ends at the start of the next calendar month after the bill date.
+    const end = Date.UTC(sd.getUTCFullYear(), sd.getUTCMonth() + 1, 1);
+    const periodDays = Math.round((end - start) / DAY);
+    const elapsed = Math.round((cur - start) / DAY);
+    const used = v.curReading - v.startReading;
+    const pricePerKwh = v.price / 1000;
+    const grossPerKwh = pricePerKwh * (1 + v.vat / 100);
+    const perDay = elapsed > 0 ? used / elapsed : 0;
+    const fcM3 = elapsed > 0 ? perDay * periodDays : used;
+    const part = (m3) => {
+      const kwh = m3 * v.factor, net = kwh * pricePerKwh, gross = kwh * grossPerKwh;
+      return { m3, kwh, net, vat: gross - net, gross, bgn: gross * v.rate };
+    };
+    return { start, end, periodDays, elapsed, perDay, perM3: v.factor * grossPerKwh, grossPerKwh, now: part(used), fc: part(fcM3) };
+  }
+
+  const selectedRegion = () => prices.regions.find((r) => r.name === $("region").value) || prices.regions[0];
+
+  // Uploaded in an earlier month than today: Overgas hasn't published this month's price yet.
+  function isStale(region) {
+    const now = new Date();
+    const [uy, um] = region.uploaded.split("-").map(Number);
+    return uy < now.getFullYear() || (uy === now.getFullYear() && um - 1 < now.getMonth());
+  }
+
+  function renderTariff() {
+    const region = selectedRegion();
+    const override = parseFloat($("override").value);
+    const useOverride = isFinite(override) && override > 0;
+    $("final-price").textContent = (useOverride ? override : region.price).toFixed(2);
+
+    const now = new Date();
+    const um = Number(region.uploaded.split("-")[1]);
+    const stale = !useOverride && isStale(region);
+    $("stale-info").hidden = !stale;
+    if (stale) {
+      $("stale-tip").textContent =
+        "Overgas hasn't uploaded the " + MONTHS[now.getMonth()] + " price for this region yet. " +
+        "This calculation uses the " + MONTHS[um - 1] + " price (uploaded " + bgDate(region.uploaded) + ").";
+    }
+
+    const chip = $("source-chip");
+    chip.classList.toggle("offline", !prices.live);
+    chip.textContent = useOverride ? "Your override" : prices.live ? "From overgas.bg" : "Built-in price";
+    const pdfLink = '<a href="' + region.pdf + '" target="_blank" rel="noopener">price list</a>';
+    $("source-text").innerHTML = useOverride ? "" : "Uploaded " + bgDate(region.uploaded) + " · " + pdfLink +
+      (prices.checkedAt ? " · checked " + new Date(prices.checkedAt).toLocaleDateString("en-GB") : "");
+    return useOverride ? override : region.price;
+  }
+
+  function render() {
+    const price = renderTariff();
+    const v = {
+      startReading: parseFloat($("start-reading").value), startDate: $("start-date").value,
+      curReading: parseFloat($("cur-reading").value), curDate: $("cur-date").value,
+      price, vat: parseFloat($("vat").value),
+      factor: parseFloat($("factor").value), rate: parseFloat($("rate").value),
+    };
+    try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+
+    const bad = Object.values(v).some((x) => typeof x === "number" ? !isFinite(x) : !x);
+    if (bad) { $("out-days").textContent = "Fill in both readings, both dates and the tariff settings."; return; }
+    const r = calc(v);
+    if (r.now.m3 < 0) { $("out-days").innerHTML = '<span class="warn">Today’s reading is lower than the bill reading.</span>'; return; }
+    if (r.elapsed <= 0) { $("out-days").innerHTML = '<span class="warn">Today’s date must be after the bill date.</span>'; return; }
+
+    $("out-now-eur").textContent = eur(r.now.gross);
+    $("out-now-bgn").textContent = bgn(r.now.bgn) + " · " + n1(r.now.m3, "m³");
+    $("out-fc-eur").textContent = eur(r.fc.gross);
+    $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
+    $("out-forecast-label").textContent = "Forecast to " + fmtDate(r.end);
+    $("out-bar").style.width = Math.min(100, (r.elapsed / r.periodDays) * 100) + "%";
+    $("out-days").textContent = "Day " + r.elapsed + " of " + r.periodDays + " · " + fmtDate(r.start) + " – " + fmtDate(r.end);
+    $("out-rate").textContent = n1(r.perDay, "m³/day") + " · " + eur(r.perDay * r.perM3) + "/day";
+
+    $("t-m3-now").textContent = n1(r.now.m3, "m³"); $("t-m3-fc").textContent = n1(r.fc.m3, "m³");
+    $("t-kwh-now").textContent = n1(r.now.kwh, "kWh"); $("t-kwh-fc").textContent = n1(r.fc.kwh, "kWh");
+    $("t-net-now").textContent = eur(r.now.net); $("t-net-fc").textContent = eur(r.fc.net);
+    $("t-vat-now").textContent = eur(r.now.vat); $("t-vat-fc").textContent = eur(r.fc.vat);
+    $("t-tot-now").textContent = eur(r.now.gross); $("t-tot-fc").textContent = eur(r.fc.gross);
+    $("t-bgn-now").textContent = bgn(r.now.bgn); $("t-bgn-fc").textContent = bgn(r.fc.bgn);
+    $("t-factor").textContent = v.factor; $("t-vat").textContent = v.vat;
+    $("t-price-line").textContent =
+      "Price with VAT: €" + (r.grossPerKwh * 1000).toFixed(2) + "/MWh = €" + r.grossPerKwh.toFixed(5) +
+      "/kWh ≈ €" + r.perM3.toFixed(4) + "/m³. Forecast assumes the same daily use for the rest of the month.";
+  }
+
+  // ---- Live prices from overgas.bg ----
+
+  // Household section only: region headings followed by their "битови потребители за разпределение и снабдяване" PDF.
+  function parsePricePage(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const out = [];
+    let inHome = false, region = null;
+    doc.querySelectorAll("h1, h2, h3, h4, h5, h6, .documents li").forEach((el) => {
+      if (/^H\d$/.test(el.tagName)) {
+        const t = el.textContent.trim();
+        if (t === "За моя Дом") inHome = true;
+        else if (t === "За моя Бизнес") inHome = false;
+        else if (inHome) region = t;
+        return;
+      }
+      if (!inHome || !region) return;
+      const a = el.querySelector("a[href$='.pdf']");
+      if (!a || !/битови потребители за разпределение и снабдяване/i.test(a.textContent)) return;
+      const m = (el.querySelector("i")?.textContent || "").match(/(\d{2})\.(\d{2})\.(\d{4})/);
+      if (!m || out.some((r) => r.name === region)) return;
+      out.push({ name: region, pdf: a.href, uploaded: m[3] + "-" + m[2] + "-" + m[1] });
+    });
+    return out;
+  }
+
+  let pdfjsReady;
+  function loadPdfJs() {
+    pdfjsReady ??= new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = PDFJS + "pdf.min.js";
+      s.onload = () => {
+        const lib = window.pdfjsLib;
+        // Cross-origin worker scripts can't start directly; wrap in a same-origin blob.
+        const blob = new Blob(["importScripts('" + PDFJS + "pdf.worker.min.js');"], { type: "text/javascript" });
+        lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+        resolve(lib);
+      };
+      s.onerror = () => reject(new Error("pdf.js failed to load"));
+      document.head.appendChild(s);
+    });
+    return pdfjsReady;
+  }
+
+  // The final price is the last column of the table, so the last two-decimal number on the page.
+  async function readFinalPrice(pdfUrl) {
+    const lib = await loadPdfJs();
+    const data = await (await fetch(pdfUrl)).arrayBuffer();
+    const pdf = await lib.getDocument({ data }).promise;
+    const page = await pdf.getPage(1);
+    const text = (await page.getTextContent()).items.map((i) => i.str).join(" ");
+    const nums = text.match(/\d{1,3}[.,]\d{2}(?!\d)/g);
+    if (!nums) throw new Error("No price found in " + pdfUrl);
+    return parseFloat(nums[nums.length - 1].replace(",", "."));
+  }
+
+  async function refreshPrices() {
+    const btn = $("refresh");
+    btn.disabled = true;
+    $("source-chip").textContent = "Checking overgas.bg…";
+    try {
+      const res = await fetch(PAGE_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const found = parsePricePage(await res.text());
+      if (!found.length) throw new Error("No household price lists found");
+      const known = new Map((prices.regions || []).map((r) => [r.pdf, r.price]));
+      for (const r of found) r.price = known.has(r.pdf) ? known.get(r.pdf) : await readFinalPrice(r.pdf);
+      prices = { regions: found, live: true, checkedAt: new Date().toISOString() };
+      try { localStorage.setItem(PRICE_KEY, JSON.stringify(prices)); } catch (e) {}
+      fillRegions();
+    } catch (e) {
+      // Blocked (e.g. inside the claude.ai viewer) or offline: keep cached or built-in prices.
+      prices = { ...prices, live: false };
+      console.warn("Couldn't refresh Overgas prices:", e);
+    }
+    btn.disabled = false;
+    render();
+  }
+
+  // Tap-to-toggle for touch screens; hover and focus handle the rest.
+  $("stale-info").querySelector("button").addEventListener("click", () => $("stale-info").classList.toggle("open"));
+
+  ids.forEach((id) => $(id).addEventListener("input", render));
+  $("region").addEventListener("change", render);
+  $("refresh").addEventListener("click", refreshPrices);
+  $("reset").addEventListener("click", () => {
+    ids.forEach((id) => { if (id !== "region") $(id).value = DEFAULTS[id]; });
+    $("region").value = DEFAULTS.region;
+    render();
+  });
+  render();
+  // Only look for a new price when the selected region's price isn't from this month yet.
+  if (isStale(selectedRegion())) refreshPrices();
+
+  // ---- Installed app: offline cache and "Update now" button ----
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    let reloading = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!reloading) { reloading = true; location.reload(); }
+    });
+    navigator.serviceWorker.addEventListener("message", (e) => {
+      if (e.data?.version) $("app-version").textContent = "Version " + e.data.version;
+    });
+
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      const offer = (worker) => {
+        $("update-bar").hidden = false;
+        $("update-btn").onclick = () => { $("update-btn").disabled = true; worker.postMessage("skipWaiting"); };
+      };
+      // Only offer an update when a previous version is already running this page.
+      if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+      reg.addEventListener("updatefound", () => {
+        const w = reg.installing;
+        w.addEventListener("statechange", () => {
+          if (w.state === "installed" && navigator.serviceWorker.controller) offer(w);
+        });
+      });
+      navigator.serviceWorker.controller?.postMessage("version");
+      // Phones keep the app open for days; check again whenever it comes back to the screen.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") reg.update().catch(() => {});
+      });
+    }).catch((e) => console.warn("Service worker not registered:", e));
+  }
+})();
+</script>
+
+</body>
+</html>
