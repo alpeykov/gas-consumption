@@ -460,7 +460,8 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
-    background: var(--tip-bg); color: var(--tip-fg); font-weight: 600;
+    background: var(--panel); color: var(--fg); font-weight: 600;
+    border-bottom: 1px solid var(--line);
   }
   .update-bar { flex-direction: column; }
   .update-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px; }
@@ -468,7 +469,7 @@
     font: inherit; font-weight: 700; color: var(--on-flame); background: var(--flame);
     border: 0; border-radius: 6px; padding: 7px 16px; cursor: pointer;
   }
-  .update-link { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .update-link { color: var(--flame); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
   .update-x {
     font: inherit; font-size: 1.3rem; line-height: 1; color: inherit; background: transparent;
     border: 0; padding: 2px 6px; cursor: pointer; opacity: .75;
@@ -480,7 +481,7 @@
   }
   .update-notes h3 { font-size: 0.85rem; margin: 0 0 4px; }
   .update-notes ul { margin: 0 0 10px; padding-left: 18px; }
-  .update-bar button:focus-visible { outline: 2px solid var(--tip-fg); outline-offset: 2px; }
+  .update-bar button:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   .app-version { color: var(--muted); font-size: 0.8rem; text-align: center; grid-column: 1 / -1; }
 </style>
 </head>
