@@ -930,6 +930,8 @@
 
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+  // Nothing saved before this visit: someone opening the app for the first time on this device.
+  const firstVisit = Object.keys(saved).length === 0;
 
   // Price list: { regions: [...], live: bool, checkedAt: ISO }
   let prices = { regions: BUILT_IN, live: false, checkedAt: null };
@@ -1451,6 +1453,15 @@
   const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); if (!open) $("bill-example").hidden = true; };
   $("help-btn").addEventListener("click", () => setAbout($("about").hidden));
   $("about-close").addEventListener("click", () => setAbout(false));
+  // Open the "?" text by itself only the very first time the app is opened on this device.
+  // People who already used the app (saved readings) don't get it.
+  const HELP_SEEN_KEY = "gas-bill-help-seen";
+  try {
+    if (!localStorage.getItem(HELP_SEEN_KEY)) {
+      if (firstVisit) setAbout(true);
+      localStorage.setItem(HELP_SEEN_KEY, "1");
+    }
+  } catch (e) {}
   // "last bill" link: show where on the bill the reading is.
   $("about").addEventListener("click", (e) => {
     if (!e.target.closest(".bill-link")) return;
