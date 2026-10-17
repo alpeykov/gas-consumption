@@ -743,17 +743,21 @@
   const n1 = (v, unit) => num(v, 0, 1) + " " + unit;
   const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
   const DAY = 86400000;
-  // Bulgarian short months render as "1.10", so spell the month out there.
-  const fmtDate = (ms) => new Date(ms).toLocaleDateString(locale(), { day: "numeric", month: lang === "bg" ? "long" : "short", timeZone: "UTC" });
   // Bulgarian ordinal day for the forecast label: "1-ви ноември", "2-ри", "7-ми", "11-ти".
   const bgOrdinal = (n) => {
     const t10 = n % 100, u = n % 10;
     if (t10 >= 11 && t10 <= 19) return n + "-ти";
     return n + (u === 1 ? "-ви" : u === 2 ? "-ри" : u === 7 || u === 8 ? "-ми" : "-ти");
   };
+  // English ordinal day: "1st", "2nd", "3rd", "11th", "22nd".
+  const enOrdinal = (n) => {
+    const t10 = n % 100, u = n % 10;
+    return n + (t10 >= 11 && t10 <= 13 ? "th" : u === 1 ? "st" : u === 2 ? "nd" : u === 3 ? "rd" : "th");
+  };
+  // Dates with an ordinal day: "1-ви октомври" / "1st Oct".
   const fcDate = (ms) => {
-    if (lang !== "bg") return fmtDate(ms);
     const d = new Date(ms);
+    if (lang !== "bg") return enOrdinal(d.getUTCDate()) + " " + d.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
     return bgOrdinal(d.getUTCDate()) + " " + d.toLocaleDateString("bg-BG", { month: "long", timeZone: "UTC" });
   };
   const bgDate = (iso) => iso.split("-").reverse().join(".");
@@ -913,7 +917,7 @@
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(r.end) });
     $("out-bar").style.width = Math.min(100, (r.elapsed / r.periodDays) * 100) + "%";
-    $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays, s: fmtDate(r.start), end: fmtDate(r.end) });
+    $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays, s: fcDate(r.start), end: fcDate(r.end) });
     $("out-rate").textContent = t("perDay", { m3: n1(r.perDay, "m³"), money: eur(r.perDay * r.perM3) });
 
     $("t-m3-now").textContent = n1(r.now.m3, "m³"); $("t-m3-fc").textContent = n1(r.fc.m3, "m³");
