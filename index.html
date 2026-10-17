@@ -410,6 +410,8 @@
   }
   .ios-help { flex-wrap: wrap; }
   .ios-help span { flex: 1; min-width: 0; }
+  .about-actions { flex-basis: 100%; margin: 2px 0 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .about-actions #check-update-msg { flex: none; font-weight: 600; }
   .ios-help a { color: inherit; font-weight: 700; }
   .bill-example { flex-basis: 100%; margin: 4px 0 0; display: grid; gap: 6px; }
   .bill-example img { width: 100%; height: auto; max-width: 720px; border-radius: 6px; background: #ffffff; }
@@ -533,6 +535,10 @@
     <div class="ios-help" id="about" role="note" hidden>
       <span data-i18n-html="about"></span>
       <button type="button" id="about-close" data-i18n-aria="close" aria-label="Затвори">×</button>
+      <p class="about-actions">
+        <button type="button" class="ghost" id="check-update" data-i18n="checkUpdate">Провери за обновление</button>
+        <span id="check-update-msg" role="status"></span>
+      </p>
       <figure class="bill-example" id="bill-example" hidden>
         <img src="icons/bill-new-reading.png" width="954" height="86" data-i18n-alt="billAlt" alt="">
         <figcaption data-i18n="billCaption"></figcaption>
@@ -797,6 +803,11 @@
       updateMsg: "Има нова версия на приложението.",
       updateBtn: "Обнови сега",
       updateWhatsNew: "Какво ново?",
+      checkUpdate: "Провери за обновление",
+      updChecking: "Проверка…",
+      upToDate: "Имате последната версия ({v}).",
+      updFound: "Има нова версия – вижте лентата горе.",
+      updUnavailable: "Проверката не е възможна в момента.",
       updateVersion: "Версия {v} · {d}",
       updateNoNotes: "Подобрения и поправки.",
       version: "Версия {v}",
@@ -900,6 +911,11 @@
       updateMsg: "A new version of the app is available.",
       updateBtn: "Update now",
       updateWhatsNew: "What's new?",
+      checkUpdate: "Check for updates",
+      updChecking: "Checking…",
+      upToDate: "You have the latest version ({v}).",
+      updFound: "A new version is available – see the bar at the top.",
+      updUnavailable: "Checking isn't possible right now.",
       updateVersion: "Version {v} · {d}",
       updateNoNotes: "Improvements and fixes.",
       version: "Version {v}",
@@ -1546,6 +1562,25 @@
 
   // ---- Update bar: "What's new?" notes and dismiss ----
   let updateDismissed = false;
+  let swReg = null, offerUpdate = null;
+  // "?" → "Check for updates": asks for a new version now and shows the update bar if there is one.
+  $("check-update").addEventListener("click", async () => {
+    const msg = $("check-update-msg");
+    if (!swReg || !offerUpdate) { msg.textContent = t("updUnavailable"); return; }
+    msg.textContent = t("updChecking");
+    try {
+      await swReg.update();
+      // A found version first installs, then waits; give it a moment.
+      for (let i = 0; i < 20 && swReg.installing && !swReg.waiting; i++) await new Promise((r) => setTimeout(r, 250));
+    } catch (e) { msg.textContent = t("updUnavailable"); return; }
+    if (swReg.waiting && navigator.serviceWorker.controller) {
+      updateDismissed = false;
+      offerUpdate(swReg.waiting);
+      msg.textContent = t("updFound");
+    } else {
+      msg.textContent = t("upToDate", { v: swVersion || "" });
+    }
+  });
   $("update-dismiss").addEventListener("click", () => { updateDismissed = true; $("update-bar").hidden = true; $("update-notes").hidden = true; $("update-notes-link").setAttribute("aria-expanded", "false"); });
   // Numeric version compare: "1.10.0" > "1.9.2".
   const newer = (a, b) => {
@@ -1586,8 +1621,9 @@
     });
 
     navigator.serviceWorker.register("sw.js").then((reg) => {
+      swReg = reg;
       // Closed with ×: stays closed while the app is in use, and is offered again when the app is opened or brought back.
-      const offer = (worker) => {
+      const offer = offerUpdate = (worker) => {
         if (updateDismissed) return;
         $("update-bar").hidden = false;
         $("update-btn").onclick = () => { $("update-btn").disabled = true; worker.postMessage("skipWaiting"); };
