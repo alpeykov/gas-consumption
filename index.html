@@ -303,12 +303,12 @@
   <section class="readings">
     <div class="reading">
       <span class="label">Reading on last bill</span>
-      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="2445" aria-label="Meter reading on last bill"><span class="unit">m³</span></div>
+      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" aria-label="Meter reading on last bill"><span class="unit">m³</span></div>
       <input class="date-input" id="start-date" type="date" value="2026-10-01" aria-label="Date of last bill reading">
     </div>
     <div class="reading">
       <span class="label">Reading today</span>
-      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="2475" aria-label="Current meter reading"><span class="unit">m³</span></div>
+      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" aria-label="Current meter reading"><span class="unit">m³</span></div>
       <input class="date-input" id="cur-date" type="date" value="2026-10-17" aria-label="Date of current reading">
     </div>
   </section>
@@ -357,8 +357,8 @@
 
   const DEFAULTS = {
     region: "Овергаз Мрежи",
-    "start-reading": "2445", "start-date": monthStartIso,
-    "cur-reading": "2475", "cur-date": todayIso,
+    "start-reading": "", "start-date": monthStartIso,
+    "cur-reading": "", "cur-date": todayIso,
     override: "", vat: "20", factor: "10.55", rate: "1.95583",
   };
   const KEY = "gas-bill-forecast-v1";
@@ -463,11 +463,22 @@
     };
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
 
+    // Blank every result so numbers from earlier input never linger next to a message.
+    const clear = (html) => {
+      document.querySelectorAll(".bill .eur, .bill .bgn, .breakdown td[id], #out-rate").forEach((el) => el.textContent = "–");
+      $("out-bar").style.width = "0%";
+      $("t-price-line").textContent = "";
+      $("out-days").innerHTML = html;
+    };
+    if (!isFinite(v.startReading) || !isFinite(v.curReading)) {
+      clear("Enter the meter reading from your last bill and today’s reading to see your bill.");
+      return;
+    }
     const bad = Object.values(v).some((x) => typeof x === "number" ? !isFinite(x) : !x);
-    if (bad) { $("out-days").textContent = "Fill in both readings, both dates and the tariff settings."; return; }
+    if (bad) { clear("Fill in both dates and the tariff settings."); return; }
     const r = calc(v);
-    if (r.now.m3 < 0) { $("out-days").innerHTML = '<span class="warn">Today’s reading is lower than the bill reading.</span>'; return; }
-    if (r.elapsed <= 0) { $("out-days").innerHTML = '<span class="warn">Today’s date must be after the bill date.</span>'; return; }
+    if (r.now.m3 < 0) { clear('<span class="warn">Today’s reading is lower than the bill reading.</span>'); return; }
+    if (r.elapsed <= 0) { clear('<span class="warn">Today’s date must be after the bill date.</span>'); return; }
 
     $("out-now-eur").textContent = eur(r.now.gross);
     $("out-now-bgn").textContent = bgn(r.now.bgn) + " · " + n1(r.now.m3, "m³");
