@@ -712,6 +712,7 @@
       chartBtn: "Архив Цени",
       today: "Днес",
       tariffEdit: "Промени",
+      priceFrom: "от {d}",
       tariffHide: "Скрий",
       staleShort: "цената е от {prev}",
       staleShortNoHistory: "текуща цена",
@@ -811,6 +812,7 @@
       chartBtn: "Historical prices",
       today: "Today",
       tariffEdit: "Change",
+      priceFrom: "from {d}",
       tariffHide: "Hide",
       staleShort: "price from {prev}",
       staleShortNoHistory: "current price",
@@ -1110,7 +1112,9 @@
       $("stale-tip").textContent = t("noHistory", { when: monthLabel(month) });
     }
 
-    tariffSummary = { region: region.name, price, stale: stale || missing, prev: stale ? monthName(um - 1) : "" };
+    // Date the price applies from: the Overgas upload date, or the 1st of an earlier billed month; none for a typed price.
+    const since = useOverride ? "" : hist ? month + "-01" : region.uploaded;
+    tariffSummary = { region: region.name, price, since, stale: stale || missing, prev: stale ? monthName(um - 1) : "" };
 
     const chip = $("source-chip");
     chip.classList.toggle("offline", !prices.live && !hist);
@@ -1141,7 +1145,7 @@
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
     const ts = tariffSummary;
     $("tariff-summary").innerHTML = "<span>" + regionLabel(ts.region) + "</span><span><b>" + num(ts.price, 2) + "</b> €/MWh " + t("vatExcl") +
-      "</span><span><b>" + num(v.factor, 2, 3) + "</b> kWh/m³</span><span>" + t("vatRow", { v: num(v.vat, 0, 2) }) + "</span>" +
+      (ts.since ? " · " + t("priceFrom", { d: bgDate(ts.since) }) : "") + "</span><span><b>" + num(v.factor, 2, 3) + "</b> kWh/m³</span><span>" + t("vatRow", { v: num(v.vat, 0, 2) }) + "</span>" +
       (ts.stale ? '<span class="stale-note">' + (ts.prev ? t("staleShort", { prev: ts.prev }) : t("staleShortNoHistory")) + "</span>" : "");
     // Dates as text in the app's language.
     const longDate = (iso) => iso ? new Date(parseDate(iso)).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "–";
