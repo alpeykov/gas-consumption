@@ -1,59 +1,66 @@
 <!doctype html>
-<html lang="en">
+<html lang="bg">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gas Bill Forecast</title>
-<meta name="description" content="Overgas household gas consumption and month-end bill forecast in euro.">
-<meta name="theme-color" content="#1f5fd6">
+<title>Сметка за газ</title>
+<meta name="description" content="Потребление на газ и прогноза за месечната сметка към Овергаз в евро.">
+<meta name="theme-color" content="#0f141a">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Gas Bill">
+<meta name="apple-mobile-web-app-title" content="Сметка за газ">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>
+  // Apply the saved theme before first paint so the page never flashes the wrong colours.
+  (function () {
+    var themes = { dark: "#0f141a", light: "#eef1f4", blue: "#0a1a33", contrast: "#000000" };
+    var t = "dark";
+    try { var s = localStorage.getItem("gas-bill-theme"); if (themes[s]) t = s; } catch (e) {}
+    document.documentElement.setAttribute("data-theme", t);
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", themes[t]);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
   /* Layout: one narrow column — meter readings in, bill summary up top, the arithmetic underneath. */
+  /* Themes: dark is the default (bare :root); the others are picked in the header and saved per browser. */
   :root {
-    --bg: #eef1f4;
-    --panel: #ffffff;
-    --fg: #17202a;
-    --muted: #5b6875;
-    --line: #d5dce3;
-    --flame: #1f5fd6;
-    --flame-soft: #e3ecfb;
-    --amber: #b5650a;
-    --amber-soft: #fbefdf;
-    --tip-bg: #17202a;
-    --tip-fg: #f4f6f8;
-    --dial-bg: #17202a;
-    --dial-fg: #f4f6f8;
-    --dial-red: #c8352b;
-    --side: #e4ecf8;
-    --side-line: #bccce6;
-    --rule: #c3ccd6;
-    --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0f141a; --panel: #18202a; --fg: #e8edf2; --muted: #93a1ae; --line: #2a3542;
-      --flame: #6d9dff; --flame-soft: #1c2b45; --amber: #f0a64a; --amber-soft: #3a2a14;
-      --tip-bg: #e8edf2; --tip-fg: #17202a;
-      --dial-bg: #05080b; --dial-fg: #f4f6f8; --dial-red: #e5574c;
-      --side: #182540; --side-line: #34507e; --rule: #3a4a5e;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
     --bg: #0f141a; --panel: #18202a; --fg: #e8edf2; --muted: #93a1ae; --line: #2a3542;
-    --flame: #6d9dff; --flame-soft: #1c2b45; --amber: #f0a64a; --amber-soft: #3a2a14;
+    --flame: #6d9dff; --flame-soft: #1c2b45; --on-flame: #ffffff; --amber: #f0a64a; --amber-soft: #3a2a14;
     --tip-bg: #e8edf2; --tip-fg: #17202a;
     --dial-bg: #05080b; --dial-fg: #f4f6f8; --dial-red: #e5574c;
     --side: #182540; --side-line: #34507e; --rule: #3a4a5e;
+    --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f4; --panel: #ffffff; --fg: #17202a; --muted: #5b6875; --line: #d5dce3;
+    --flame: #1f5fd6; --flame-soft: #e3ecfb; --on-flame: #ffffff; --amber: #b5650a; --amber-soft: #fbefdf;
+    --tip-bg: #17202a; --tip-fg: #f4f6f8;
+    --dial-bg: #17202a; --dial-fg: #f4f6f8; --dial-red: #c8352b;
+    --side: #e4ecf8; --side-line: #bccce6; --rule: #c3ccd6;
+    color-scheme: light;
+  }
+  :root[data-theme="blue"] {
+    --bg: #0a1a33; --panel: #10264a; --fg: #e6f0ff; --muted: #9db3d6; --line: #1f3a66;
+    --flame: #4cc3ff; --flame-soft: #123a5c; --on-flame: #04213a; --amber: #ffb454; --amber-soft: #3d2c10;
+    --tip-bg: #e6f0ff; --tip-fg: #0a1a33;
+    --dial-bg: #050d1c; --dial-fg: #f4f6f8; --dial-red: #ff6b5e;
+    --side: #0d3156; --side-line: #2a5c8f; --rule: #24497a;
+    color-scheme: dark;
+  }
+  :root[data-theme="contrast"] {
+    --bg: #000000; --panel: #0d0d0d; --fg: #ffffff; --muted: #d0d0d0; --line: #6b6b6b;
+    --flame: #ffd400; --flame-soft: #3a3200; --on-flame: #000000; --amber: #ff9f1a; --amber-soft: #3a2400;
+    --tip-bg: #ffffff; --tip-fg: #000000;
+    --dial-bg: #000000; --dial-fg: #ffffff; --dial-red: #ff5c5c;
+    --side: #161616; --side-line: #ffd400; --rule: #8a8a8a;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -89,6 +96,7 @@
     color: var(--muted); font-weight: 600;
   }
   .num { font-variant-numeric: tabular-nums; }
+  .label.nocaps { text-transform: none; letter-spacing: 0.02em; font-size: 0.78rem; }
 
   /* Tariff strip: region + final price */
   .tariff {
@@ -191,6 +199,7 @@
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%;
     font-variant-numeric: tabular-nums;
   }
+  .tariff .field input:disabled { background: transparent; border-style: dashed; color: var(--muted); cursor: not-allowed; opacity: 1; }
   .hint { color: var(--muted); font-size: 0.85rem; margin: 0; }
   .breakdown .hint { margin-top: 10px; }
   .hint a, .source a { color: var(--flame); }
@@ -208,6 +217,51 @@
   }
   @media (prefers-reduced-motion: reduce) { .tip { transition: none; } }
 
+  /* Collapsible tariff panel: always open on wide screens, foldable on phones */
+  .tariff-body { display: grid; gap: 16px; }
+  .tariff-head { margin: 0; }
+  #tariff-toggle {
+    all: unset; box-sizing: border-box; width: 100%;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-size: 1rem; font-weight: 600; color: var(--fg); cursor: default;
+  }
+  .tariff-title { display: grid; gap: 2px; min-width: 0; }
+  .tariff-summary { display: none; font-size: 0.85rem; font-weight: 500; color: var(--muted); }
+  .chev { display: none; width: 10px; height: 10px; flex: none; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: 0 4px 4px 0; transition: transform .15s; }
+  @media (max-width: 820px) {
+    #tariff-toggle { cursor: pointer; }
+    #tariff-toggle:focus-visible { outline: 2px solid var(--flame); outline-offset: 4px; border-radius: 4px; }
+    .chev { display: block; }
+    .tariff.collapsed .chev { transform: rotate(-45deg); margin: 0 6px 0 0; }
+    .tariff.collapsed .tariff-body { display: none; }
+    .tariff.collapsed .tariff-summary { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+
+  /* Header with language switch */
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .head-text { min-width: 0; }
+  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  .lang button {
+    font: inherit; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--muted); background: transparent; border: 0; padding: 6px 12px; cursor: pointer;
+  }
+  .lang button + button { border-left: 1px solid var(--line); }
+  .lang button[aria-pressed="true"] { background: var(--flame); color: var(--on-flame); }
+  .lang button:focus-visible { outline: 2px solid var(--flame); outline-offset: -2px; }
+  .prefs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .theme-pick {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+    padding: 0 4px 0 12px; font-size: 0.85rem; font-weight: 600; color: var(--muted);
+  }
+  .theme-pick select {
+    font: inherit; font-weight: 700; color: var(--fg); background: transparent;
+    border: 0; padding: 6px 4px; cursor: pointer;
+  }
+  .theme-pick select option { background: var(--panel); color: var(--fg); }
+  .theme-pick select:focus-visible { outline: 2px solid var(--flame); outline-offset: 0; border-radius: 4px; }
+
   /* Update bar for the installed app */
   .update-bar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -219,7 +273,7 @@
     background: var(--tip-bg); color: var(--tip-fg); font-weight: 600;
   }
   .update-bar button {
-    font: inherit; font-weight: 700; color: #fff; background: var(--flame);
+    font: inherit; font-weight: 700; color: var(--on-flame); background: var(--flame);
     border: 0; border-radius: 6px; padding: 7px 16px; cursor: pointer;
   }
   .update-bar button:focus-visible { outline: 2px solid var(--tip-fg); outline-offset: 2px; }
@@ -229,51 +283,71 @@
 <body>
 
 <div class="update-bar" id="update-bar" role="status" hidden>
-  <span>A new version of the app is available.</span>
-  <button type="button" id="update-btn">Update now</button>
+  <span data-i18n="updateMsg">Има нова версия на приложението.</span>
+  <button type="button" id="update-btn" data-i18n="updateBtn">Обнови сега</button>
 </div>
 
 <div class="wrap">
   <header>
-    <h1>Gas Bill Forecast</h1>
-    <p>Overgas household tariff · meter readings in m³ · prices in euro</p>
+    <div class="head-text">
+      <h1 data-i18n="title">Сметка за газ</h1>
+      <p data-i18n="subtitle">Битов тариф на Овергаз · показания в m³ · цени в евро</p>
+    </div>
+    <div class="prefs">
+      <div class="lang" role="group" data-i18n-aria="langLabel" aria-label="Език">
+        <button type="button" data-lang="bg" lang="bg">БГ</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+      </div>
+      <label class="theme-pick">
+        <span data-i18n="themeLabel">Тема</span>
+        <select id="theme">
+          <option value="dark" data-i18n="themeDark">Тъмна</option>
+          <option value="light" data-i18n="themeLight">Светла</option>
+          <option value="blue" data-i18n="themeBlue">Синя</option>
+          <option value="contrast" data-i18n="themeContrast">Висок контраст</option>
+        </select>
+      </label>
+    </div>
   </header>
 
   <aside class="side">
   <section class="tariff" aria-labelledby="tariff-h">
-    <h2 id="tariff-h">Tariff settings</h2>
+    <h2 id="tariff-h" class="tariff-head">
+      <button type="button" id="tariff-toggle" aria-expanded="true" aria-controls="tariff-body">
+        <span class="tariff-title"><span data-i18n="tariffH">Тарифни настройки</span><span class="tariff-summary" id="tariff-summary"></span></span>
+        <span class="chev" aria-hidden="true"></span>
+      </button>
+    </h2>
+    <div class="tariff-body" id="tariff-body">
     <label class="field">
-      <span class="label">Region</span>
+      <span class="label" data-i18n="region">Регион</span>
       <select id="region"></select>
     </label>
     <div class="final">
-      <span class="label">Final gas price, excl. VAT</span>
+      <span class="label" data-i18n="finalPrice">Крайна цена на газа, без ДДС</span>
       <span class="final-price num">
         <span id="final-price">–</span><small>€/MWh</small>
         <span class="info" id="stale-info" hidden>
-          <button type="button" class="info-btn" aria-describedby="stale-tip" aria-label="About this price">i</button>
+          <button type="button" class="info-btn" aria-describedby="stale-tip" data-i18n-aria="aboutPrice" aria-label="За тази цена">i</button>
           <span class="tip" role="tooltip" id="stale-tip"></span>
         </span>
       </span>
     </div>
     <div class="source">
-      <span class="chip" id="source-chip">Checking overgas.bg…</span>
+      <span class="chip" id="source-chip"></span>
       <span id="source-text"></span>
-      <button type="button" class="ghost" id="refresh">Check for new prices</button>
+      <button type="button" class="ghost" id="refresh" data-i18n="refresh">Провери за нови цени</button>
     </div>
     <hr>
     <div class="settings">
-      <label class="field"><span class="label">Override price, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" placeholder="Use Overgas price"></label>
-      <label class="field"><span class="label">VAT, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20"></label>
-      <label class="field"><span class="label">kWh per m³</span><input id="factor" type="number" step="0.01" inputmode="decimal" value="10.55"></label>
-      <label class="field"><span class="label">BGN per EUR</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583"></label>
+      <label class="field"><span class="label nocaps" data-i18n="override">Ръчна цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
+      <label class="field"><span class="label" data-i18n="vat">ДДС, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20" disabled></label>
+      <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.01" inputmode="decimal" value="10.55"></label>
+      <label class="field"><span class="label" data-i18n="rate">Лева за 1 евро</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583" disabled></label>
     </div>
-    <p class="hint">
-      Prices are the “Крайна цена на ПГ” column of the household price list for each region on
-      <a href="https://www.overgas.bg/za-overgaz/produkti-i-uslugi/tseni-na-prirodniya-gaz/" target="_blank" rel="noopener">overgas.bg → Цени на природния газ</a>.
-      Leave the override empty to use them. The m³ → kWh factor (10.55) matches the calculat.org converter; your bill may use a slightly different calorific value each month.
-    </p>
-    <p class="hint"><button type="button" class="ghost" id="reset">Restore defaults</button></p>
+    <p class="hint" data-i18n-html="sourceHint"></p>
+    <p class="hint"><button type="button" class="ghost" id="reset" data-i18n="reset">Върни стандартните</button></p>
+    </div>
   </section>
   </aside>
 
@@ -281,12 +355,12 @@
   <section class="bill" aria-live="polite">
     <div class="bill-row">
       <div class="figure">
-        <span class="label">Used so far</span>
+        <span class="label" data-i18n="usedSoFar">Изразходвано досега</span>
         <span class="eur num" id="out-now-eur">–</span>
         <span class="bgn num" id="out-now-bgn">–</span>
       </div>
       <div class="figure forecast">
-        <span class="label" id="out-forecast-label">Forecast for the month</span>
+        <span class="label" id="out-forecast-label">Прогноза за месеца</span>
         <span class="eur num" id="out-fc-eur">–</span>
         <span class="bgn num" id="out-fc-bgn">–</span>
       </div>
@@ -302,29 +376,29 @@
 
   <section class="readings">
     <div class="reading">
-      <span class="label">Reading on last bill</span>
-      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" aria-label="Meter reading on last bill"><span class="unit">m³</span></div>
-      <input class="date-input" id="start-date" type="date" value="2026-10-01" aria-label="Date of last bill reading">
+      <span class="label" data-i18n="readingLast">Показание от последната сметка</span>
+      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingLastAria" aria-label="Показание на уреда от последната сметка"><span class="unit">m³</span></div>
+      <input class="date-input" id="start-date" type="date" value="2026-10-01" data-i18n-aria="readingLastDate" aria-label="Дата на показанието от сметката">
     </div>
     <div class="reading">
-      <span class="label">Reading today</span>
-      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" aria-label="Current meter reading"><span class="unit">m³</span></div>
-      <input class="date-input" id="cur-date" type="date" value="2026-10-17" aria-label="Date of current reading">
+      <span class="label" data-i18n="readingToday">Показание днес</span>
+      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingTodayAria" aria-label="Текущо показание на уреда"><span class="unit">m³</span></div>
+      <input class="date-input" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание">
     </div>
   </section>
 
   <section class="breakdown">
-    <h2>How it adds up</h2>
+    <h2 data-i18n="howH">Как се получава сумата</h2>
     <div class="table-scroll">
       <table>
-        <thead><tr><td></td><td>So far</td><td>Full month</td></tr></thead>
+        <thead><tr><td></td><td data-i18n="soFar">Досега</td><td data-i18n="fullMonth">Цял месец</td></tr></thead>
         <tbody>
-          <tr><td>Gas used</td><td id="t-m3-now">–</td><td id="t-m3-fc">–</td></tr>
-          <tr><td>Energy (× <span id="t-factor">10.55</span> kWh/m³)</td><td id="t-kwh-now">–</td><td id="t-kwh-fc">–</td></tr>
-          <tr><td>Gas cost, excl. VAT</td><td id="t-net-now">–</td><td id="t-net-fc">–</td></tr>
-          <tr><td>VAT <span id="t-vat">20</span>%</td><td id="t-vat-now">–</td><td id="t-vat-fc">–</td></tr>
-          <tr class="total"><td>Total, EUR</td><td id="t-tot-now">–</td><td id="t-tot-fc">–</td></tr>
-          <tr><td>Total, BGN</td><td id="t-bgn-now">–</td><td id="t-bgn-fc">–</td></tr>
+          <tr><td data-i18n="gasUsed">Изразходван газ</td><td id="t-m3-now">–</td><td id="t-m3-fc">–</td></tr>
+          <tr><td id="t-energy-label"></td><td id="t-kwh-now">–</td><td id="t-kwh-fc">–</td></tr>
+          <tr><td data-i18n="netCost">Цена на газа без ДДС</td><td id="t-net-now">–</td><td id="t-net-fc">–</td></tr>
+          <tr><td id="t-vat-label"></td><td id="t-vat-now">–</td><td id="t-vat-fc">–</td></tr>
+          <tr class="total"><td data-i18n="totalEur">Общо, евро</td><td id="t-tot-now">–</td><td id="t-tot-fc">–</td></tr>
+          <tr><td data-i18n="totalBgn">Общо, лева</td><td id="t-bgn-now">–</td><td id="t-bgn-fc">–</td></tr>
         </tbody>
       </table>
     </div>
@@ -365,7 +439,153 @@
   const PRICE_KEY = "gas-bill-prices-v1";
   const ids = Object.keys(DEFAULTS).filter((id) => id !== "region").concat("region");
   const $ = (id) => document.getElementById(id);
-  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  // ---- Language: Bulgarian by default; a chosen language is kept in this browser across updates ----
+  const LANG_KEY = "gas-bill-lang";
+  const STR = {
+    bg: {
+      docTitle: "Сметка за газ",
+      title: "Сметка за газ",
+      subtitle: "Битов тариф на Овергаз · показания в m³ · цени в евро",
+      langLabel: "Език",
+      themeLabel: "Тема",
+      themeDark: "Тъмна",
+      themeLight: "Светла",
+      themeBlue: "Синя",
+      themeContrast: "Висок контраст",
+      tariffH: "Тарифни настройки",
+      region: "Регион",
+      finalPrice: "Крайна цена на газа, без ДДС",
+      aboutPrice: "За тази цена",
+      refresh: "Провери за нови цени",
+      override: "Ръчна цена, €/MWh",
+      overrideHint: "Цена от Овергаз",
+      vat: "ДДС, %",
+      factor: "kWh за 1 m³",
+      rate: "Лева за 1 евро",
+      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Ръчна цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ (10,55) е средна стойност; точната стойност за месеца е посочена в сметката ви от Овергаз и можете да я въведете.",
+      sourceLinkText: "overgas.bg → Цени на природния газ",
+      reset: "Върни стандартните",
+      usedSoFar: "Изразходвано досега",
+      forecastTo: "Прогноза до {date}",
+      readingLast: "Показание от последната сметка",
+      readingLastAria: "Показание на уреда от последната сметка",
+      readingLastDate: "Дата на показанието от сметката",
+      readingToday: "Показание днес",
+      readingTodayAria: "Текущо показание на уреда",
+      readingTodayDate: "Дата на текущото показание",
+      howH: "Как се получава сумата",
+      soFar: "Досега",
+      fullMonth: "Цял месец",
+      gasUsed: "Изразходван газ",
+      energy: "Енергия (× {f} kWh/m³)",
+      netCost: "Цена на газа без ДДС",
+      vatRow: "ДДС {v}%",
+      totalEur: "Общо, евро",
+      totalBgn: "Общо, лева",
+      updateMsg: "Има нова версия на приложението.",
+      updateBtn: "Обнови сега",
+      version: "Версия {v}",
+      checking: "Проверка в overgas.bg…",
+      chipOverride: "Ваша цена",
+      chipLive: "От overgas.bg",
+      chipBuiltIn: "Вградена цена",
+      uploaded: "Качено на {d}",
+      priceList: "ценова листа",
+      checked: "проверено {d}",
+      staleTip: "Овергаз все още не е качил цената за {cur} за този регион. Изчислението използва цената за {prev} (качена на {d}).",
+      msgEnter: "Въведете показанието от последната сметка и днешното показание, за да видите сметката си.",
+      msgFill: "Попълнете двете дати и тарифните настройки.",
+      msgLower: "Днешното показание е по-малко от показанието в сметката.",
+      msgDate: "Днешната дата трябва да е след датата на сметката.",
+      dayOf: "Ден {e} от {p} · {s} – {end}",
+      perDay: "{m3}/ден · {money}/ден",
+      priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата приема същото дневно потребление до края на месеца.",
+    },
+    en: {
+      docTitle: "Gas Bill Forecast",
+      title: "Gas Bill Forecast",
+      subtitle: "Overgas household tariff · meter readings in m³ · prices in euro",
+      langLabel: "Language",
+      themeLabel: "Theme",
+      themeDark: "Dark",
+      themeLight: "Light",
+      themeBlue: "Blue",
+      themeContrast: "High contrast",
+      tariffH: "Tariff settings",
+      region: "Region",
+      finalPrice: "Final gas price, excl. VAT",
+      aboutPrice: "About this price",
+      refresh: "Check for new prices",
+      override: "Override price, €/MWh",
+      overrideHint: "Use Overgas price",
+      vat: "VAT, %",
+      factor: "kWh per m³",
+      rate: "BGN per EUR",
+      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave the override empty to use them. VAT and the BGN rate are fixed. “kWh per m³” (10.55) is an average; the exact value for the month is printed on your Overgas bill and you can enter it.",
+      sourceLinkText: "overgas.bg → Цени на природния газ",
+      reset: "Restore defaults",
+      usedSoFar: "Used so far",
+      forecastTo: "Forecast to {date}",
+      readingLast: "Reading on last bill",
+      readingLastAria: "Meter reading on last bill",
+      readingLastDate: "Date of last bill reading",
+      readingToday: "Reading today",
+      readingTodayAria: "Current meter reading",
+      readingTodayDate: "Date of current reading",
+      howH: "How it adds up",
+      soFar: "So far",
+      fullMonth: "Full month",
+      gasUsed: "Gas used",
+      energy: "Energy (× {f} kWh/m³)",
+      netCost: "Gas cost, excl. VAT",
+      vatRow: "VAT {v}%",
+      totalEur: "Total, EUR",
+      totalBgn: "Total, BGN",
+      updateMsg: "A new version of the app is available.",
+      updateBtn: "Update now",
+      version: "Version {v}",
+      checking: "Checking overgas.bg…",
+      chipOverride: "Your override",
+      chipLive: "From overgas.bg",
+      chipBuiltIn: "Built-in price",
+      uploaded: "Uploaded {d}",
+      priceList: "price list",
+      checked: "checked {d}",
+      staleTip: "Overgas hasn't uploaded the {cur} price for this region yet. This calculation uses the {prev} price (uploaded {d}).",
+      msgEnter: "Enter the meter reading from your last bill and today’s reading to see your bill.",
+      msgFill: "Fill in both dates and the tariff settings.",
+      msgLower: "Today’s reading is lower than the bill reading.",
+      msgDate: "Today’s date must be after the bill date.",
+      dayOf: "Day {e} of {p} · {s} – {end}",
+      perDay: "{m3}/day · {money}/day",
+      priceLine: "Price with VAT: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Forecast assumes the same daily use for the rest of the month.",
+    },
+  };
+  let lang = "bg";
+  try { if (localStorage.getItem(LANG_KEY) === "en") lang = "en"; } catch (e) {}
+  const t = (key, params = {}) => STR[lang][key].replace(/\{(\w+)\}/g, (_, k) => params[k] ?? "");
+  const locale = () => (lang === "bg" ? "bg-BG" : "en-GB");
+  const monthName = (m) => new Date(Date.UTC(2000, m, 1)).toLocaleDateString(locale(), { month: "long", timeZone: "UTC" });
+  let swVersion = null;
+
+  function applyStatic() {
+    document.documentElement.lang = lang;
+    document.title = t("docTitle");
+    document.querySelectorAll("[data-i18n]").forEach((el) => el.textContent = t(el.dataset.i18n));
+    document.querySelectorAll("[data-i18n-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => el.placeholder = t(el.dataset.i18nPlaceholder));
+    const link = '<a href="' + PAGE_URL + '" target="_blank" rel="noopener">' + t("sourceLinkText") + "</a>";
+    document.querySelectorAll("[data-i18n-html]").forEach((el) => el.innerHTML = t(el.dataset.i18nHtml, { link }));
+    document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    if (swVersion) $("app-version").textContent = t("version", { v: swVersion });
+  }
+
+  function setLang(next) {
+    lang = next;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+    render();
+  }
 
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
@@ -389,14 +609,19 @@
     sel.value = prices.regions.some((r) => r.name === current) ? current : prices.regions[0].name;
   }
   fillRegions();
-  ids.forEach((id) => { if (id !== "region" && saved[id] != null) $(id).value = saved[id]; });
+  // VAT and the BGN rate are fixed by law, so older saved values never override them.
+  const FIXED = ["vat", "rate"];
+  ids.forEach((id) => { if (id !== "region" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
 
-  const eur = (v) => "€" + v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const bgn = (v) => v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " лв.";
-  const n1 = (v, unit) => v.toLocaleString("en-GB", { maximumFractionDigits: 1 }) + " " + unit;
+  const num = (v, min, max = min) => v.toLocaleString(locale(), { minimumFractionDigits: min, maximumFractionDigits: max });
+  // Bulgarian writes "26,17 €"; English "€26.17".
+  const eur = (v, digits = 2) => (lang === "bg" ? num(v, digits) + " €" : "€" + num(v, digits));
+  const bgn = (v) => num(v, 2) + " лв.";
+  const n1 = (v, unit) => num(v, 0, 1) + " " + unit;
   const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
   const DAY = 86400000;
-  const fmtDate = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  // Bulgarian short months render as "1.10", so spell the month out there.
+  const fmtDate = (ms) => new Date(ms).toLocaleDateString(locale(), { day: "numeric", month: lang === "bg" ? "long" : "short", timeZone: "UTC" });
   const bgDate = (iso) => iso.split("-").reverse().join(".");
 
   // Pure calculation, kept separate from the DOM.
@@ -432,24 +657,24 @@
     const region = selectedRegion();
     const override = parseFloat($("override").value);
     const useOverride = isFinite(override) && override > 0;
-    $("final-price").textContent = (useOverride ? override : region.price).toFixed(2);
+    $("final-price").textContent = num(useOverride ? override : region.price, 2);
 
     const now = new Date();
     const um = Number(region.uploaded.split("-")[1]);
     const stale = !useOverride && isStale(region);
     $("stale-info").hidden = !stale;
     if (stale) {
-      $("stale-tip").textContent =
-        "Overgas hasn't uploaded the " + MONTHS[now.getMonth()] + " price for this region yet. " +
-        "This calculation uses the " + MONTHS[um - 1] + " price (uploaded " + bgDate(region.uploaded) + ").";
+      $("stale-tip").textContent = t("staleTip", { cur: monthName(now.getMonth()), prev: monthName(um - 1), d: bgDate(region.uploaded) });
     }
+
+    $("tariff-summary").textContent = region.name + " · " + num(useOverride ? override : region.price, 2) + " €/MWh";
 
     const chip = $("source-chip");
     chip.classList.toggle("offline", !prices.live);
-    chip.textContent = useOverride ? "Your override" : prices.live ? "From overgas.bg" : "Built-in price";
-    const pdfLink = '<a href="' + region.pdf + '" target="_blank" rel="noopener">price list</a>';
-    $("source-text").innerHTML = useOverride ? "" : "Uploaded " + bgDate(region.uploaded) + " · " + pdfLink +
-      (prices.checkedAt ? " · checked " + new Date(prices.checkedAt).toLocaleDateString("en-GB") : "");
+    chip.textContent = refreshing ? t("checking") : useOverride ? t("chipOverride") : prices.live ? t("chipLive") : t("chipBuiltIn");
+    const pdfLink = '<a href="' + region.pdf + '" target="_blank" rel="noopener">' + t("priceList") + "</a>";
+    $("source-text").innerHTML = useOverride ? "" : t("uploaded", { d: bgDate(region.uploaded) }) + " · " + pdfLink +
+      (prices.checkedAt ? " · " + t("checked", { d: bgDate(prices.checkedAt.slice(0, 10)) }) : "");
     return useOverride ? override : region.price;
   }
 
@@ -462,6 +687,9 @@
       factor: parseFloat($("factor").value), rate: parseFloat($("rate").value),
     };
     try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
+    $("t-vat-label").textContent = t("vatRow", { v: isFinite(v.vat) ? num(v.vat, 0, 2) : "–" });
+    $("out-forecast-label").textContent = t("forecastTo", { date: fmtDate(Date.UTC(today.getFullYear(), today.getMonth() + 1, 1)) });
 
     // Blank every result so numbers from earlier input never linger next to a message.
     const clear = (html) => {
@@ -471,23 +699,23 @@
       $("out-days").innerHTML = html;
     };
     if (!isFinite(v.startReading) || !isFinite(v.curReading)) {
-      clear("Enter the meter reading from your last bill and today’s reading to see your bill.");
+      clear(t("msgEnter"));
       return;
     }
     const bad = Object.values(v).some((x) => typeof x === "number" ? !isFinite(x) : !x);
-    if (bad) { clear("Fill in both dates and the tariff settings."); return; }
+    if (bad) { clear(t("msgFill")); return; }
     const r = calc(v);
-    if (r.now.m3 < 0) { clear('<span class="warn">Today’s reading is lower than the bill reading.</span>'); return; }
-    if (r.elapsed <= 0) { clear('<span class="warn">Today’s date must be after the bill date.</span>'); return; }
+    if (r.now.m3 < 0) { clear('<span class="warn">' + t("msgLower") + "</span>"); return; }
+    if (r.elapsed <= 0) { clear('<span class="warn">' + t("msgDate") + "</span>"); return; }
 
     $("out-now-eur").textContent = eur(r.now.gross);
     $("out-now-bgn").textContent = bgn(r.now.bgn) + " · " + n1(r.now.m3, "m³");
     $("out-fc-eur").textContent = eur(r.fc.gross);
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
-    $("out-forecast-label").textContent = "Forecast to " + fmtDate(r.end);
+    $("out-forecast-label").textContent = t("forecastTo", { date: fmtDate(r.end) });
     $("out-bar").style.width = Math.min(100, (r.elapsed / r.periodDays) * 100) + "%";
-    $("out-days").textContent = "Day " + r.elapsed + " of " + r.periodDays + " · " + fmtDate(r.start) + " – " + fmtDate(r.end);
-    $("out-rate").textContent = n1(r.perDay, "m³/day") + " · " + eur(r.perDay * r.perM3) + "/day";
+    $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays, s: fmtDate(r.start), end: fmtDate(r.end) });
+    $("out-rate").textContent = t("perDay", { m3: n1(r.perDay, "m³"), money: eur(r.perDay * r.perM3) });
 
     $("t-m3-now").textContent = n1(r.now.m3, "m³"); $("t-m3-fc").textContent = n1(r.fc.m3, "m³");
     $("t-kwh-now").textContent = n1(r.now.kwh, "kWh"); $("t-kwh-fc").textContent = n1(r.fc.kwh, "kWh");
@@ -495,10 +723,7 @@
     $("t-vat-now").textContent = eur(r.now.vat); $("t-vat-fc").textContent = eur(r.fc.vat);
     $("t-tot-now").textContent = eur(r.now.gross); $("t-tot-fc").textContent = eur(r.fc.gross);
     $("t-bgn-now").textContent = bgn(r.now.bgn); $("t-bgn-fc").textContent = bgn(r.fc.bgn);
-    $("t-factor").textContent = v.factor; $("t-vat").textContent = v.vat;
-    $("t-price-line").textContent =
-      "Price with VAT: €" + (r.grossPerKwh * 1000).toFixed(2) + "/MWh = €" + r.grossPerKwh.toFixed(5) +
-      "/kWh ≈ €" + r.perM3.toFixed(4) + "/m³. Forecast assumes the same daily use for the rest of the month.";
+    $("t-price-line").textContent = t("priceLine", { mwh: eur(r.grossPerKwh * 1000), kwh: eur(r.grossPerKwh, 5), m3: eur(r.perM3, 4) });
   }
 
   // ---- Live prices from overgas.bg ----
@@ -556,10 +781,12 @@
     return parseFloat(nums[nums.length - 1].replace(",", "."));
   }
 
+  let refreshing = false;
   async function refreshPrices() {
     const btn = $("refresh");
     btn.disabled = true;
-    $("source-chip").textContent = "Checking overgas.bg…";
+    refreshing = true;
+    $("source-chip").textContent = t("checking");
     try {
       const res = await fetch(PAGE_URL, { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -576,6 +803,7 @@
       console.warn("Couldn't refresh Overgas prices:", e);
     }
     btn.disabled = false;
+    refreshing = false;
     render();
   }
 
@@ -590,6 +818,37 @@
     $("region").value = DEFAULTS.region;
     render();
   });
+  document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+  // Theme picker; the head script already applied the saved theme before first paint.
+  const THEME_KEY = "gas-bill-theme";
+  const THEME_BG = { dark: "#0f141a", light: "#eef1f4", blue: "#0a1a33", contrast: "#000000" };
+  $("theme").value = document.documentElement.dataset.theme;
+  $("theme").addEventListener("change", () => {
+    const theme = $("theme").value;
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]').content = THEME_BG[theme];
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  });
+
+  // Tariff panel folding (phones only); the choice is kept in this browser across updates.
+  const COLLAPSE_KEY = "gas-bill-tariff-collapsed";
+  const narrow = matchMedia("(max-width: 820px)");
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(COLLAPSE_KEY) === "1"; } catch (e) {}
+  const syncTariffPanel = () => {
+    $("tariff-toggle").closest(".tariff").classList.toggle("collapsed", collapsed);
+    $("tariff-toggle").setAttribute("aria-expanded", String(!(collapsed && narrow.matches)));
+  };
+  $("tariff-toggle").addEventListener("click", () => {
+    if (!narrow.matches) return;
+    collapsed = !collapsed;
+    try { localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0"); } catch (e) {}
+    syncTariffPanel();
+  });
+  narrow.addEventListener("change", syncTariffPanel);
+  syncTariffPanel();
+  applyStatic();
   render();
   // Only look for a new price when the selected region's price isn't from this month yet.
   if (isStale(selectedRegion())) refreshPrices();
@@ -601,7 +860,7 @@
       if (!reloading) { reloading = true; location.reload(); }
     });
     navigator.serviceWorker.addEventListener("message", (e) => {
-      if (e.data?.version) $("app-version").textContent = "Version " + e.data.version;
+      if (e.data?.version) { swVersion = e.data.version; $("app-version").textContent = t("version", { v: swVersion }); }
     });
 
     navigator.serviceWorker.register("sw.js").then((reg) => {
