@@ -1,7 +1,7 @@
 {
   "name": "Gas Consumption",
   "short_name": "Gas Consumption",
-  "description": "Потребление на газ и прогноза за месечната сметка към Овергаз в евро.",
+  "description": "Track your Overgas gas use since the last bill and forecast this month's bill in euro.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

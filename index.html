@@ -3,8 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Консумация на газ</title>
-<meta name="description" content="Потребление на газ и прогноза за месечната сметка към Овергаз в евро.">
+<title>Gas Consumption</title>
+<meta name="description" content="Track your Overgas gas use since the last bill and forecast this month's bill in euro.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gas Consumption">
+<meta property="og:description" content="Track your Overgas gas use since the last bill and forecast this month's bill in euro.">
+<meta property="og:url" content="https://alpeykov.github.io/gas-consumption/">
+<meta property="og:image" content="https://alpeykov.github.io/gas-consumption/icons/icon-512-v2.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#0f141a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64-v2.png">
@@ -283,6 +291,13 @@
   .themes button[aria-pressed="true"] { border-color: var(--flame); }
   .themes button:focus-visible { outline: 2px solid var(--flame); outline-offset: 1px; }
 
+  .help-btn {
+    width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
+    font: 700 0.95rem/1 var(--font-body); color: var(--flame); background: var(--panel); border: 1px solid var(--line);
+  }
+  .help-btn[aria-expanded="true"] { background: var(--flame); color: var(--on-flame); border-color: var(--flame); }
+  .help-btn:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+
   /* Install button (phones, browser only) */
   .install-btn {
     font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--on-flame); background: var(--flame);
@@ -355,7 +370,12 @@
         <button type="button" data-theme-choice="blue" data-i18n-aria="themeBlue" data-i18n-title="themeBlue" aria-label="Синя"><span style="--s-bg:#0a1a33;--s-dot:#4cc3ff"></span></button>
         <button type="button" data-theme-choice="contrast" data-i18n-aria="themeContrast" data-i18n-title="themeContrast" aria-label="Висок контраст"><span style="--s-bg:#000000;--s-dot:#ffd400"></span></button>
       </div>
+      <button type="button" class="help-btn" id="help-btn" aria-expanded="false" aria-controls="about" data-i18n-aria="helpLabel" aria-label="За приложението">?</button>
       <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
+    </div>
+    <div class="ios-help" id="about" role="note" hidden>
+      <span data-i18n="about"></span>
+      <button type="button" id="about-close" data-i18n-aria="close" aria-label="Затвори">×</button>
     </div>
     <div class="ios-help" id="ios-help" role="note" hidden>
       <span data-i18n="iosHelp"></span>
@@ -524,6 +544,8 @@
       themeBlue: "Синя",
       themeContrast: "Висок контраст",
       install: "Инсталирай",
+      helpLabel: "За приложението",
+      about: "Приложението изчислява колко струва газът, изразходван от последната сметка, и прогнозира сметката за целия месец в евро. Въведете показанието от последната сметка и днешното показание. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона и газовата зона в „Тарифни настройки“.",
       iosHelp: "За да инсталирате приложението: натиснете бутона „Сподели“ (квадрат със стрелка нагоре) и изберете „Добави към началния екран“.",
       close: "Затвори",
       tariffH: "Тарифни настройки",
@@ -590,6 +612,8 @@
       themeBlue: "Blue",
       themeContrast: "High contrast",
       install: "Install",
+      helpLabel: "About this app",
+      about: "This app works out what the gas you have used since your last bill costs and forecasts the whole month’s bill in euro. Enter the meter reading from your last bill and today’s reading. The Overgas price and kWh per m³ update automatically; choose your region and gas zone under “Tariff settings”.",
       iosHelp: "To install the app: tap the Share button (square with an arrow pointing up) and choose “Add to Home Screen”.",
       close: "Close",
       tariffH: "Tariff settings",
@@ -964,6 +988,11 @@
   // or the kWh per m³ isn't from last month (the newest Bulgartransgaz certifies).
   if (isStale(selectedRegion())) refreshPrices();
   if (isGcvStale(selectedZone())) refreshGcv();
+
+  // "?" button: a few sentences about the app, in the current language.
+  const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); };
+  $("help-btn").addEventListener("click", () => setAbout($("about").hidden));
+  $("about-close").addEventListener("click", () => setAbout(false));
 
   // ---- "Install" button: phones only, and only while the app is open in the browser ----
   const isInstalled = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
