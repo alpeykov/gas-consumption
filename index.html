@@ -1141,12 +1141,12 @@
     $("out-fc-eur").textContent = eur(r.fc.gross);
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(r.end) });
-    // Timeline of the billing period: its start and end dates, today's reading at the marker.
+    // Timeline of the billing period: its start and end dates, the date of today's reading at the marker.
     const pct = Math.min(100, (r.elapsed / r.periodDays) * 100);
     $("out-bar").style.width = pct + "%";
     $("tl-today").hidden = false;
     $("tl-today").style.left = "calc(" + pct + "% - 1px)";
-    $("tl-today-label").textContent = fcDate(parseDate(v.curDate)) + " · " + v.curReading;
+    $("tl-today-label").textContent = fcDate(parseDate(v.curDate));
     $("tl-today-label").style.left = pct < 18 ? "0" : pct > 82 ? "auto" : "50%";
     $("tl-today-label").style.right = pct > 82 ? "0" : "auto";
     $("tl-today-label").style.transform = pct < 18 || pct > 82 ? "none" : "translateX(-50%)";
