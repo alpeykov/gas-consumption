@@ -1141,7 +1141,7 @@
     $("out-fc-eur").textContent = eur(r.fc.gross);
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(r.end) });
-    // Timeline of the billing period: last bill reading at the start, today's reading at its marker.
+    // Timeline of the billing period: its start and end dates, today's reading at the marker.
     const pct = Math.min(100, (r.elapsed / r.periodDays) * 100);
     $("out-bar").style.width = pct + "%";
     $("tl-today").hidden = false;
@@ -1150,7 +1150,7 @@
     $("tl-today-label").style.left = pct < 18 ? "0" : pct > 82 ? "auto" : "50%";
     $("tl-today-label").style.right = pct > 82 ? "0" : "auto";
     $("tl-today-label").style.transform = pct < 18 || pct > 82 ? "none" : "translateX(-50%)";
-    $("tl-start").innerHTML = fcDate(r.start) + " · <b>" + v.startReading + "</b>";
+    $("tl-start").textContent = fcDate(r.start);
     $("tl-end").textContent = fcDate(r.end);
     $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays });
     $("out-rate").textContent = t("perDay", { m3: n1(r.perDay, "m³"), money: eur(r.perDay * r.perM3) });
