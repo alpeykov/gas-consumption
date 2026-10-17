@@ -378,6 +378,32 @@
     border: 0; padding: 0 4px; cursor: pointer;
   }
 
+  /* Phones: language, themes, chart, share and "?" on one line */
+  @media (max-width: 460px) {
+    header { gap: 14px; }
+    .prefs { width: 100%; gap: 6px; justify-content: space-between; }
+    .lang button { padding: 5px 7px; }
+    .lang .flag { width: 22px; height: 14px; }
+    .themes { gap: 2px; padding: 3px; }
+    .themes button { width: 26px; height: 26px; }
+    .themes button span { width: 18px; height: 18px; }
+    .icon-btn, .help-btn { width: 30px; height: 30px; flex: none; }
+    .install-btn { flex-basis: 100%; order: 10; }
+  }
+  @media (max-width: 345px) {
+    .prefs { gap: 4px; }
+    .lang button { padding: 4px 5px; }
+    .lang .flag { width: 20px; height: 13px; }
+    .themes { gap: 0; padding: 2px; }
+    .themes button { width: 24px; height: 24px; }
+    .themes button span { width: 16px; height: 16px; }
+    .icon-btn, .help-btn { width: 28px; height: 28px; }
+  }
+  /* Touch screens: no hover tooltips (they would stay on screen after a tap) */
+  @media (hover: none) {
+    .icon-btn::after { display: none; }
+  }
+
   /* Update bar for the installed app */
   .update-bar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
