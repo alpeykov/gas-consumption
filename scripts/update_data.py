@@ -1,11 +1,11 @@
-"""Refresh data/prices.json (Overgas household prices) and data/gcv.json (Bulgartransgaz kWh per m³).
+"""Refresh data/prices.json (Overgas household prices) and data/gcv.json (Bulgartransgaz kWh per m³ by month).
 
 Runs daily from GitHub Actions. Needs `pdftotext` (poppler-utils). Standard library only.
 Files are rewritten only when the data itself changes, so unchanged days produce no commit.
 """
 import datetime as dt
-import difflib
 import html
+import io
 import json
 import re
 import subprocess
@@ -13,6 +13,8 @@ import sys
 import tempfile
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -22,9 +24,6 @@ UA = {"User-Agent": "Mozilla/5.0 (gas-consumption data updater; +https://github.
 OVERGAS_PAGE = "https://www.overgas.bg/za-overgaz/produkti-i-uslugi/tseni-na-prirodniya-gaz/"
 BTG_PAGE = "https://bulgartransgaz.bg/pages/gas-quality-46.html"
 BTG_BASE = "https://bulgartransgaz.bg/"
-
-MONTHS = ["january", "february", "march", "april", "may", "june", "july",
-          "august", "september", "october", "november", "december"]
 
 
 def get(url: str) -> bytes:
@@ -84,64 +83,79 @@ def overgas_prices() -> list[dict]:
     return regions
 
 
-# ---- Bulgartransgaz gross calorific value per zone ----
+# ---- Bulgartransgaz representative calorific value (kWh per m³) per month ----
+# Overgas bills use the "представителна калоричност" Bulgartransgaz sets for the billed month:
+# one national value per month, published per gas year (October to September) as an .xlsx file.
 
-def month_from_name(path: str, today: dt.date) -> str | None:
-    """Certificate file names carry the English month name, sometimes misspelt ("Seotember")."""
-    words = re.findall(r"[a-z]+", urllib.parse.unquote(path).lower())
-    for w in words:
-        hit = difflib.get_close_matches(w, MONTHS, n=1, cutoff=0.75)
-        if hit:
-            m = MONTHS.index(hit[0]) + 1
-            year = today.year if m <= today.month else today.year - 1
-            return f"{year}-{m:02d}"
-    return None
+XLSX_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+BG_MONTHS = {"октомври": 10, "ноември": 11, "декември": 12, "януари": 1, "февруари": 2, "март": 3,
+             "април": 4, "май": 5, "юни": 6, "юли": 7, "август": 8, "септември": 9}
 
 
-def btg_zones(today: dt.date) -> list[dict]:
+def xlsx_rows(data: bytes) -> list[list[str]]:
+    z = zipfile.ZipFile(io.BytesIO(data))
+    shared = []
+    if "xl/sharedStrings.xml" in z.namelist():
+        for si in ET.fromstring(z.read("xl/sharedStrings.xml")).iter(XLSX_NS + "si"):
+            shared.append("".join(t.text or "" for t in si.iter(XLSX_NS + "t")))
+    rows = []
+    for row in ET.fromstring(z.read("xl/worksheets/sheet1.xml")).iter(XLSX_NS + "row"):
+        vals = []
+        for c in row.iter(XLSX_NS + "c"):
+            v = c.find(XLSX_NS + "v")
+            if v is not None:
+                vals.append(shared[int(v.text)] if c.get("t") == "s" else v.text)
+        rows.append(vals)
+    return rows
+
+
+def btg_representative() -> dict:
     page = get(BTG_PAGE).decode("utf-8", "replace")
-    zones: dict[int, dict] = {}
-    # The page lists the newest month first, so the first link per zone is the latest certificate.
-    for href, text in re.findall(r"<a [^>]*href=\"([^\"]+\.pdf)\"[^>]*>(.*?)</a>", page, re.S):
-        z = re.match(r"Зона\s*-?\s*(\d+)\s*-+\s*(.+)", clean(text))
-        if not z or int(z[1]) in zones:
-            continue
-        url = urllib.parse.urljoin(BTG_BASE, href)
-        values = [float(v) for v in re.findall(r"(?<![\d.])1[01]\.\d{3}(?![\d])", pdf_text(url))]
-        if not values:
-            continue
-        name = re.sub(r"\s*/\s*", "/", z[2]).replace("София1", "София 1").strip()
-        zones[int(z[1])] = {
-            "id": int(z[1]),
-            "name": f"Зона {z[1]} – {name}",
-            "kwhPerM3": round(sum(values) / len(values), 3),
-            "month": month_from_name(href, today),
-            "days": len(values),
-            "pdf": url,
-        }
-    if not zones:
-        raise RuntimeError("No zone certificates found on bulgartransgaz.bg")
-    return [zones[k] for k in sorted(zones)]
+    links = []
+    for href, text in re.findall(r"<a [^>]*href=\"([^\"]+\.xlsx)\"[^>]*>(.*?)</a>", page, re.S):
+        y = re.search(r"Представителна калоричност за газова година\s*(\d{4})\s*-\s*(\d{4})", clean(text))
+        if y:
+            links.append((int(y[1]), urllib.parse.urljoin(BTG_BASE, href)))
+    links.sort(reverse=True)
+    if not links:
+        raise RuntimeError("No representative calorific value files found on bulgartransgaz.bg")
+    months, sources = {}, []
+    for start_year, url in links[:2]:  # current and previous gas year
+        sources.append(url)
+        for row in xlsx_rows(get(url)):
+            if len(row) < 2:
+                continue
+            name = re.search(r"/\s*([А-Яа-я]+)", row[0])
+            m = BG_MONTHS.get(name[1].lower()) if name else None
+            try:
+                value = float(row[1])
+            except ValueError:
+                continue
+            if m and 9 < value < 12:
+                months[f"{start_year if m >= 10 else start_year + 1}-{m:02d}"] = value
+    if not months:
+        raise RuntimeError("No monthly values in " + ", ".join(sources))
+    return {"months": dict(sorted(months.items())), "sources": sources}
 
 
-def write_if_changed(path: Path, key: str, items: list[dict], now: str) -> bool:
+def write_if_changed(path: Path, data: dict, now: str) -> bool:
     old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-    if old.get(key) == items:
+    old.pop("updated", None)
+    if old == data:
         return False
-    path.write_text(json.dumps({"updated": now, key: items}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps({"updated": now, **data}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return True
 
 
 def main() -> int:
     DATA.mkdir(exist_ok=True)
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
-    today = dt.date.today()
     failed = False
-    for path, key, fetch in ((DATA / "prices.json", "regions", overgas_prices),
-                             (DATA / "gcv.json", "zones", lambda: btg_zones(today))):
+    for path, fetch in ((DATA / "prices.json", lambda: {"regions": overgas_prices()}),
+                        (DATA / "gcv.json", btg_representative)):
         try:
-            items = fetch()
-            print(f"{path.name}: {'updated' if write_if_changed(path, key, items, now) else 'unchanged'} ({len(items)} {key})")
+            data = fetch()
+            print(f"{path.name}: {'updated' if write_if_changed(path, data, now) else 'unchanged'}")
         except Exception as e:  # keep the other file's update even if one source breaks
             failed = True
             print(f"{path.name}: FAILED: {e}", file=sys.stderr)

@@ -451,7 +451,6 @@
     <div class="settings">
       <label class="field"><span class="label nocaps" data-i18n="override">Въведи цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
       <label class="field"><span class="label" data-i18n="vat">ДДС, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20" disabled></label>
-      <label class="field wide"><span class="label" data-i18n="zone">Газова зона</span><select id="zone"></select></label>
       <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.001" inputmode="decimal" value=""></label>
       <p class="gcv-source" id="gcv-source"></p>
       <label class="field"><span class="label" data-i18n="rate">Лева за 1 евро</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583" disabled></label>
@@ -489,19 +488,12 @@
   const PRICES_URL = "data/prices.json";
   const GCV_URL = "data/gcv.json";
 
-  // Bulgartransgaz kWh per m³ per zone, used until data/gcv.json has been loaded once.
-  const BUILT_IN_GCV = [
-    { id: 1, name: "Зона 1 – Варна", kwhPerM3: 10.835, month: "2026-09" },
-    { id: 2, name: "Зона 2 – Бургас", kwhPerM3: 10.835, month: "2026-09" },
-    { id: 3, name: "Зона 3 – Стара Загора/Пловдив", kwhPerM3: 10.835, month: "2026-09" },
-    { id: 4, name: "Зона 4 – София 1/Пазарджик", kwhPerM3: 10.835, month: "2026-09", pdf: "https://bulgartransgaz.bg/files/useruploads/files/CERT%20SEPTEMBER26/Group_4_Sofia1_Paz_September.pdf" },
-    { id: 5, name: "Зона 5 – София2,3,4", kwhPerM3: 10.839, month: "2026-09" },
-    { id: 6, name: "Зона 6 – Ботевград", kwhPerM3: 10.82, month: "2026-09" },
-    { id: 7, name: "Зона 7 – Враца-Монтана", kwhPerM3: 10.82, month: "2026-09" },
-    { id: 8, name: "Зона 8 – Плевен", kwhPerM3: 10.82, month: "2026-09" },
-    { id: 9, name: "Зона 9 – Русе", kwhPerM3: 10.835, month: "2026-09" },
-    { id: 10, name: "Зона 10 – Югозападна България", kwhPerM3: 10.89, month: "2026-09" },
-  ];
+  // Bulgartransgaz representative calorific value (kWh per m³) by month, used until data/gcv.json loads.
+  // This is the value Overgas prints on the bill ("коефициент на преобразуване").
+  const BUILT_IN_GCV = {
+    months: { "2026-07": 10.87, "2026-08": 10.82, "2026-09": 10.76, "2026-10": 10.8 },
+    sources: ["https://bulgartransgaz.bg/files/useruploads/files/R_GCV_26_26October.xlsx"],
+  };
 
   // Household prices built into the page, used until data/prices.json has been loaded once.
   const BUILT_IN = [
@@ -523,11 +515,11 @@
     region: "Овергаз Мрежи",
     "start-reading": "", "start-date": monthStartIso,
     "cur-reading": "", "cur-date": todayIso,
-    override: "", vat: "20", factor: "", rate: "1.95583", zone: "4",
+    override: "", vat: "20", factor: "", rate: "1.95583",
   };
   const KEY = "gas-bill-forecast-v1";
   const PRICE_KEY = "gas-bill-prices-v1";
-  const GCV_KEY = "gas-bill-gcv-v1";
+  const GCV_KEY = "gas-bill-gcv-v2";
   const ids = Object.keys(DEFAULTS);
   const $ = (id) => document.getElementById(id);
   // ---- Language: Bulgarian by default; a chosen language is kept in this browser across updates ----
@@ -545,7 +537,7 @@
       themeContrast: "Висок контраст",
       install: "Инсталирай",
       helpLabel: "За приложението",
-      about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете показанието от последната сметка и днешното показание. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона и газовата зона в „Тарифни настройки“.",
+      about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете показанието от последната сметка и днешното показание. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона в „Тарифни настройки“.",
       iosHelp: "За да инсталирате приложението: натиснете бутона „Сподели“ (квадрат със стрелка нагоре) и изберете „Добави към началния екран“.",
       close: "Затвори",
       tariffH: "Тарифни настройки",
@@ -558,11 +550,11 @@
       vat: "ДДС, %",
       factor: "kWh за 1 m³",
       rate: "Лева за 1 евро",
-      zone: "Газова зона",
-      certificate: "сертификат",
-      gcvAuto: "Автоматично от Булгартрансгаз · {when}",
-      gcvTyped: "Ползва се вашата стойност. Булгартрансгаз за зоната: {v} ({when}). Изтрийте полето, за да се ползва тя.",
-      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Въведи цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ се взема от сертификатите за качество на Булгартрансгаз за избраната газова зона, последния публикуван месец, както в сметката на Овергаз. Ако в сметката ви стойността е различна, въведете я.",
+      gcvFile: "таблица",
+      gcvAuto: "Представителна калоричност на Булгартрансгаз за {when}",
+      gcvMissing: "Булгартрансгаз още не е публикувал стойността за {want}; ползва се тази за {when}",
+      gcvTyped: "Ползва се вашата стойност. Булгартрансгаз за {when}: {v}. Изтрийте полето, за да се ползва тя.",
+      sourceHint: "Цените са от колона „Крайна цена на ПГ“ в ценовата листа за битови клиенти на всеки регион в {link}. Оставете „Въведи цена“ празно, за да се използват те. ДДС и курсът на лева са фиксирани. „kWh за 1 m³“ е представителната калоричност на Булгартрансгаз за месеца на сметката – същият „коефициент на преобразуване“, който Овергаз ползва в сметката.",
       sourceLinkText: "overgas.bg → Цени на природния газ",
       reset: "Върни стандартна цена",
       usedSoFar: "Цена за текуща консумация",
@@ -613,7 +605,7 @@
       themeContrast: "High contrast",
       install: "Install",
       helpLabel: "About this app",
-      about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter the meter’s reading from your last bill and today’s reading from the meter. The Overgas price and kWh per m³ update automatically; choose your region and gas zone under “Tariff settings”.",
+      about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter the meter’s reading from your last bill and today’s reading from the meter. The Overgas price and kWh per m³ update automatically; choose your region under “Tariff settings”.",
       iosHelp: "To install the app: tap the Share button (square with an arrow pointing up) and choose “Add to Home Screen”.",
       close: "Close",
       tariffH: "Tariff settings",
@@ -626,11 +618,11 @@
       vat: "VAT, %",
       factor: "kWh per m³",
       rate: "BGN per EUR",
-      zone: "Gas zone",
-      certificate: "certificate",
-      gcvAuto: "Automatic from Bulgartransgaz · {when}",
-      gcvTyped: "Using your value. Bulgartransgaz for this zone: {v} ({when}). Clear the field to use it.",
-      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” comes from the Bulgartransgaz gas quality certificates for the chosen gas zone, using the latest published month, as on the Overgas bill. If your bill shows a different value, enter it.",
+      gcvFile: "table",
+      gcvAuto: "Bulgartransgaz representative calorific value for {when}",
+      gcvMissing: "Bulgartransgaz has not published {want} yet; using {when}",
+      gcvTyped: "Using your value. Bulgartransgaz for {when}: {v}. Clear the field to use it.",
+      sourceHint: "Prices are the “Крайна цена на ПГ” column of the household price list for each region on {link}. Leave “Enter price” empty to use them. VAT and the BGN rate are fixed. “kWh per m³” is the Bulgartransgaz representative calorific value for the billed month, the same conversion factor Overgas uses on the bill.",
       sourceLinkText: "overgas.bg → Цени на природния газ",
       reset: "Restore default price",
       usedSoFar: "Cost of consumption so far",
@@ -720,28 +712,16 @@
   }
   fillRegions();
 
-  // Zone list: { zones: [...] } from data/gcv.json, cached per browser.
-  let gcv = { zones: BUILT_IN_GCV };
+  // kWh per m³ by month: { months: { "YYYY-MM": value }, sources: [...] } from data/gcv.json, cached per browser.
+  let gcv = BUILT_IN_GCV;
   try {
     const cached = JSON.parse(localStorage.getItem(GCV_KEY) || "null");
-    if (cached && Array.isArray(cached.zones) && cached.zones.length) gcv = cached;
+    if (cached && cached.months && Object.keys(cached.months).length) gcv = cached;
   } catch (e) {}
-  function fillZones() {
-    const sel = $("zone");
-    const current = sel.value || saved.zone || DEFAULTS.zone;
-    sel.innerHTML = "";
-    gcv.zones.forEach((z) => {
-      const o = document.createElement("option");
-      o.value = String(z.id); o.textContent = z.name;
-      sel.appendChild(o);
-    });
-    sel.value = gcv.zones.some((z) => String(z.id) === current) ? current : String(gcv.zones[0].id);
-  }
-  fillZones();
 
   // VAT and the BGN rate are fixed by law, so older saved values never override them.
   const FIXED = ["vat", "rate"];
-  ids.forEach((id) => { if (id !== "region" && id !== "zone" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
+  ids.forEach((id) => { if (id !== "region" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
   // 10.55 was the old fixed default; switch those users to the automatic Bulgartransgaz value.
   if ($("factor").value === "10.55") $("factor").value = "";
 
@@ -796,28 +776,32 @@
     return uy < now.getFullYear() || (uy === now.getFullYear() && um - 1 < now.getMonth());
   }
 
-  const selectedZone = () => gcv.zones.find((z) => String(z.id) === $("zone").value) || gcv.zones[0];
-  // Bulgartransgaz certifies a month after it ends, so last month's value is the newest there can be.
-  function isGcvStale(zone) {
-    const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const want = prev.getFullYear() + "-" + pad2(prev.getMonth() + 1);
-    return !zone.month || zone.month < want;
+  // The billed month is the month of the last bill's reading date (the start of the period).
+  const billedMonth = () => ($("start-date").value || todayIso).slice(0, 7);
+  // Value for that month, or the latest earlier one while Bulgartransgaz hasn't published it yet.
+  function gcvFor(month) {
+    if (gcv.months[month]) return { value: gcv.months[month], month, exact: true };
+    const all = Object.keys(gcv.months).sort();
+    const earlier = all.filter((m) => m < month).pop() || all[all.length - 1];
+    return { value: gcv.months[earlier], month: earlier, exact: false };
   }
-  // kWh per m³: what the user typed, otherwise the zone's latest certified value.
+  const isGcvStale = () => !gcv.months[billedMonth()];
+  // kWh per m³: what the user typed, otherwise Bulgartransgaz's value for the billed month.
   function factorInUse() {
     const typed = parseFloat($("factor").value);
-    return isFinite(typed) && typed > 0 ? typed : selectedZone().kwhPerM3;
+    return isFinite(typed) && typed > 0 ? typed : gcvFor(billedMonth()).value;
   }
+  const monthLabel = (ym) => { const [y, m] = ym.split("-").map(Number); return monthName(m - 1) + " " + y; };
   function renderGcv() {
-    const zone = selectedZone();
-    $("factor").placeholder = num(zone.kwhPerM3, 3);
-    const [y, m] = (zone.month || "").split("-").map(Number);
-    const when = y ? monthName(m - 1) + " " + y : "";
+    const want = billedMonth();
+    const g = gcvFor(want);
+    $("factor").placeholder = num(g.value, 3);
     const typed = parseFloat($("factor").value);
-    const link = zone.pdf ? ' · <a href="' + zone.pdf + '" target="_blank" rel="noopener">' + t("certificate") + "</a>" : "";
-    $("gcv-source").innerHTML = isFinite(typed) && typed > 0
-      ? t("gcvTyped", { v: num(zone.kwhPerM3, 3), when })
-      : t("gcvAuto", { when }) + link;
+    const src = gcv.sources && gcv.sources[0];
+    const link = src ? ' · <a href="' + src + '" target="_blank" rel="noopener">' + t("gcvFile") + "</a>" : "";
+    if (isFinite(typed) && typed > 0) $("gcv-source").innerHTML = t("gcvTyped", { v: num(g.value, 3), when: monthLabel(g.month) });
+    else if (g.exact) $("gcv-source").innerHTML = t("gcvAuto", { when: monthLabel(g.month) }) + link;
+    else $("gcv-source").innerHTML = t("gcvMissing", { want: monthLabel(want), when: monthLabel(g.month) }) + link;
   }
 
   function renderTariff() {
@@ -927,10 +911,9 @@
   async function refreshGcv() {
     try {
       const data = await getJson(GCV_URL);
-      if (!Array.isArray(data.zones) || !data.zones.length) throw new Error("No zones in " + GCV_URL);
-      gcv = { zones: data.zones };
+      if (!data.months || !Object.keys(data.months).length) throw new Error("No months in " + GCV_URL);
+      gcv = { months: data.months, sources: data.sources || [] };
       try { localStorage.setItem(GCV_KEY, JSON.stringify(gcv)); } catch (e) {}
-      fillZones();
     } catch (e) {
       console.warn("Couldn't refresh kWh per m³:", e);
     }
@@ -942,7 +925,7 @@
 
   ids.forEach((id) => $(id).addEventListener("input", render));
   $("region").addEventListener("change", render);
-  $("zone").addEventListener("change", () => { render(); if (isGcvStale(selectedZone())) refreshGcv(); });
+  $("start-date").addEventListener("change", () => { if (isGcvStale()) refreshGcv(); });
   $("refresh").addEventListener("click", () => { refreshPrices(); refreshGcv(); });
   // Restores only the price settings; meter readings, dates and the region stay as entered.
   $("reset").addEventListener("click", () => {
@@ -985,9 +968,9 @@
   applyStatic();
   render();
   // Only ask for new data when what we have is out of date: the price isn't from this month,
-  // or the kWh per m³ isn't from last month (the newest Bulgartransgaz certifies).
+  // or there is no kWh per m³ yet for the billed month.
   if (isStale(selectedRegion())) refreshPrices();
-  if (isGcvStale(selectedZone())) refreshGcv();
+  if (isGcvStale()) refreshGcv();
 
   // "?" button: a few sentences about the app, in the current language.
   const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); };
