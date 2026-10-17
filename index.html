@@ -323,7 +323,7 @@
   .chart-head h2 { margin: 0; font-size: 1.05rem; }
   .chart-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
   .chart-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
-  .chart-controls select {
+  .chart-controls select, .chart-controls > select {
     font: inherit; font-weight: 600; color: var(--fg); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
   }
@@ -450,7 +450,7 @@
     <div class="chart-head">
       <div>
         <h2 id="chart-h" data-i18n="chartTitle">Исторически цени на газа</h2>
-        <p class="chart-sub" data-i18n="chartSub">Овергаз Мрежи, битови клиенти · €/m³ с ДДС</p>
+        <p class="chart-sub" id="chart-sub"></p>
       </div>
       <div class="chart-controls">
         <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
@@ -633,18 +633,19 @@
       shareText: "Изчислете сметката си за газ от Овергаз",
       shareCopied: "Линкът е копиран",
       chartTitle: "Исторически цени на газа",
-      chartSub: "Овергаз Мрежи, битови клиенти · €/m³ с ДДС",
+      chartSub: "Овергаз Мрежи, битови клиенти · цена в {unit}",
+      vatExcl: "без ДДС",
+      vatIncl: "с ДДС",
       fromYear: "От",
       toYear: "До",
       chartKeySolid: "месечни ценови листи",
       chartKeyDash: "приблизително (блог на Овергаз)",
-      chartNote: "Цена за m³ с ДДС = цена за MWh с ДДС × представителната калоричност на Булгартрансгаз за месеца ÷ 1000; където цената е обявена без ДДС, е добавен 20% ДДС. До април 2022 г. цените не включват пренос и достъп през мрежата на Булгартрансгаз; месечната такса снабдяване не е включена.",
+      chartNote: "Крайна цена на природния газ за битови клиенти в €/MWh с ДДС. Където Овергаз е обявил цената без ДДС (от май 2022 г.), е добавен 20% ДДС. Цените до 31.12.2025 г. са обявени в лева и са превърнати в евро по курс 1,95583. До април 2022 г. цените не включват пренос и достъп през мрежата на Булгартрансгаз; месечната такса снабдяване не е включена.",
       chartLoading: "Зареждане…",
       chartEmpty: "Няма данни за избрания период.",
       tipApprox: "приблизително, по блога на Овергаз",
       tipOld: "без пренос и достъп",
-      tipGcvApprox: "kWh/m³ от {when}",
-      chartAria: "Цена на природния газ за m³ с ДДС, {from} – {to}: от {min} до {max}.",
+      chartAria: "Цена на природния газ в {unit}, {from} – {to}: от {min} до {max}.",
       about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете днешното показание на уреда и показанието от {bill}. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона в „Тарифни настройки“. Ако смените датата на последната сметка с по-стар месец, приложението зарежда цената и kWh за 1 m³ за този месец. Иконата с графиката показва историческите цени.",
       iosHelp: "За да инсталирате приложението: натиснете бутона „Сподели“ (квадрат със стрелка нагоре) и изберете „Добави към началния екран“.",
       close: "Затвори",
@@ -725,18 +726,19 @@
       shareText: "Work out your Overgas gas bill",
       shareCopied: "Link copied",
       chartTitle: "Historical gas prices",
-      chartSub: "Overgas Мрежи, households · €/m³ incl. VAT",
+      chartSub: "Overgas Мрежи, households · price in {unit}",
+      vatExcl: "excl. VAT",
+      vatIncl: "incl. VAT",
       fromYear: "From",
       toYear: "To",
       chartKeySolid: "monthly price lists",
       chartKeyDash: "approximate (Overgas blog)",
-      chartNote: "Price per m³ incl. VAT = price per MWh incl. VAT × the Bulgartransgaz representative calorific value for the month ÷ 1000; where a price was published without VAT, 20% VAT was added. Until April 2022 prices exclude Bulgartransgaz transmission and access; the monthly supply fee is not included.",
+      chartNote: "Final household natural gas price in €/MWh incl. VAT. Where Overgas published the price without VAT (from May 2022), 20% VAT was added. Prices up to 31.12.2025 were published in leva and are converted to euro at 1.95583. Until April 2022 prices exclude Bulgartransgaz transmission and access; the monthly supply fee is not included.",
       chartLoading: "Loading…",
       chartEmpty: "No data for the chosen period.",
       tipApprox: "approximate, from the Overgas blog",
       tipOld: "excl. transmission and access",
-      tipGcvApprox: "kWh/m³ from {when}",
-      chartAria: "Natural gas price per m³ incl. VAT, {from} – {to}: from {min} to {max}.",
+      chartAria: "Natural gas price in {unit}, {from} – {to}: from {min} to {max}.",
       about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter today’s reading from the meter and the meter’s reading from your {bill}. The Overgas price and kWh per m³ update automatically; choose your region under “Tariff settings”. If you change the date of your last bill to an earlier month, the app loads that month’s price and kWh per m³. The chart icon shows historical prices.",
       iosHelp: "To install the app: tap the Share button (square with an arrow pointing up) and choose “Add to Home Screen”.",
       close: "Close",
@@ -1172,7 +1174,7 @@
     Object.entries(history.months).forEach(([m, r]) => { byMonth[m] = { m, mwh: r.priceEur * 1.2, basis: "full", src: r.pdf }; });
     return Object.values(byMonth).sort((a, b) => (a.m < b.m ? -1 : 1)).map((p) => {
       const g = gcvFor(p.m);
-      return { ...p, kwh: g.value, gcvMonth: g.month, gcvExact: g.exact, m3: p.mwh * g.value / 1000 };
+      return { ...p, kwh: g.value, gcvMonth: g.month, gcvExact: g.exact };
     });
   }
   function fillYearSelects() {
@@ -1202,10 +1204,15 @@
       const key = y + "-" + pad2(mo);
       if (key <= lastData) months.push(key);
     }
-    const pts = months.map((k) => byMonth[k] || null);
-    const vals = pts.filter(Boolean).map((p) => p.m3);
+    // p.mwh is € per MWh incl. VAT (VAT added where Overgas published the price without it).
+    const unitText = "€/MWh " + t("vatIncl");
+    $("chart-sub").textContent = t("chartSub", { unit: unitText });
+    const val = (p) => p.mwh;
+    const fmt = (v) => num(v, 2);
+    const pts = months.map((k) => (byMonth[k] ? { ...byMonth[k], v: val(byMonth[k]) } : null));
+    const vals = pts.filter(Boolean).map((p) => p.v);
     const W = Math.max(280, $("chart-box").clientWidth), H = Math.round(Math.min(340, Math.max(220, W * 0.45)));
-    const M = { l: 44, r: 14, t: 14, b: 26 };
+    const M = { l: 44, r: 14, t: 24, b: 26 };
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     if (!vals.length) {
       svg.innerHTML = '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + t("chartEmpty") + "</text>";
@@ -1218,8 +1225,9 @@
     let out = "";
     for (let v = 0; v <= yMax + 1e-9; v += step) {
       out += '<line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"/>';
-      out += '<text x="' + (M.l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + num(v, step < 0.1 ? 2 : 1) + "</text>";
+      out += '<text x="' + (M.l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + num(v, step < 0.1 ? 2 : step < 1 ? 1 : 0) + "</text>";
     }
+    out += '<text x="' + M.l + '" y="' + (M.t - 4) + '" text-anchor="start" font-weight="600">' + unitText + "</text>";
     const yearEvery = Math.ceil((to - from + 1) / Math.max(1, Math.floor((W - M.l - M.r) / 48)));
     months.forEach((k, i) => {
       if (k.endsWith("-01") && (+k.slice(0, 4) - from) % yearEvery === 0) {
@@ -1234,8 +1242,8 @@
       for (let i = 0; i < pts.length - 1; i++) {
         const a = pts[i], b = pts[i + 1];
         if (!a || !b || (a.basis === "blog" || b.basis === "blog") !== approx) continue;
-        if (penAt !== i) d += "M" + x(i).toFixed(1) + " " + y(a.m3).toFixed(1);
-        d += "L" + x(i + 1).toFixed(1) + " " + y(b.m3).toFixed(1);
+        if (penAt !== i) d += "M" + x(i).toFixed(1) + " " + y(a.v).toFixed(1);
+        d += "L" + x(i + 1).toFixed(1) + " " + y(b.v).toFixed(1);
         penAt = i + 1;
       }
       return d;
@@ -1247,7 +1255,7 @@
     out += '<rect x="' + M.l + '" y="' + M.t + '" width="' + (W - M.l - M.r) + '" height="' + (H - M.t - M.b) + '" fill="transparent" id="chart-hit"/>';
     svg.innerHTML = out;
     const first = pts.find(Boolean), last = [...pts].reverse().find(Boolean);
-    svg.setAttribute("aria-label", t("chartAria", { from: monthLabel(first.m), to: monthLabel(last.m), min: eur(Math.min(...vals), 2) + "/m³", max: eur(Math.max(...vals), 2) + "/m³" }));
+    svg.setAttribute("aria-label", t("chartAria", { unit: unitText, from: monthLabel(first.m), to: monthLabel(last.m), min: fmt(Math.min(...vals)), max: fmt(Math.max(...vals)) }));
 
     // Crosshair + tooltip on the nearest month with data.
     const hit = $("chart-hit"), tip = $("chart-tip");
@@ -1260,12 +1268,12 @@
       const p = pts[best];
       $("chart-cross").setAttribute("x1", x(best)); $("chart-cross").setAttribute("x2", x(best));
       $("chart-cross").setAttribute("visibility", "visible");
-      $("chart-dot").setAttribute("cx", x(best)); $("chart-dot").setAttribute("cy", y(p.m3)); $("chart-dot").setAttribute("visibility", "visible");
+      $("chart-dot").setAttribute("cx", x(best)); $("chart-dot").setAttribute("cy", y(p.v)); $("chart-dot").setAttribute("visibility", "visible");
       const notes = [];
       if (p.basis === "blog") notes.push(t("tipApprox"));
       if (p.basis === "old") notes.push(t("tipOld"));
-      if (!p.gcvExact) notes.push(t("tipGcvApprox", { when: monthLabel(p.gcvMonth) }));
-      tip.innerHTML = monthLabel(p.m) + "<br><b>" + eur(p.m3, 3) + "/m³</b><br>" + eur(p.mwh, 2) + "/MWh · " + num(p.kwh, 3) + " kWh/m³" +
+      tip.innerHTML = monthLabel(p.m) + "<br><b>" + fmt(p.v) + " " + unitText + "</b><br>" +
+        fmt(p.mwh / 1.2) + " €/MWh " + t("vatExcl") +
         (notes.length ? "<br>" + notes.join(" · ") : "");
       tip.hidden = false;
       // Beside the crosshair, on whichever side has room, so the tooltip never covers the line at that month.
