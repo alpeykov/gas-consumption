@@ -57,7 +57,7 @@
     --bg: #eef1f4; --panel: #ffffff; --fg: #17202a; --muted: #5b6875; --line: #d5dce3;
     --flame: #1f5fd6; --flame-soft: #e3ecfb; --on-flame: #ffffff; --amber: #b5650a; --amber-soft: #fbefdf;
     --tip-bg: #17202a; --tip-fg: #f4f6f8;
-    --dial-bg: #17202a; --dial-fg: #f4f6f8; --dial-red: #c8352b;
+    --dial-bg: #eef3fa; --dial-fg: #17202a; --dial-red: #c8352b; --dial-line: #bccce6;
     --side: #e4ecf8; --side-line: #bccce6; --rule: #c3ccd6;
     color-scheme: light;
   }
@@ -182,6 +182,7 @@
   .dial {
     display: flex; align-items: center; gap: 6px;
     background: var(--dial-bg); border-radius: 6px; padding: 6px 10px;
+    border: 1px solid var(--dial-line, transparent);
   }
   .dial input {
     flex: 1; min-width: 0; width: 100%;
