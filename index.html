@@ -319,6 +319,7 @@
   .lang button:not([aria-pressed="true"]) .flag { opacity: .55; }
   .lang button:focus-visible { outline: 2px solid var(--flame); outline-offset: -2px; }
   .prefs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .prefs .help-btn { order: 99; } /* "?" is always the last control */
   .themes { display: inline-flex; gap: 6px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
   .themes button {
     width: 28px; height: 28px; padding: 0; border-radius: 6px; cursor: pointer;
@@ -428,7 +429,7 @@
     .themes button { width: 26px; height: 26px; }
     .themes button span { width: 18px; height: 18px; }
     .icon-btn, .help-btn { width: 30px; height: 30px; flex: none; }
-    .install-btn { flex-basis: 100%; order: 10; }
+    .install-btn { flex-basis: 100%; order: 100; }
   }
   @media (max-width: 345px) {
     .prefs { gap: 4px; }
@@ -506,8 +507,8 @@
       <button type="button" class="icon-btn" id="share-btn" data-i18n-aria="shareBtn" data-i18n-tip="shareBtn" aria-label="Сподели" data-tip="Сподели">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       </button>
-      <button type="button" class="help-btn" id="help-btn" aria-expanded="false" aria-controls="about" data-i18n-aria="helpLabel" aria-label="За приложението">?</button>
       <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
+      <button type="button" class="help-btn" id="help-btn" aria-expanded="false" aria-controls="about" data-i18n-aria="helpLabel" aria-label="За приложението">?</button>
     </div>
     <div class="ios-help" id="about" role="note" hidden>
       <span data-i18n-html="about"></span>
