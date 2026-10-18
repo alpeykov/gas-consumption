@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.2",
+      "date": "2026-10-18",
+      "bg": [
+        "Графиката с архивните цени запомня избрания период и валута на всяко устройство."
+      ],
+      "en": [
+        "The price archive chart remembers the chosen period and currency on each device."
+      ]
+    },
+    {
       "version": "1.9.1",
       "date": "2026-10-17",
       "bg": [

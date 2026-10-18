@@ -1428,15 +1428,23 @@
       return { ...p, kwh: g.value, gcvMonth: g.month, gcvExact: g.exact };
     });
   }
+  // The chart's period and currency are kept in this browser (per device).
+  const CHART_KEY = "gas-bill-chart-v1";
+  const chartPrefs = () => { try { return JSON.parse(localStorage.getItem(CHART_KEY)) || {}; } catch (e) { return {}; } };
+  const saveChartPrefs = () => {
+    try { localStorage.setItem(CHART_KEY, JSON.stringify({ from: +$("chart-from").value, to: +$("chart-to").value, cur: $("chart-cur").value })); } catch (e) {}
+  };
+  { const c = chartPrefs().cur; if (c === "EUR" || c === "BGN") $("chart-cur").value = c; }
   function fillYearSelects() {
     const years = [...new Set(chartPoints.map((p) => +p.m.slice(0, 4)))];
-    const fill = (sel, val) => {
+    const saved = chartPrefs();
+    const fill = (sel, val, fallback) => {
       sel.innerHTML = years.map((y) => '<option value="' + y + '">' + y + "</option>").join("");
-      sel.value = String(val);
+      sel.value = String(years.includes(val) ? val : fallback);
     };
     const last = years[years.length - 1];
-    fill($("chart-from"), years.includes(2018) ? 2018 : years[0]);
-    fill($("chart-to"), last);
+    fill($("chart-from"), saved.from, years.includes(2018) ? 2018 : years[0]);
+    fill($("chart-to"), saved.to, last);
   }
   const niceStep = (range) => {
     const raw = range / 5, pow = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -1555,9 +1563,7 @@
   }
   $("chart-btn").addEventListener("click", () => openChart($("chart-panel").hidden));
   $("chart-close").addEventListener("click", () => openChart(false));
-  $("chart-from").addEventListener("change", drawChart);
-  $("chart-to").addEventListener("change", drawChart);
-  $("chart-cur").addEventListener("change", drawChart);
+  ["chart-from", "chart-to", "chart-cur"].forEach((id) => $(id).addEventListener("change", () => { saveChartPrefs(); drawChart(); }));
   addEventListener("resize", () => { if (!$("chart-panel").hidden && chartData) drawChart(); });
 
   // ---- Share: the phone's share menu, otherwise copy the link ----

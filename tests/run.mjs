@@ -213,6 +213,18 @@ async function sanity() {
     expect(await page.$eval("#chart-panel", (el) => el.hidden), "closes");
     await page.close2();
   });
+  await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
+    const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await page.click("#chart-btn"); await settle(1200);
+    await page.select("#chart-from", "2020"); await page.select("#chart-to", "2023"); await page.select("#chart-cur", "BGN");
+    await page.reload({ waitUntil: "networkidle0" });
+    await page.click("#chart-btn"); await settle(1200);
+    const v = await page.evaluate(() => ["chart-from", "chart-to", "chart-cur"].map((id) => document.getElementById(id).value).join("|"));
+    expect(v === "2020|2023|BGN", "after reload: " + v);
+    expect(/2020.*2023/.test(await page.$eval("#chart-svg", (s) => s.getAttribute("aria-label"))), "chart drawn for the saved years");
+    expect((await text(page, "#chart-sub")).includes("лв./MWh"), "chart drawn in the saved currency");
+    await page.close2();
+  });
   await test("sanity", "N8 update bar: What's new and close", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.evaluate(() => { document.getElementById("update-bar").hidden = false; });
