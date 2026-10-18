@@ -39,13 +39,21 @@ function near(a, b, tol, msg) { expect(Math.abs(a - b) <= tol, `${msg}: got ${a}
 
 let browser;
 // A clean browser profile per test; optional localStorage and viewport.
-async function open({ width = 1280, height = 900, storage = {}, waitChart = false } = {}) {
+// The page's clock is fixed (default 17 Oct 2026, noon) so dates and sums don't depend on the real day;
+// window.__setNow(iso) moves it later in a test.
+async function open({ width = 1280, height = 900, storage = {}, waitChart = false, now = "2026-10-17T12:00:00" } = {}) {
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/favicon|fonts\.g/.test(m.text())) errors.push("console: " + m.text()); });
   await page.setViewport({ width, height, isMobile: width < 500, hasTouch: width < 500 });
+  await page.evaluateOnNewDocument((iso) => {
+    const Real = Date; let off = new Real(iso).getTime() - Real.now();
+    class FakeDate extends Real { constructor(...a) { if (a.length) super(...a); else super(Real.now() + off); } static now() { return Real.now() + off; } }
+    globalThis.Date = FakeDate;
+    globalThis.__setNow = (s) => { off = new Real(s).getTime() - Real.now(); };
+  }, now);
   await page.evaluateOnNewDocument((items) => {
     if (sessionStorage.getItem("__seeded")) return;
     for (const [k, v] of Object.entries(items)) localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
@@ -213,6 +221,24 @@ async function sanity() {
     expect(await page.$eval("#chart-panel", (el) => el.hidden), "closes");
     await page.close2();
   });
+  await test("sanity", "N12 chart defaults on first open: 2020 to the latest year, EUR", async () => {
+    const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await page.click("#chart-btn"); await settle(1200);
+    const r = await page.evaluate(() => ({ from: document.getElementById("chart-from").value, to: document.getElementById("chart-to").value,
+      last: [...document.getElementById("chart-to").options].pop().value, cur: document.getElementById("chart-cur").value }));
+    expect(r.from === "2020" && r.to === r.last && r.cur === "EUR", `got ${r.from}–${r.to} ${r.cur}, latest year ${r.last}`);
+    await page.close2();
+  });
+  await test("sanity", "N13 'Reading today' date moves to today on opening and on returning to the app", async () => {
+    const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-10") });
+    expect((await page.$eval("#cur-date", (el) => el.value)) === "2026-10-17", "opening: date is today");
+    expect((await text(page, "#cur-date-text")).startsWith("17 октомври 2026"), "opening: date text is today");
+    expect((await page.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-forecast-v1"))["cur-date"])) === "2026-10-17", "today's date is saved");
+    expect((await page.$eval("#cur-reading", (el) => el.value)) === "2475", "the reading is kept");
+    await page.evaluate(() => { __setNow("2026-10-19T08:00:00"); document.dispatchEvent(new Event("visibilitychange")); });
+    expect((await text(page, "#cur-date-text")).startsWith("19 октомври 2026"), "returning on another day: date is today");
+    await page.close2();
+  });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.click("#chart-btn"); await settle(1200);
@@ -251,7 +277,7 @@ async function sanity() {
 // ======================================================================
 async function regression() {
   await test("regression", "R1 September 2026 bill = 13,61 € (2429 → 2445)", async () => {
-    const page = await open({ storage: readings(2429, 2445, "2026-09-01", "2026-10-01") });
+    const page = await open({ storage: readings(2429, 2445, "2026-09-01", "2026-10-01"), now: "2026-10-01T12:00:00" });
     await settle(800);
     near(num(await text(page, "#t-tot-fc")), 13.61, 0.005, "total");
     near(num(await text(page, "#t-net-fc")), 11.34, 0.005, "before VAT");
@@ -259,7 +285,7 @@ async function regression() {
     await page.close2();
   });
   await test("regression", "R2 January 2026 bill = 202,64 € ±1 ct (1620 → 1901)", async () => {
-    const page = await open({ storage: readings(1620, 1901, "2026-01-01", "2026-02-01") });
+    const page = await open({ storage: readings(1620, 1901, "2026-01-01", "2026-02-01"), now: "2026-02-01T12:00:00" });
     await settle(800);
     near(num(await text(page, "#t-tot-fc")), 202.64, 0.011, "total");
     expect((await text(page, "#t-energy-label")).includes("10,74"), "kWh/m³ 10,74");
@@ -273,7 +299,7 @@ async function regression() {
     await page.close2();
   });
   await test("regression", "R4 months up to November 2024 add the 1,60 € supply fee", async () => {
-    const page = await open({ storage: readings(1000, 1100, "2024-10-01", "2024-11-01") });
+    const page = await open({ storage: readings(1000, 1100, "2024-10-01", "2024-11-01"), now: "2024-11-01T12:00:00" });
     await settle(800);
     expect(!(await page.$eval("#t-fee-row", (el) => el.hidden)), "fee row shown");
     near(num(await text(page, "#t-fee-fc")), 1.60, 0.005, "fee");

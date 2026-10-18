@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.3",
+      "date": "2026-10-18",
+      "bg": [
+        "При първо отваряне графиката с архивните цени започва от 2020 г.",
+        "Датата на „Показание днес“ се сменя сама на днешната при отваряне на приложението."
+      ],
+      "en": [
+        "When first opened, the price archive chart starts from 2020.",
+        "The date of “Reading today” changes to today by itself when you open the app."
+      ]
+    },
+    {
       "version": "1.9.2",
       "date": "2026-10-18",
       "bg": [

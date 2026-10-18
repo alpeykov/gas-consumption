@@ -753,6 +753,8 @@
   const pad2 = (n) => String(n).padStart(2, "0");
   const today = new Date();
   const todayIso = today.getFullYear() + "-" + pad2(today.getMonth() + 1) + "-" + pad2(today.getDate());
+  // Phones keep the app open for days, so "today" is worked out again whenever it is needed.
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); };
   const monthStartIso = today.getFullYear() + "-" + pad2(today.getMonth() + 1) + "-01";
   document.getElementById("start-date").value = monthStartIso;
   document.getElementById("cur-date").value = todayIso;
@@ -1077,6 +1079,8 @@
   ids.forEach((id) => { if (id !== "region" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
   // 10.55 was the old fixed default; switch those users to the automatic Bulgartransgaz value.
   if ($("factor").value === "10.55") $("factor").value = "";
+  // "Показание днес" is dated today: opening the app on another day moves the date to today.
+  if ($("cur-date").value !== todayStr()) $("cur-date").value = todayStr();
 
   const num = (v, min, max = min) => v.toLocaleString(locale(), { minimumFractionDigits: min, maximumFractionDigits: max });
   // Bulgarian writes "26,17 €"; English "€26.17".
@@ -1345,7 +1349,13 @@
   $("start-date").addEventListener("change", () => { if (isGcvStale()) refreshGcv(); historyRequested = false; render(); });
   $("refresh").addEventListener("click", () => { refreshPrices(); refreshGcv(); });
   $("today-btn").addEventListener("click", () => {
-    $("cur-date").value = todayIso;
+    $("cur-date").value = todayStr();
+    $("cur-date").dispatchEvent(new Event("input"));
+  });
+  // Coming back to an app left open since another day counts as opening it: the date moves to today.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || $("cur-date").value === todayStr()) return;
+    $("cur-date").value = todayStr();
     $("cur-date").dispatchEvent(new Event("input"));
   });
   // Desktop browsers only open the calendar from its own icon; open it on any click of the date field.
@@ -1443,7 +1453,7 @@
       sel.value = String(years.includes(val) ? val : fallback);
     };
     const last = years[years.length - 1];
-    fill($("chart-from"), saved.from, years.includes(2018) ? 2018 : years[0]);
+    fill($("chart-from"), saved.from, years.includes(2020) ? 2020 : years[0]);
     fill($("chart-to"), saved.to, last);
   }
   const niceStep = (range) => {
