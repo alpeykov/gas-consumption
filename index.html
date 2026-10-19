@@ -95,15 +95,15 @@
     display: grid; gap: 20px;
   }
   /* Phones: one column, tariff settings after the readings (DOM order).
-     Computers: tariff settings in a right column, with a rule between the bill and it. */
+     Computers: tariff settings in a left column, with a rule between it and the bill. */
   .main { display: grid; gap: 20px; min-width: 0; }
   @media (min-width: 821px) {
     .main {
-      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-columns: 320px minmax(0, 1fr);
       grid-template-rows: auto auto 1fr;
-      grid-template-areas: "bill tariff" "readings tariff" "breakdown tariff";
+      grid-template-areas: "tariff bill" "tariff readings" "tariff breakdown";
       column-gap: 57px; align-items: start;
-      background: linear-gradient(var(--rule), var(--rule)) no-repeat right 348px top 0 / 1px 100%;
+      background: linear-gradient(var(--rule), var(--rule)) no-repeat 348px 0 / 1px 100%;
     }
     .main > .bill { grid-area: bill; }
     .main > .readings { grid-area: readings; }
