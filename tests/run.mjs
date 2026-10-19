@@ -270,6 +270,25 @@ async function sanity() {
     expect((await val("cur-reading")) === "2480" && (await val("start-reading")) === "2445", "Undo swaps back");
     await page.close2();
   });
+  await test("sanity", "N16 help says the app is independent and links to the privacy policy (bg, en, phone)", async () => {
+    for (const lang of ["bg", "en"]) {
+      const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang } });
+      await page.click("#help-btn");
+      const legal = await text(page, "#about .about-legal");
+      expect(lang === "bg" ? /не е свързано с Овергаз/.test(legal) : /not affiliated with Overgas/.test(legal), lang + " independence note: " + legal);
+      expect((await page.$eval("#about .about-legal a", (a) => a.getAttribute("href"))) === "privacy.html", lang + " privacy link");
+      await page.close2();
+    }
+    const page = await open({ width: 320 });
+    await page.goto(URL + "privacy.html", { waitUntil: "networkidle0" });
+    const r = await page.evaluate(() => ({ bg: !!document.querySelector('#bg[lang="bg"]'), en: !!document.querySelector('#en[lang="en"]'),
+      txt: document.body.innerText, wide: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 }));
+    expect(r.bg && r.en, "privacy page has Bulgarian and English sections");
+    expect(/не събира/.test(r.txt) && /does not collect/.test(r.txt), "privacy page states no data is collected");
+    expect(!r.wide, "privacy page scrolls sideways at 320 px");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.click("#chart-btn"); await settle(1200);

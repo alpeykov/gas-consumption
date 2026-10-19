@@ -1,5 +1,5 @@
 // Bump VERSION on every release: a changed sw.js is what makes installed apps show "Update available".
-const VERSION = "1.9.6";
+const VERSION = "1.9.7";
 const CACHE = "gas-bill-" + VERSION;
 const SHELL = [
   "./",
@@ -11,6 +11,7 @@ const SHELL = [
   "./icons/apple-touch-icon-v2.png",
   "./icons/favicon-64-v2.png",
   "./icons/bill-new-reading.png",
+  "./privacy.html",
   "./data/prices.json",
   "./data/gcv.json",
   "./data/price-history.json",
