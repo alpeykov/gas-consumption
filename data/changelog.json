@@ -2,6 +2,22 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.4",
+      "date": "2026-10-19",
+      "bg": [
+        "Бутон × във всяко показание го изчиства.",
+        "Бутон ⇅ между двете показания ги разменя (само стойностите, датите остават).",
+        "Изчистването и размяната могат да се върнат с „Върни“.",
+        "Нов текст: „Прогнозата е базирана на същото дневно потребление до края на месеца.“"
+      ],
+      "en": [
+        "An × in each reading clears it.",
+        "A ⇅ button between the two readings swaps them (values only; the dates stay).",
+        "Clearing and swapping can be undone with “Undo”.",
+        "Reworded the forecast note in Bulgarian."
+      ]
+    },
+    {
       "version": "1.9.3",
       "date": "2026-10-18",
       "bg": [

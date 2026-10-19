@@ -1,5 +1,5 @@
 // Bump VERSION on every release: a changed sw.js is what makes installed apps show "Update available".
-const VERSION = "1.9.3";
+const VERSION = "1.9.4";
 const CACHE = "gas-bill-" + VERSION;
 const SHELL = [
   "./",

@@ -193,6 +193,7 @@ async function sanity() {
     expect(num(await text(page, "#t-tot-fc")) === 51.90, "totals still calculated while closed");
     await page.click("#breakdown-toggle");
     expect(await shown(), "opens");
+    expect((await text(page, "#t-price-line")).endsWith("Прогнозата е базирана на същото дневно потребление до края на месеца."), "forecast note wording");
     expect((await page.$eval("#breakdown-toggle", (b) => b.getAttribute("aria-expanded"))) === "true", "aria-expanded true");
     await page.reload({ waitUntil: "networkidle0" });
     expect(await shown(), "stays open after reload");
@@ -237,6 +238,36 @@ async function sanity() {
     expect((await page.$eval("#cur-reading", (el) => el.value)) === "2475", "the reading is kept");
     await page.evaluate(() => { __setNow("2026-10-19T08:00:00"); document.dispatchEvent(new Event("visibilitychange")); });
     expect((await text(page, "#cur-date-text")).startsWith("19 октомври 2026"), "returning on another day: date is today");
+    await page.close2();
+  });
+  await test("sanity", "N14 × clears only its own reading; Undo brings it back", async () => {
+    const page = await open({ storage: readings(2445, 2480, "2026-10-01", "2026-10-17") });
+    const val = (id) => page.$eval("#" + id, (el) => el.value);
+    const clrHidden = (id) => page.$eval(`.clr[data-clear="${id}"]`, (b) => b.hidden);
+    expect(!(await clrHidden("cur-reading")) && !(await clrHidden("start-reading")), "× shown when there is a number");
+    await page.click('.clr[data-clear="cur-reading"]');
+    expect((await val("cur-reading")) === "" && (await val("start-reading")) === "2445", "today's reading cleared, the bill reading kept");
+    expect((await val("cur-date")) === "2026-10-17" && (await val("start-date")) === "2026-10-01", "dates kept");
+    expect(await page.evaluate(() => document.activeElement.id === "cur-reading"), "cursor in the cleared field");
+    expect(await clrHidden("cur-reading"), "× hidden on an empty field");
+    expect((await page.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-forecast-v1"))["cur-reading"])) === "", "clearing is saved");
+    await page.click("#toast-undo");
+    expect((await val("cur-reading")) === "2480", "Undo restores the reading");
+    await page.click('.clr[data-clear="start-reading"]');
+    expect((await val("start-reading")) === "" && (await val("cur-reading")) === "2480", "bill reading cleared, today's kept");
+    await page.close2();
+  });
+  await test("sanity", "N15 ⇅ swaps only the two reading values; Undo swaps back", async () => {
+    const page = await open({ storage: readings(2445, 2480, "2026-10-01", "2026-10-17") });
+    const val = (id) => page.$eval("#" + id, (el) => el.value);
+    await page.click("#swap-btn");
+    expect((await val("cur-reading")) === "2445" && (await val("start-reading")) === "2480", "values swapped");
+    expect((await val("cur-date")) === "2026-10-17" && (await val("start-date")) === "2026-10-01", "dates not swapped");
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-forecast-v1")));
+    expect(saved["cur-reading"] === "2445" && saved["start-reading"] === "2480", "swap is saved");
+    expect((await text(page, "#toast")).includes("разменени"), "note says swapped");
+    await page.click("#toast-undo");
+    expect((await val("cur-reading")) === "2480" && (await val("start-reading")) === "2445", "Undo swaps back");
     await page.close2();
   });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
@@ -541,6 +572,25 @@ async function ui() {
       await page.click("#about-close"); expect(await hidden("#about"), "help closes with ×");
       expect(await hidden("#bill-example"), "bill example closes with the help");
       expect(!page.errors.length, page.errors.join(" | "));
+      await page.close2();
+    });
+    await test("ui", `U5 × inside each meter, ⇅ between the two cards without covering anything (${dev})`, async () => {
+      const page = await open({ width: w, storage: readings(2445, 2480, "2026-10-01", "2026-10-17") });
+      const r = await page.evaluate(() => {
+        const box = (el) => { const b = el.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height }; };
+        const [c1, c2] = [...document.querySelectorAll(".reading")].map(box);
+        const sw = box(document.getElementById("swap-btn"));
+        const clrInDial = [...document.querySelectorAll(".clr")].every((b) => { const d = box(b.closest(".dial")), x = box(b); return x.left >= d.left && x.right <= d.right && x.top >= d.top && x.bottom <= d.bottom; });
+        const hits = [...document.querySelectorAll(".reading input, .reading .date-field, .reading button, .reading .label")].filter((el) => {
+          const b = box(el); return b.width && !(b.right <= sw.left || b.left >= sw.right || b.bottom <= sw.top || b.top >= sw.bottom);
+        }).map((el) => el.id || el.className);
+        const cx = sw.left + sw.width / 2, cy = sw.top + sw.height / 2;
+        return { clrInDial, hits, c1, c2, cx, cy };
+      });
+      expect(r.clrInDial, "× is inside its meter field");
+      expect(!r.hits.length, "⇅ covers: " + r.hits.join(", "));
+      if (dev === "desktop") expect(r.cx > r.c1.right - 30 && r.cx < r.c2.left + 30, "⇅ sits between the cards side by side");
+      else expect(Math.abs(r.cy - (r.c1.bottom + r.c2.top) / 2) < 3, "⇅ sits centred between the stacked cards");
       await page.close2();
     });
     await test("ui", `U4 header controls sit on one line, '?' last (${dev})`, async () => {

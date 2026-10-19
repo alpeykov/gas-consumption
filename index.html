@@ -215,6 +215,26 @@
     letter-spacing: 0.12em; font-variant-numeric: tabular-nums;
   }
   .dial .unit { color: var(--dial-red); font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; }
+  /* × clears just that reading; shown only when the field has a number. */
+  .clr {
+    flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; cursor: pointer;
+    background: color-mix(in srgb, var(--dial-fg) 14%, transparent); color: var(--dial-fg);
+  }
+  .clr svg { width: 16px; height: 16px; }
+  .clr:focus-visible, .swap-btn:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+  /* ⇄ swaps the two readings (values only); it sits on the line between the two cards. */
+  .readings { position: relative; }
+  .swap-btn {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
+    width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+    background: var(--panel); color: var(--flame); border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  .swap-btn svg { width: 18px; height: 18px; transform: rotate(90deg); }
+  @media (max-width: 460px) {
+    /* Cards stacked: the button is a zero-height row centred in the gap between them. */
+    .swap-btn { position: relative; left: auto; top: auto; transform: none; justify-self: center; margin: -20px 0; }
+    .swap-btn svg { transform: none; }
+  }
   input:focus-visible, select:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   /* The date shows as text in the app's language; the browser's date input sits invisibly on top to open its picker. */
   .date-row { display: flex; gap: 8px; }
@@ -424,9 +444,14 @@
   .key { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
   .key-solid, .key-dash { flex: none; }
 
+  .toast-undo {
+    font: inherit; font-weight: 700; color: inherit; background: transparent; text-decoration: underline;
+    border: 0; padding: 4px 6px; margin-left: 6px; min-height: 28px; cursor: pointer;
+  }
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30;
     background: var(--tip-bg); color: var(--tip-fg); border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 0.9rem;
+    width: max-content; max-width: calc(100vw - 32px);
   }
 
   /* Install button (phones, browser only) */
@@ -646,16 +671,17 @@
   <section class="readings">
     <div class="reading">
       <span class="label" data-i18n="readingToday">Показание днес</span>
-      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingTodayAria" aria-label="Текущо показание на уреда"><span class="unit">m³</span></div>
+      <div class="dial"><input id="cur-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingTodayAria" aria-label="Текущо показание на уреда"><span class="unit">m³</span><button type="button" class="clr" data-clear="cur-reading" data-i18n-aria="clearToday" aria-label="Изчисти показанието днес" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button></div>
       <div class="date-row">
         <label class="date-field"><span class="date-cal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="date-text" id="cur-date-text"></span>
           <input class="date-native" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание"></label>
         <button type="button" class="today-btn" id="today-btn" data-i18n="today">Днес</button>
       </div>
     </div>
+    <button type="button" class="swap-btn" id="swap-btn" data-i18n-aria="swapReadings" aria-label="Размени двете показания"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v15M8 4l-4 4M8 4l4 4M16 20V5M16 20l-4-4M16 20l4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <div class="reading">
       <span class="label" data-i18n="readingLast">Показание от последната сметка</span>
-      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingLastAria" aria-label="Показание на уреда от последната сметка"><span class="unit">m³</span></div>
+      <div class="dial"><input id="start-reading" type="number" inputmode="decimal" step="any" value="" placeholder="0000" data-i18n-aria="readingLastAria" aria-label="Показание на уреда от последната сметка"><span class="unit">m³</span><button type="button" class="clr" data-clear="start-reading" data-i18n-aria="clearLast" aria-label="Изчисти показанието от сметката" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button></div>
       <div class="date-row">
         <label class="date-field"><span class="date-cal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="date-text" id="start-date-text"></span>
           <input class="date-native" id="start-date" type="date" value="2026-10-01" data-i18n-aria="readingLastDate" aria-label="Дата на показанието от сметката"></label>
@@ -841,6 +867,12 @@
       readingLastDate: "Дата на показанието от сметката",
       readingToday: "Показание днес",
       readingTodayAria: "Текущо показание на уреда",
+      clearToday: "Изчисти показанието днес",
+      clearLast: "Изчисти показанието от сметката",
+      swapReadings: "Размени двете показания",
+      cleared: "Показанието е изчистено.",
+      swapped: "Показанията са разменени.",
+      undo: "Върни",
       readingTodayDate: "Дата на текущото показание",
       howH: "Как се получава сумата",
       soFar: "Досега",
@@ -880,7 +912,7 @@
       msgDate: "Днешната дата трябва да е след датата на сметката.",
       dayOf: "Ден {e} от {p} от периода на сметката",
       perDay: "{m3}/ден · {money}/ден",
-      priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата приема същото дневно потребление до края на месеца.",
+      priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата е базирана на същото дневно потребление до края на месеца.",
     },
     en: {
       docTitle: "Gas Consumption",
@@ -949,6 +981,12 @@
       readingLastDate: "Date of last bill reading",
       readingToday: "Reading today",
       readingTodayAria: "Current meter reading",
+      clearToday: "Clear today's reading",
+      clearLast: "Clear the last bill reading",
+      swapReadings: "Swap the two readings",
+      cleared: "Reading cleared.",
+      swapped: "Readings swapped.",
+      undo: "Undo",
       readingTodayDate: "Date of current reading",
       howH: "How it adds up",
       soFar: "So far",
@@ -1230,6 +1268,7 @@
   }
 
   function render() {
+    document.querySelectorAll(".clr").forEach((b) => { b.hidden = !$(b.dataset.clear).value; });
     const { price, fee } = renderTariff();
     renderGcv();
     const v = {
@@ -1579,10 +1618,34 @@
   // ---- Share: the phone's share menu, otherwise copy the link ----
   const APP_URL = "https://alpeykov.github.io/gas-consumption/";
   let toastTimer;
-  const toast = (msg) => {
+  // An optional undo shows as a button in the note and keeps it up a little longer.
+  const toast = (msg, undo) => {
     $("toast").textContent = msg; $("toast").hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, 2200);
+    if (undo) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "toast-undo"; b.id = "toast-undo"; b.textContent = t("undo");
+      b.addEventListener("click", () => { undo(); $("toast").hidden = true; });
+      $("toast").append(" ", b);
+    }
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, undo ? 5000 : 2200);
   };
+  // Clearing or swapping readings can be undone for a few seconds.
+  const READING_IDS = ["cur-reading", "start-reading"];
+  const setReadings = (vals) => {
+    READING_IDS.forEach((id, i) => { $(id).value = vals[i]; });
+    $("cur-reading").dispatchEvent(new Event("input"));
+  };
+  const readingsNow = () => READING_IDS.map((id) => $(id).value);
+  document.querySelectorAll(".clr").forEach((b) => b.addEventListener("click", () => {
+    const before = readingsNow(), field = $(b.dataset.clear);
+    field.value = ""; field.dispatchEvent(new Event("input")); field.focus();
+    toast(t("cleared"), () => setReadings(before));
+  }));
+  $("swap-btn").addEventListener("click", () => {
+    const before = readingsNow();
+    setReadings([before[1], before[0]]);
+    toast(t("swapped"), () => setReadings(before));
+  });
   $("share-btn").addEventListener("click", async () => {
     const data = { title: t("docTitle"), text: t("shareText"), url: APP_URL };
     if (navigator.share) {
