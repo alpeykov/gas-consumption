@@ -528,14 +528,20 @@ async function ui() {
     });
 
     // ---- UI ----
-    await test("ui", `U1 layout order is right (${dev})`, async () => {
+    await test("ui", `U1 layout order is right; tariff on the right on computers (${dev})`, async () => {
       const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
       const box = await page.evaluate(() => Object.fromEntries([".bill", ".readings", ".tariff", ".breakdown"].map((s) => {
         const r = document.querySelector(s).getBoundingClientRect(); return [s, { x: Math.round(r.left), y: Math.round(r.top) }];
       })));
       if (dev === "desktop") {
-        expect(box[".tariff"].x < box[".bill"].x, "tariff in the left column");
-        expect(box[".bill"].y < box[".readings"].y && box[".readings"].y < box[".breakdown"].y, "bill → readings → breakdown on the right");
+        expect(box[".tariff"].x > box[".bill"].x, "tariff in the right column");
+        const rule = await page.evaluate(() => {
+          const m = document.querySelector(".main"), b = document.querySelector(".bill").getBoundingClientRect(), t = document.querySelector(".tariff").getBoundingClientRect();
+          const x = m.getBoundingClientRect().right - parseFloat(getComputedStyle(m).backgroundPositionX.match(/[\d.]+px/)[0]);
+          return { x, gapL: b.right, gapR: t.left };
+        });
+        expect(rule.x > rule.gapL + 10 && rule.x < rule.gapR - 10, `divider line in the gap: ${Math.round(rule.x)} between ${Math.round(rule.gapL)} and ${Math.round(rule.gapR)}`);
+        expect(box[".bill"].y < box[".readings"].y && box[".readings"].y < box[".breakdown"].y, "bill → readings → breakdown on the left");
       } else {
         const ys = [".bill", ".readings", ".tariff", ".breakdown"].map((s) => box[s].y);
         expect(ys.every((y, i) => i === 0 || y > ys[i - 1]), "phone order: bill → readings → tariff → breakdown");
