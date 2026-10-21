@@ -289,6 +289,21 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N17 help has a Send feedback email with subject, version and language (bg, en)", async () => {
+    for (const lang of ["bg", "en"]) {
+      const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang } });
+      await page.click("#help-btn");
+      expect((await text(page, "#feedback")) === (lang === "bg" ? "Изпрати отзив" : "Send feedback"), lang + " button text");
+      // Keep the test page from following the mailto: link.
+      await page.evaluate(() => document.addEventListener("click", (e) => e.preventDefault()));
+      await page.click("#feedback");
+      const href = decodeURIComponent(await page.$eval("#feedback", (a) => a.getAttribute("href")));
+      expect(href.startsWith("mailto:aleksandar.peykov@gmail.com?subject=Gas Consumption"), lang + " address and subject: " + href.slice(0, 80));
+      expect(href.includes(" · " + lang + " · ") && /browser|installed web app/.test(href), lang + " body carries where and language");
+      expect((await text(page, "#toast")).includes("aleksandar.peykov@gmail.com"), lang + " note names the address");
+      await page.close2();
+    }
+  });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.click("#chart-btn"); await settle(1200);

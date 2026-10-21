@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.8",
+      "date": "2026-10-21",
+      "bg": [
+        "В „?“ има бутон „Изпрати отзив“ – отваря имейл, в който можете да напишете какво да подобрим."
+      ],
+      "en": [
+        "The “?” help has a “Send feedback” button that opens an email to tell us what to improve."
+      ]
+    },
+    {
       "version": "1.9.7",
       "date": "2026-10-19",
       "bg": [
