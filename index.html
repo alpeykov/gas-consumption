@@ -13,7 +13,7 @@
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
 <meta name="twitter:card" content="summary">
-<meta name="theme-color" content="#0f141a">
+<meta name="theme-color" content="#0a1a33">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64-v2.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192-v2.png">
@@ -26,7 +26,7 @@
   // Apply the saved theme before first paint so the page never flashes the wrong colours.
   (function () {
     var themes = { dark: "#0f141a", light: "#eef1f4", blue: "#0a1a33", contrast: "#000000" };
-    var t = "dark";
+    var t = "blue";
     try { var s = localStorage.getItem("gas-bill-theme"); if (themes[s]) t = s; } catch (e) {}
     document.documentElement.setAttribute("data-theme", t);
     document.querySelector('meta[name="theme-color"]').setAttribute("content", themes[t]);
@@ -698,9 +698,9 @@
       </div>
       <div class="menu-row"><span class="menu-label" data-i18n="themeLabel">Тема</span>
         <div class="themes" role="group" data-i18n-aria="themeLabel" aria-label="Тема">
-          <button type="button" data-theme-choice="dark" data-i18n-aria="themeDark" data-i18n-title="themeDark" aria-label="Тъмна"><span style="--s-bg:#0f141a;--s-dot:#6d9dff"></span></button>
-          <button type="button" data-theme-choice="light" data-i18n-aria="themeLight" data-i18n-title="themeLight" aria-label="Светла"><span style="--s-bg:#eef1f4;--s-dot:#1f5fd6"></span></button>
           <button type="button" data-theme-choice="blue" data-i18n-aria="themeBlue" data-i18n-title="themeBlue" aria-label="Синя"><span style="--s-bg:#0a1a33;--s-dot:#4cc3ff"></span></button>
+          <button type="button" data-theme-choice="light" data-i18n-aria="themeLight" data-i18n-title="themeLight" aria-label="Светла"><span style="--s-bg:#eef1f4;--s-dot:#1f5fd6"></span></button>
+          <button type="button" data-theme-choice="dark" data-i18n-aria="themeDark" data-i18n-title="themeDark" aria-label="Тъмна"><span style="--s-bg:#0f141a;--s-dot:#6d9dff"></span></button>
           <button type="button" data-theme-choice="contrast" data-i18n-aria="themeContrast" data-i18n-title="themeContrast" aria-label="Висок контраст"><span style="--s-bg:#000000;--s-dot:#ffd400"></span></button>
         </div>
       </div>

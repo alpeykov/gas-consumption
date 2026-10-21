@@ -177,8 +177,11 @@ async function sanity() {
   });
   await test("sanity", "N4 themes switch and are remembered", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
-    expect((await page.evaluate(() => document.documentElement.dataset.theme)) === "dark", "dark by default");
-    for (const th of ["light", "blue", "contrast", "dark"]) {
+    expect((await page.evaluate(() => document.documentElement.dataset.theme)) === "blue", "dark blue by default");
+    const order = await page.$$eval(".themes button", (b) => b.map((x) => x.dataset.themeChoice).join(","));
+    expect(order === "blue,light,dark,contrast", "order " + order);
+    expect((await page.$eval('.themes button[data-theme-choice="blue"]', (b) => b.getAttribute("aria-pressed"))) === "true", "dark blue dot marked");
+    for (const th of ["light", "dark", "contrast", "blue"]) {
       await page.click(`.themes button[data-theme-choice="${th}"]`);
       expect((await page.evaluate(() => document.documentElement.dataset.theme)) === th, `${th} applied`);
     }

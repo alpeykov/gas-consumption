@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.0.3",
+      "date": "2026-10-21",
+      "bg": [
+        "Тъмносинята тема е първа и е по подразбиране за нови потребители. Избраната тема се запазва."
+      ],
+      "en": [
+        "The dark blue theme comes first and is the default for new users. A theme you chose stays as it is."
+      ]
+    },
+    {
       "version": "2.0.2",
       "date": "2026-10-21",
       "bg": [
