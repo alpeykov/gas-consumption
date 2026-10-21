@@ -376,6 +376,17 @@ async function sanity() {
       await p2.close2();
     }
   });
+  await test("sanity", "N22 'Tariff settings' under the title opens the menu with the tariff settings expanded", async () => {
+    const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    expect((await text(page, "#head-tariff")) === "Тарифни настройки", "link text");
+    await page.click("#head-tariff");
+    expect(!(await page.$eval("#menu", (e) => e.hidden)), "menu opens");
+    expect((await page.$eval("#tariff-toggle", (e) => e.getAttribute("aria-expanded"))) === "true", "tariff settings expanded");
+    expect(await page.$eval("#region", (e) => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), "region choice visible");
+    await page.click("#tariff-toggle");
+    expect((await page.$eval("#tariff-toggle", (e) => e.getAttribute("aria-expanded"))) === "false", "Hide still collapses it in the menu");
+    await page.close2();
+  });
   await test("sanity", "N21 ☰ menu slides in and out", async () => {
     const page = await open({ width: 390, motion: true, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     const x = () => page.$eval("#menu", (m) => m.hidden ? "hidden" : Math.round(m.getBoundingClientRect().left));

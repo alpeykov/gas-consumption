@@ -98,6 +98,11 @@
   .main { display: grid; gap: 20px; min-width: 0; }
   header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
   header p { margin: 4px 0 0; color: var(--muted); }
+  .head-link {
+    font: inherit; color: var(--flame); font-weight: 600; background: none; border: 0; padding: 0;
+    text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+  }
+  .head-link:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; border-radius: 2px; }
   .label {
     font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--muted); font-weight: 600;
@@ -593,7 +598,7 @@
     </button>
     <div class="head-text">
       <h1 data-i18n="title">Консумация на газ</h1>
-      <p id="head-price">Битова тарифа на Овергаз · показания в m³ · цени в евро</p>
+      <p><span id="head-price">Битова тарифа на Овергаз · показания в m³ · цени в евро</span> · <button type="button" class="head-link" id="head-tariff" aria-controls="menu" data-i18n="tariffH">Тарифни настройки</button></p>
     </div>
     <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
     <div class="ios-help" id="about" role="note" hidden>
@@ -1805,6 +1810,12 @@
   $("menu-btn").addEventListener("click", () => setMenu(!menuOpen()));
   $("menu-close").addEventListener("click", () => { setMenu(false); $("menu-btn").focus(); });
   $("menu-scrim").addEventListener("click", () => setMenu(false));
+  // "Tariff settings" under the title: the menu with the tariff settings expanded.
+  $("head-tariff").addEventListener("click", () => {
+    setMenu(true);
+    if (!tariffOpen) $("tariff-toggle").click();
+    $("menu").scrollTop = 0;
+  });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
   // Actions close the menu and show what they opened; language and theme keep it open.
   ["chart-btn", "share-btn", "backup-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
