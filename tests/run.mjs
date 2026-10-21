@@ -61,6 +61,15 @@ async function open({ width = 1280, height = 900, storage = {}, waitChart = fals
     sessionStorage.setItem("__seeded", "1");
   }, storage);
   await page.goto(URL, { waitUntil: "networkidle0" });
+  const click = page.click.bind(page);
+  page.click = async (sel, o) => {
+    await page.evaluate((s) => {
+      const el = document.querySelector(s), menu = document.getElementById("menu");
+      if (!el || !menu || el.closest("#menu-btn")) return;
+      if (menu.contains(el) === menu.hidden) document.getElementById("menu-btn").click();
+    }, sel);
+    return click(sel, o);
+  };
   page.errors = errors;
   page.close2 = () => ctx.close();
   return page;
@@ -120,13 +129,15 @@ async function smoke() {
       await page.close2();
     });
   }
-  await test("smoke", "S6 new visitor: empty readings and the help opens once", async () => {
+  await test("smoke", "S6 new visitor: the guide opens once, then empty readings", async () => {
     const page = await open({ width: 390 });
-    expect(!(await page.$eval("#about", (el) => el.hidden)), "help is open on the first visit");
-    expect((await page.$eval("#cur-reading", (el) => el.value)) === "", "today's reading is empty");
+    expect(!(await page.$eval("#guide", (el) => el.hidden)), "guide is open on the first visit");
+    expect(await page.$eval("#about", (el) => el.hidden), "help stays closed");
+    await page.click("#g-skip");
+    expect((await page.$eval("#cur-reading", (el) => el.value)) === "", "today's reading is empty after the guide");
     expect((await text(page, "#out-days")).length > 10, "explains what to enter");
     await page.reload({ waitUntil: "networkidle0" });
-    expect(await page.$eval("#about", (el) => el.hidden), "help stays closed on the second visit");
+    expect(await page.$eval("#guide", (el) => el.hidden), "guide stays closed on the second visit");
     await page.close2();
   });
 }
@@ -307,7 +318,7 @@ async function sanity() {
   });
   await test("sanity", "N18 backup saves readings and settings to a file; restore loads them back, with Undo", async () => {
     const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-theme": "blue", "gas-bill-prices-v1": "{}" } });
-    expect(await page.$eval("#backup-btn", (b) => b.nextElementSibling.id === "install-btn" && b.previousElementSibling.id === "share-btn"), "backup sits between share and ?");
+    expect(await page.$eval("#backup-btn", (b) => b.previousElementSibling.id === "share-btn"), "backup sits after share in the menu");
     await page.click("#backup-btn");
     expect(!(await page.$eval("#backup", (e) => e.hidden)), "backup panel opens");
     // Catch the download instead of saving it.
@@ -336,6 +347,33 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     fs.rmSync(dir, { recursive: true, force: true });
     await page.close2();
+  });
+  await test("sanity", "N19 guide: four steps with 163 and 127 that are never saved; replay puts own readings back", async () => {
+    const page = await open({ width: 390 });
+    const val = (id) => page.$eval("#" + id, (el) => el.value);
+    const savedCur = () => page.evaluate(() => (JSON.parse(localStorage.getItem("gas-bill-forecast-v1") || "{}"))["cur-reading"] || "");
+    expect((await text(page, "#g-title")).startsWith("1"), "step 1");
+    expect((await val("cur-reading")) === "163" && (await val("start-reading")) === "", "step 1 fills 163");
+    await page.click("#g-next");
+    expect((await val("start-reading")) === "127", "step 2 fills 127");
+    await page.click("#g-next");
+    expect((await text(page, "#g-text")).includes("36 m³") && (await text(page, "#out-fc-eur")) !== "–", "step 3 shows the bill for 36 m³");
+    expect((await savedCur()) === "", "example readings are not saved");
+    await page.click("#g-next");
+    expect((await text(page, "#g-next")) === "Започни" && await page.$eval("#g-skip", (e) => e.hidden), "last step: Start, no Skip");
+    await page.click("#g-next");
+    expect(await page.$eval("#guide", (e) => e.hidden), "Start closes the guide");
+    expect((await val("cur-reading")) === "" && (await val("start-reading")) === "", "readings are empty again");
+    await page.close2();
+    for (const from of ["help", "menu"]) {
+      const p2 = await open({ width: 390, storage: readings(2445, 2480, "2026-10-01", "2026-10-17") });
+      if (from === "help") { await p2.click("#help-btn"); await p2.click("#guide-show"); } else await p2.click("#menu-guide");
+      expect(!(await p2.$eval("#guide", (e) => e.hidden)) && (await p2.$eval("#cur-reading", (e) => e.value)) === "163", from + ": guide replays with 163");
+      await p2.keyboard.press("Escape");
+      expect((await p2.$eval("#cur-reading", (e) => e.value)) === "2480" && (await p2.$eval("#start-reading", (e) => e.value)) === "2445", from + ": own readings are back");
+      expect(!p2.errors.length, p2.errors.join(" | "));
+      await p2.close2();
+    }
   });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
@@ -433,17 +471,10 @@ async function regression() {
     expect((await page.$eval("#region", (s) => s.value)) === "Овергаз Мрежи", "stored value stays Bulgarian");
     await page.close2();
   });
-  await test("regression", "R8 '?' is the last header control", async () => {
+  await test("regression", "R8 the ☰ menu holds every setting and action, in order", async () => {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
-    const last = await page.evaluate(() => {
-      // Order by row (vertical middle), then left to right; controls differ in height.
-      const els = [...document.querySelectorAll(".prefs > :not([hidden])")].map((el) => {
-        const r = el.getBoundingClientRect(); return { id: el.id || el.className, mid: Math.round((r.top + r.height / 2) / 8), left: r.left };
-      });
-      els.sort((a, b) => a.mid - b.mid || a.left - b.left);
-      return els[els.length - 1].id;
-    });
-    expect(last === "help-btn", "last control is " + last);
+    const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes")].map((e) => e.id || e.className).join(","));
+    expect(order === "menu-tariff,lang,themes,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
     await page.close2();
   });
   // Layout matrix: every width × theme × language — nothing may scroll sideways or leave its card.
@@ -470,8 +501,8 @@ async function regression() {
           }
           if (phone) {
             const mid = (el) => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
-            const prefs = [...document.querySelectorAll(".prefs > :not([hidden])")].map(mid);
-            out.headerOneLine = Math.max(...prefs) - Math.min(...prefs) < 4;
+            const m = document.getElementById("menu-btn").getBoundingClientRect(), h = document.querySelector("header h1").getBoundingClientRect();
+            out.headerOneLine = m.top < h.bottom && h.top < m.bottom && m.right <= h.left;
             const sels = [...document.querySelectorAll(".chart-controls select")].map(mid);
             out.chartControlsOneRow = Math.max(...sels) - Math.min(...sels) < 4;
           }
@@ -666,14 +697,27 @@ async function ui() {
       else expect(Math.abs(r.cy - (r.c1.bottom + r.c2.top) / 2) < 3, "⇅ sits centred between the stacked cards");
       await page.close2();
     });
-    await test("ui", `U4 header controls sit on one line, '?' last (${dev})`, async () => {
+    await test("ui", `U4 ☰ opens a panel from the left that fits the screen and closes (${dev})`, async () => {
       const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      await page.click("#menu-btn");
       const r = await page.evaluate(() => {
-        const els = [...document.querySelectorAll(".prefs > :not([hidden])")].map((el) => { const b = el.getBoundingClientRect(); return { id: el.id || el.className, mid: b.top + b.height / 2, left: b.left }; });
-        return { spread: Math.max(...els.map((e) => e.mid)) - Math.min(...els.map((e) => e.mid)), last: els.sort((a, b) => a.left - b.left).pop().id };
+        const m = document.getElementById("menu"), b = m.getBoundingClientRect();
+        return { open: !m.hidden, left: b.left, right: b.right, w: innerWidth, scroll: m.scrollWidth > m.clientWidth + 1,
+          expanded: document.getElementById("menu-btn").getAttribute("aria-expanded"), sum: document.getElementById("menu-tariff-sum").textContent };
       });
-      expect(r.spread < 4, "controls on more than one line");
-      expect(r.last === "help-btn", "last control is " + r.last);
+      expect(r.open && r.expanded === "true", "menu opens");
+      expect(r.left === 0 && r.right < r.w, "menu sits on the left, narrower than the screen");
+      expect(!r.scroll, "menu scrolls sideways");
+      expect(/€\/MWh/.test(r.sum), "tariff line shows the price: " + r.sum);
+      await page.click('.themes button[data-theme-choice="light"]');
+      expect(!(await page.$eval("#menu", (e) => e.hidden)), "theme choice keeps the menu open");
+      await page.keyboard.press("Escape");
+      expect(await page.$eval("#menu", (e) => e.hidden), "Escape closes the menu");
+      await page.click("#chart-btn"); await settle(800);
+      expect(await page.$eval("#menu", (e) => e.hidden) && !(await page.$eval("#chart-panel", (e) => e.hidden)), "an action closes the menu and opens its panel");
+      await page.click("#menu-tariff");
+      expect(await page.$eval("#tariff-toggle", (e) => e.getAttribute("aria-expanded")) === "true", "tariff line opens the tariff settings");
+      expect(!page.errors.length, page.errors.join(" | "));
       await page.close2();
     });
   }

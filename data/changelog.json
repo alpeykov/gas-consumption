@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.0.0",
+      "date": "2026-10-21",
+      "bg": [
+        "Ново меню ☰ горе вляво: тарифни настройки, език, тема, архив на цените, споделяне, резервно копие, помощ и упътване.",
+        "При първо отваряне кратко упътване в 4 стъпки показва с примерни числа (163 и 127) как се получава сметката. Може да се пусне отново от менюто или от „За приложението“."
+      ],
+      "en": [
+        "New ☰ menu at the top left: tariff settings, language, theme, price archive, sharing, backup, help and the guide.",
+        "On first open, a short 4-step guide shows with example numbers (163 and 127) how the bill is worked out. Replay it from the menu or from “About this app”."
+      ]
+    },
+    {
       "version": "1.9.9",
       "date": "2026-10-21",
       "bg": [
