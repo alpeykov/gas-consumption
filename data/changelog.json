@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "1.9.9",
+      "date": "2026-10-21",
+      "bg": [
+        "Нов бутон „Резервно копие“ до „Сподели“: запазва показанията и настройките във файл и ги възстановява – и на нов телефон."
+      ],
+      "en": [
+        "New “Backup” button next to “Share”: saves your readings and settings to a file and restores them – also on a new phone."
+      ]
+    },
+    {
       "version": "1.9.8",
       "date": "2026-10-21",
       "bg": [

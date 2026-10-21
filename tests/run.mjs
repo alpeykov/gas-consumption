@@ -3,6 +3,7 @@
 // Serves the project locally and drives the installed Chrome in headless mode (puppeteer-core).
 import http from "node:http";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
@@ -303,6 +304,38 @@ async function sanity() {
       expect((await text(page, "#toast")).includes("aleksandar.peykov@gmail.com"), lang + " note names the address");
       await page.close2();
     }
+  });
+  await test("sanity", "N18 backup saves readings and settings to a file; restore loads them back, with Undo", async () => {
+    const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-theme": "blue", "gas-bill-prices-v1": "{}" } });
+    expect(await page.$eval("#backup-btn", (b) => b.nextElementSibling.id === "install-btn" && b.previousElementSibling.id === "share-btn"), "backup sits between share and ?");
+    await page.click("#backup-btn");
+    expect(!(await page.$eval("#backup", (e) => e.hidden)), "backup panel opens");
+    // Catch the download instead of saving it.
+    await page.evaluate(() => { HTMLAnchorElement.prototype.click = function () { window.__dl = { name: this.download, href: this.href }; }; });
+    await page.click("#backup-save");
+    const dl = await page.evaluate(async () => ({ name: window.__dl.name, json: await (await fetch(window.__dl.href)).text() }));
+    expect(dl.name === "gas-consumption-backup-2026-10-17.json", "file name " + dl.name);
+    const b = JSON.parse(dl.json);
+    expect(b.app === "gas-consumption" && JSON.parse(b.data["gas-bill-forecast-v1"])["cur-reading"] === "2480" && b.data["gas-bill-theme"] === "blue", "file has readings and theme");
+    expect(!("gas-bill-prices-v1" in b.data), "downloaded price data is left out");
+    expect((await text(page, "#backup-msg")).includes(dl.name), "panel names the saved file");
+    // Change the readings, then restore the file.
+    await page.evaluate(() => { const c = document.getElementById("cur-reading"); c.value = "9999"; c.dispatchEvent(new Event("input")); });
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gas-backup-"));
+    const good = path.join(dir, dl.name); fs.writeFileSync(good, dl.json);
+    const bad = path.join(dir, "other.json"); fs.writeFileSync(bad, JSON.stringify({ hello: 1 }));
+    let [fc] = await Promise.all([page.waitForFileChooser(), page.click("#backup-load")]);
+    await fc.accept([bad]); await settle(500);
+    expect((await text(page, "#backup-msg")).includes("не е копие"), "a wrong file is refused");
+    [fc] = await Promise.all([page.waitForFileChooser(), page.click("#backup-load")]);
+    await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0" }), fc.accept([good])]);
+    expect((await page.$eval("#cur-reading", (e) => e.value)) === "2480", "reading restored");
+    expect((await text(page, "#toast")).includes("възстановени"), "note says restored");
+    await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0" }), page.click("#toast-undo")]);
+    expect((await page.$eval("#cur-reading", (e) => e.value)) === "9999", "Undo brings back the readings from before");
+    expect(!page.errors.length, page.errors.join(" | "));
+    fs.rmSync(dir, { recursive: true, force: true });
+    await page.close2();
   });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });

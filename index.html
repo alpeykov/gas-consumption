@@ -469,7 +469,7 @@
   .about-legal { font-size: 0.85em; opacity: 0.85; }
   .about-legal a { color: inherit; }
   .about-actions { flex-basis: 100%; margin: 2px 0 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .about-actions #check-update-msg { flex: none; font-weight: 600; }
+  .about-actions #check-update-msg, .about-actions #backup-msg { flex: none; font-weight: 600; }
   .ios-help .about-actions button {
     font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--flame); opacity: 1;
     background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer;
@@ -499,24 +499,29 @@
     .icon-btn, .help-btn { width: 30px; height: 30px; flex: none; }
     .install-btn { flex-basis: 100%; order: 100; }
   }
-  @media (max-width: 345px) {
+  @media (max-width: 400px) {
     .prefs { gap: 4px; }
+    .themes button { width: 24px; height: 24px; }
+    .themes button span { width: 16px; height: 16px; }
+  }
+  @media (max-width: 345px) {
+    .prefs { gap: 3px; }
     .lang button { padding: 4px 5px; }
     .lang .flag { width: 20px; height: 13px; }
     .themes { gap: 0; padding: 2px; }
-    .themes button { width: 24px; height: 24px; }
-    .themes button span { width: 16px; height: 16px; }
+    .themes button { width: 22px; height: 22px; }
+    .themes button span { width: 15px; height: 15px; }
     .icon-btn, .help-btn { width: 28px; height: 28px; }
   }
   /* Phones with enlarged text: the smallest size that still keeps the row on one line */
   @media (max-width: 300px) {
-    .prefs { gap: 3px; }
-    .lang button { padding: 3px 4px; }
+    .prefs { gap: 2px; }
+    .lang button { padding: 3px 2px; }
     .lang .flag { width: 18px; height: 12px; }
-    .themes button { width: 22px; height: 22px; }
-    .themes button span { width: 14px; height: 14px; }
-    .icon-btn, .help-btn { width: 26px; height: 26px; }
-    .icon-btn svg { width: 15px; height: 15px; }
+    .themes button { width: 20px; height: 20px; }
+    .themes button span { width: 13px; height: 13px; }
+    .icon-btn, .help-btn { width: 24px; height: 24px; }
+    .icon-btn svg { width: 14px; height: 14px; }
   }
   /* Touch screens: no hover tooltips (they would stay on screen after a tap) */
   @media (hover: none) {
@@ -606,6 +611,9 @@
       <button type="button" class="icon-btn" id="share-btn" data-i18n-aria="shareBtn" data-i18n-tip="shareBtn" aria-label="Сподели" data-tip="Сподели">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       </button>
+      <button type="button" class="icon-btn" id="backup-btn" aria-expanded="false" aria-controls="backup" data-i18n-aria="backupBtn" data-i18n-tip="backupBtn" aria-label="Резервно копие" data-tip="Резервно копие">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 14V4M6 7l3-3 3 3M15 4v10M12 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
       <button type="button" class="help-btn" id="help-btn" aria-expanded="false" aria-controls="about" data-i18n-aria="helpLabel" aria-label="За приложението">?</button>
     </div>
@@ -621,6 +629,16 @@
         <img src="icons/bill-new-reading.png" width="954" height="86" data-i18n-alt="billAlt" alt="">
         <figcaption data-i18n="billCaption"></figcaption>
       </figure>
+    </div>
+    <div class="ios-help" id="backup" role="region" data-i18n-aria="backupBtn" aria-label="Резервно копие" hidden>
+      <span data-i18n="backupText"></span>
+      <button type="button" id="backup-close" data-i18n-aria="close" aria-label="Затвори">×</button>
+      <p class="about-actions">
+        <button type="button" class="ghost" id="backup-save" data-i18n="backupSave">Запази копие</button>
+        <button type="button" class="ghost" id="backup-load" data-i18n="backupLoad">Възстанови от файл</button>
+        <input type="file" id="backup-file" accept=".json,application/json" hidden>
+        <span id="backup-msg" role="status"></span>
+      </p>
     </div>
     <div class="ios-help" id="ios-help" role="note" hidden>
       <span data-i18n="iosHelp"></span>
@@ -829,6 +847,13 @@
       billAlt: "Таблицата с показанията в сметката на Овергаз; колоната „Ново“ е оградена",
       billCaption: "От сметката на Овергаз вземете числото в колона „Ново“ – с него започва текущият месец. Въведете го в „Показание от последната сметка“.",
       shareBtn: "Сподели",
+      backupBtn: "Резервно копие",
+      backupText: "Запазете показанията и настройките във файл и ги заредете отново – на този или на нов телефон.",
+      backupSave: "Запази копие",
+      backupLoad: "Възстанови от файл",
+      backupSaved: "Копието е запазено: {file}",
+      backupBad: "Този файл не е копие от Gas Consumption.",
+      backupRestored: "Данните са възстановени от копието",
       shareText: "Изчислете сметката си за газ от Овергаз",
       shareCopied: "Линкът е копиран",
       chartTitle: "Исторически цени на газа",
@@ -947,6 +972,13 @@
       billAlt: "The meter table on an Overgas bill with the “Ново” (new) column circled",
       billCaption: "On your Overgas bill, take the number in the “Ново” (new) column – the current month starts from it. Enter it as “Reading on last bill”.",
       shareBtn: "Share",
+      backupBtn: "Backup",
+      backupText: "Save your readings and settings to a file and load them back – on this phone or a new one.",
+      backupSave: "Save backup",
+      backupLoad: "Restore from file",
+      backupSaved: "Backup saved: {file}",
+      backupBad: "This file is not a Gas Consumption backup.",
+      backupRestored: "Data restored from the backup",
       shareText: "Work out your Overgas gas bill",
       shareCopied: "Link copied",
       chartTitle: "Historical gas prices",
@@ -1692,6 +1724,61 @@
       + "&body=" + encodeURIComponent(t("feedbackBody") + info);
     toast(t("feedbackSent", { email: FEEDBACK_EMAIL }));
   });
+  // ---- Backup: the readings and settings (not the downloaded price data) to a file and back ----
+  const BACKUP_KEYS = [KEY, LANG_KEY, THEME_KEY, TARIFF_OPEN_KEY, BREAKDOWN_OPEN_KEY, CHART_KEY, HELP_SEEN_KEY];
+  const UNDO_RESTORE_KEY = "gas-bill-restore-undo";
+  const backupNow = () => {
+    const data = {};
+    BACKUP_KEYS.forEach((k) => { try { const v = localStorage.getItem(k); if (v !== null) data[k] = v; } catch (e) {} });
+    return data;
+  };
+  // Replaces the saved keys with `data` and reloads, so every part of the page starts from them.
+  const applyBackup = (data, undoData) => {
+    try {
+      BACKUP_KEYS.forEach((k) => localStorage.removeItem(k));
+      Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+      if (undoData) sessionStorage.setItem(UNDO_RESTORE_KEY, JSON.stringify(undoData));
+    } catch (e) {}
+    location.reload();
+  };
+  const setBackup = (open) => { $("backup").hidden = !open; $("backup-btn").setAttribute("aria-expanded", String(open)); if (!open) $("backup-msg").textContent = ""; };
+  $("backup-btn").addEventListener("click", () => setBackup($("backup").hidden));
+  $("backup-close").addEventListener("click", () => setBackup(false));
+  $("backup-save").addEventListener("click", () => {
+    const file = "gas-consumption-backup-" + todayStr() + ".json";
+    const json = JSON.stringify({ app: "gas-consumption", version: swVersion, created: new Date().toISOString(), data: backupNow() }, null, 2);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    a.download = file;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    $("backup-msg").textContent = t("backupSaved", { file });
+  });
+  $("backup-load").addEventListener("click", () => $("backup-file").click());
+  $("backup-file").addEventListener("change", async () => {
+    const f = $("backup-file").files[0];
+    $("backup-file").value = "";
+    if (!f) return;
+    let data = null;
+    try {
+      const b = JSON.parse(await f.text());
+      if (b && b.app === "gas-consumption" && b.data && typeof b.data === "object") {
+        data = {};
+        Object.entries(b.data).forEach(([k, v]) => { if (BACKUP_KEYS.includes(k) && typeof v === "string") data[k] = v; });
+      }
+    } catch (e) {}
+    if (!data || !Object.keys(data).length) { $("backup-msg").textContent = t("backupBad"); return; }
+    applyBackup(data, backupNow());
+  });
+  // Just restored: say so, with Undo back to what was there before.
+  try {
+    const before = sessionStorage.getItem(UNDO_RESTORE_KEY);
+    if (before) {
+      sessionStorage.removeItem(UNDO_RESTORE_KEY);
+      toast(t("backupRestored"), () => applyBackup(JSON.parse(before)));
+    }
+  } catch (e) {}
+
   // "last bill" link: show where on the bill the reading is.
   $("about").addEventListener("click", (e) => {
     if (!e.target.closest(".bill-link")) return;
