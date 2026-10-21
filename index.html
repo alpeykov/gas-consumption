@@ -94,22 +94,8 @@
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     display: grid; gap: 20px;
   }
-  /* Phones: one column, tariff settings after the readings (DOM order).
-     Computers: tariff settings in a left column, with a rule between it and the bill. */
+  /* One column on every screen; the tariff settings are in the ☰ menu. */
   .main { display: grid; gap: 20px; min-width: 0; }
-  @media (min-width: 821px) {
-    .main {
-      grid-template-columns: 320px minmax(0, 1fr);
-      grid-template-rows: auto auto 1fr;
-      grid-template-areas: "tariff bill" "tariff readings" "tariff breakdown";
-      column-gap: 57px; align-items: start;
-      background: linear-gradient(var(--rule), var(--rule)) no-repeat 348px 0 / 1px 100%;
-    }
-    .main > .bill { grid-area: bill; }
-    .main > .readings { grid-area: readings; }
-    .main > .breakdown { grid-area: breakdown; }
-    .main > .tariff { grid-area: tariff; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
-  }
   header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
   header p { margin: 4px 0 0; color: var(--muted); }
   .label {
@@ -357,14 +343,19 @@
   .menu-btn svg { width: 22px; height: 22px; }
   .menu-btn:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   /* ☰ menu: a panel from the left */
-  .menu-scrim { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, 0.5); }
+  .menu-scrim { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 0.25s ease; }
+  .menu-scrim.open { opacity: 1; }
   .menu {
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 36; width: min(320px, 86vw); overflow-y: auto;
     display: flex; flex-direction: column; gap: 12px; background: var(--panel); color: var(--fg); border-right: 1px solid var(--line);
     padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
     box-shadow: 8px 0 30px rgba(0, 0, 0, 0.35);
+    transform: translateX(-104%); transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
+  .menu.open { transform: none; }
+  @media (prefers-reduced-motion: reduce) { .menu, .menu-scrim { transition: none; } }
   .menu:focus { outline: none; }
+  .menu .tariff { padding: 14px; }
   .menu-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .menu-top b { font-size: 1.1rem; }
   .menu-x { width: 36px; height: 36px; font: inherit; font-size: 1.4rem; line-height: 1; color: var(--fg); background: transparent; border: 0; border-radius: 8px; cursor: pointer; }
@@ -602,7 +593,7 @@
     </button>
     <div class="head-text">
       <h1 data-i18n="title">Консумация на газ</h1>
-      <p data-i18n="subtitle">Битова тарифа на Овергаз · показания в m³ · цени в евро</p>
+      <p id="head-price">Битова тарифа на Овергаз · показания в m³ · цени в евро</p>
     </div>
     <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
     <div class="ios-help" id="about" role="note" hidden>
@@ -641,7 +632,43 @@
       <button type="button" class="menu-x" id="menu-close" data-i18n-aria="close" aria-label="Затвори">×</button>
     </div>
     <div class="menu-sec">
-      <button type="button" class="menu-item" id="menu-tariff"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="mi-text"><span data-i18n="tariffH">Тарифни настройки</span><small id="menu-tariff-sum"></small></span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <section class="tariff" aria-labelledby="tariff-h">
+        <h2 id="tariff-h" class="tariff-head">
+          <span class="tariff-title"><span data-i18n="tariffH">Тарифни настройки</span><span class="tariff-summary" id="tariff-summary"></span></span>
+          <button type="button" class="ghost" id="tariff-toggle" aria-expanded="false" aria-controls="tariff-body">Промени</button>
+        </h2>
+        <div class="tariff-body" id="tariff-body">
+        <label class="field">
+          <span class="label" data-i18n="region">Регион</span>
+          <select id="region"></select>
+        </label>
+        <div class="final">
+          <span class="label" data-i18n="finalPrice">Крайна цена без ДДС</span>
+          <span class="final-price num">
+            <span id="final-price">–</span><small>€/MWh</small>
+            <span class="info" id="stale-info" hidden>
+              <button type="button" class="info-btn" aria-describedby="stale-tip" data-i18n-aria="aboutPrice" aria-label="За тази цена">i</button>
+              <span class="tip" role="tooltip" id="stale-tip"></span>
+            </span>
+          </span>
+        </div>
+        <div class="source">
+          <span class="chip" id="source-chip"></span>
+          <span id="source-text"></span>
+          <button type="button" class="ghost" id="refresh" data-i18n="refresh">Провери за нови цени</button>
+        </div>
+        <hr>
+        <div class="settings">
+          <label class="field"><span class="label nocaps" data-i18n="override">Въведи цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
+          <label class="field"><span class="label" data-i18n="vat">ДДС, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20" disabled></label>
+          <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.001" inputmode="decimal" value=""></label>
+          <p class="gcv-source" id="gcv-source"></p>
+          <label class="field"><span class="label" data-i18n="rate">Лева за 1 евро</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583" disabled></label>
+        </div>
+        <p class="hint" data-i18n-html="sourceHint"></p>
+        <p class="hint"><button type="button" class="ghost" id="reset" data-i18n="reset">Върни стандартна цена</button></p>
+        </div>
+      </section>
     </div>
     <div class="menu-sec">
       <div class="menu-row"><span class="menu-label" data-i18n="langLabel">Език</span>
@@ -765,44 +792,6 @@
     </div>
   </section>
 
-  <section class="tariff" aria-labelledby="tariff-h">
-    <h2 id="tariff-h" class="tariff-head">
-      <span class="tariff-title"><span data-i18n="tariffH">Тарифни настройки</span><span class="tariff-summary" id="tariff-summary"></span></span>
-      <button type="button" class="ghost" id="tariff-toggle" aria-expanded="false" aria-controls="tariff-body">Промени</button>
-    </h2>
-    <div class="tariff-body" id="tariff-body">
-    <label class="field">
-      <span class="label" data-i18n="region">Регион</span>
-      <select id="region"></select>
-    </label>
-    <div class="final">
-      <span class="label" data-i18n="finalPrice">Крайна цена без ДДС</span>
-      <span class="final-price num">
-        <span id="final-price">–</span><small>€/MWh</small>
-        <span class="info" id="stale-info" hidden>
-          <button type="button" class="info-btn" aria-describedby="stale-tip" data-i18n-aria="aboutPrice" aria-label="За тази цена">i</button>
-          <span class="tip" role="tooltip" id="stale-tip"></span>
-        </span>
-      </span>
-    </div>
-    <div class="source">
-      <span class="chip" id="source-chip"></span>
-      <span id="source-text"></span>
-      <button type="button" class="ghost" id="refresh" data-i18n="refresh">Провери за нови цени</button>
-    </div>
-    <hr>
-    <div class="settings">
-      <label class="field"><span class="label nocaps" data-i18n="override">Въведи цена, €/MWh</span><input id="override" type="number" step="0.01" inputmode="decimal" data-i18n-placeholder="overrideHint" placeholder="Цена от Овергаз"></label>
-      <label class="field"><span class="label" data-i18n="vat">ДДС, %</span><input id="vat" type="number" step="0.1" inputmode="decimal" value="20" disabled></label>
-      <label class="field"><span class="label nocaps" data-i18n="factor">kWh за 1 m³</span><input id="factor" type="number" step="0.001" inputmode="decimal" value=""></label>
-      <p class="gcv-source" id="gcv-source"></p>
-      <label class="field"><span class="label" data-i18n="rate">Лева за 1 евро</span><input id="rate" type="number" step="0.00001" inputmode="decimal" value="1.95583" disabled></label>
-    </div>
-    <p class="hint" data-i18n-html="sourceHint"></p>
-    <p class="hint"><button type="button" class="ghost" id="reset" data-i18n="reset">Върни стандартна цена</button></p>
-    </div>
-  </section>
-
   <section class="breakdown collapsed">
     <h2><button type="button" id="breakdown-toggle" aria-expanded="false" aria-controls="breakdown-body"><span data-i18n="howH">Как се получава сумата</span><span class="chev" aria-hidden="true"></span></button></h2>
     <div class="breakdown-body" id="breakdown-body">
@@ -880,6 +869,7 @@
       docTitle: "Консумация на газ",
       title: "Консумация на газ",
       subtitle: "Битова тарифа на Овергаз · показания в m³ · цени в евро",
+      headPrice: "Цена за {month}: {mwh}/MWh с ДДС · ≈ {m3}/m³ · {region}",
       langLabel: "Език",
       themeLabel: "Тема",
       themeDark: "Тъмна",
@@ -1019,6 +1009,7 @@
       docTitle: "Gas Consumption",
       title: "Gas Consumption",
       subtitle: "Overgas household tariff · meter readings in m³ · prices in euro",
+      headPrice: "{month} price: {mwh}/MWh incl. VAT · ≈ {m3}/m³ · {region}",
       langLabel: "Language",
       themeLabel: "Theme",
       themeDark: "Dark",
@@ -1406,6 +1397,11 @@
     };
     // The guide's example readings are never saved.
     if (!guideOn) try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    // Header: the final price (incl. VAT) of the month of today's reading.
+    const mwhVat = v.price * (1 + v.vat / 100);
+    $("head-price").textContent = isFinite(mwhVat) && tariffSummary
+      ? t("headPrice", { month: monthLabel(v.curDate.slice(0, 7)), mwh: eur(mwhVat), m3: eur(mwhVat * v.factor / 1000, 3), region: regionLabel(tariffSummary.region) })
+      : t("subtitle");
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
     const ts = tariffSummary;
     $("tariff-summary").innerHTML = "<span>" + regionLabel(ts.region) + "</span><span><b>" + num(ts.price, 2) + "</b> €/MWh " + t("vatExcl") +
@@ -1788,27 +1784,34 @@
   $("help-btn").addEventListener("click", () => setAbout($("about").hidden));
   $("about-close").addEventListener("click", () => setAbout(false));
   // ---- ☰ menu: settings and the less used actions in a panel from the left ----
+  // It slides in and out; `hidden` is set only once the slide out has finished.
+  let menuTimer;
+  const menuOpen = () => $("menu-btn").getAttribute("aria-expanded") === "true";
   const setMenu = (open) => {
-    $("menu").hidden = $("menu-scrim").hidden = !open;
+    const menu = $("menu"), scrim = $("menu-scrim");
+    clearTimeout(menuTimer);
     $("menu-btn").setAttribute("aria-expanded", String(open));
-    if (open && tariffSummary) $("menu-tariff-sum").textContent = regionLabel(tariffSummary.region) + " · " + num(tariffSummary.price, 2) + " €/MWh";
-    if (open) $("menu").focus();
+    if (open) {
+      menu.hidden = scrim.hidden = false;
+      menu.offsetWidth; // start the slide from the closed position
+      menu.classList.add("open"); scrim.classList.add("open");
+      menu.focus({ preventScroll: true });
+    } else {
+      menu.classList.remove("open"); scrim.classList.remove("open");
+      const done = () => { menu.hidden = scrim.hidden = true; };
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) done(); else menuTimer = setTimeout(done, 300);
+    }
   };
-  $("menu-btn").addEventListener("click", () => setMenu($("menu").hidden));
+  $("menu-btn").addEventListener("click", () => setMenu(!menuOpen()));
   $("menu-close").addEventListener("click", () => { setMenu(false); $("menu-btn").focus(); });
   $("menu-scrim").addEventListener("click", () => setMenu(false));
-  addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("menu").hidden) setMenu(false); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
   // Actions close the menu and show what they opened; language and theme keep it open.
   ["chart-btn", "share-btn", "backup-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
     setMenu(false);
     const panel = $(id).getAttribute("aria-controls");
     if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" });
   }));
-  $("menu-tariff").addEventListener("click", () => {
-    setMenu(false);
-    if (!tariffOpen) $("tariff-toggle").click();
-    $("tariff-toggle").closest(".tariff").scrollIntoView({ block: "start" });
-  });
 
   // ---- First-run guide: four steps with example readings that are put back afterwards ----
   const GUIDE_CUR = "163", GUIDE_START = "127";

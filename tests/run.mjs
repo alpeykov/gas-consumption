@@ -42,13 +42,14 @@ let browser;
 // A clean browser profile per test; optional localStorage and viewport.
 // The page's clock is fixed (default 17 Oct 2026, noon) so dates and sums don't depend on the real day;
 // window.__setNow(iso) moves it later in a test.
-async function open({ width = 1280, height = 900, storage = {}, waitChart = false, now = "2026-10-17T12:00:00" } = {}) {
+async function open({ width = 1280, height = 900, storage = {}, waitChart = false, now = "2026-10-17T12:00:00", motion = false } = {}) {
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/favicon|fonts\.g/.test(m.text())) errors.push("console: " + m.text()); });
   await page.setViewport({ width, height, isMobile: width < 500, hasTouch: width < 500 });
+  if (!motion) await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
   await page.evaluateOnNewDocument((iso) => {
     const Real = Date; let off = new Real(iso).getTime() - Real.now();
     class FakeDate extends Real { constructor(...a) { if (a.length) super(...a); else super(Real.now() + off); } static now() { return Real.now() + off; } }
@@ -375,6 +376,27 @@ async function sanity() {
       await p2.close2();
     }
   });
+  await test("sanity", "N21 ☰ menu slides in and out", async () => {
+    const page = await open({ width: 390, motion: true, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    const x = () => page.$eval("#menu", (m) => m.hidden ? "hidden" : Math.round(m.getBoundingClientRect().left));
+    await page.click("#menu-btn");
+    const start = await x(); await settle(450);
+    expect(typeof start === "number" && start < 0 && (await x()) === 0, `slides in: ${start} → ${await x()}`);
+    await page.keyboard.press("Escape");
+    const mid = await x(); await settle(450);
+    expect(mid !== "hidden" && (await x()) === "hidden", "slides out, then hides");
+    await page.close2();
+  });
+  await test("sanity", "N20 header shows this month's price incl. VAT, per MWh and per m³ (bg, en)", async () => {
+    for (const lang of ["bg", "en"]) {
+      const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang } });
+      const h = await text(page, "#head-price");
+      // 68,90 €/MWh excl. VAT + 20% = 82,68; × 10,8 kWh/m³ = 0,893 €/m³ (built-in October 2026 values).
+      expect(lang === "bg" ? /октомври 2026: 82,68 €\/MWh с ДДС · ≈ 0,893 €\/m³ · Овергаз Мрежи/.test(h)
+        : /October 2026 price: €82\.68\/MWh incl\. VAT · ≈ €0\.893\/m³ · Overgas Mrezhi/.test(h), lang + ": " + h);
+      await page.close2();
+    }
+  });
   await test("sanity", "N11 chart remembers its period and currency after reopening", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.click("#chart-btn"); await settle(1200);
@@ -443,6 +465,7 @@ async function regression() {
   });
   await test("regression", "R5 typed price overrides; Restore default price brings it back", async () => {
     const page = await open({ storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1" } });
+    await page.click("#menu-btn");
     await page.type("#override", "100"); await settle(100);
     expect((await text(page, "#final-price")) === "100,00", "typed price used");
     await page.click("#reset"); await settle(100);
@@ -473,8 +496,9 @@ async function regression() {
   });
   await test("regression", "R8 the ☰ menu holds every setting and action, in order", async () => {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
-    const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes")].map((e) => e.id || e.className).join(","));
-    expect(order === "menu-tariff,lang,themes,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
+    const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes, #menu section.tariff")].map((e) => e.id || e.className.split(" ")[0]).join(",")
+      + (document.querySelector(".main section.tariff") ? " + tariff on the page" : ""));
+    expect(order === "tariff,lang,themes,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
     await page.close2();
   });
   // Layout matrix: every width × theme × language — nothing may scroll sideways or leave its card.
@@ -626,26 +650,15 @@ async function ui() {
     });
 
     // ---- UI ----
-    await test("ui", `U1 layout order is right; tariff on the left on computers (${dev})`, async () => {
+    await test("ui", `U1 layout order is right: bill → readings → breakdown in one column (${dev})`, async () => {
       const page = await open({ width: w, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
-      const box = await page.evaluate(() => Object.fromEntries([".bill", ".readings", ".tariff", ".breakdown"].map((s) => {
+      const box = await page.evaluate(() => Object.fromEntries([".bill", ".readings", ".breakdown"].map((s) => {
         const r = document.querySelector(s).getBoundingClientRect(); return [s, { x: Math.round(r.left), y: Math.round(r.top) }];
       })));
-      if (dev === "desktop") {
-        expect(box[".tariff"].x < box[".bill"].x, "tariff in the left column");
-        const rule = await page.evaluate(() => {
-          const m = document.querySelector(".main"), b = document.querySelector(".bill").getBoundingClientRect(), t = document.querySelector(".tariff").getBoundingClientRect();
-          const x = m.getBoundingClientRect().left + parseFloat(getComputedStyle(m).backgroundPositionX.match(/[\d.]+px/)[0]);
-          return { x, gapL: t.right, gapR: b.left };
-        });
-        expect(rule.x > rule.gapL + 10 && rule.x < rule.gapR - 10, `divider line in the gap: ${Math.round(rule.x)} between ${Math.round(rule.gapL)} and ${Math.round(rule.gapR)}`);
-        expect(box[".bill"].y < box[".readings"].y && box[".readings"].y < box[".breakdown"].y, "bill → readings → breakdown on the right");
-      } else {
-        const ys = [".bill", ".readings", ".tariff", ".breakdown"].map((s) => box[s].y);
-        expect(ys.every((y, i) => i === 0 || y > ys[i - 1]), "phone order: bill → readings → tariff → breakdown");
-        const order = await page.$$eval(".readings .label", (l) => l.map((x) => x.textContent));
-        expect(order[0] === "Показание днес", "today's reading first");
-      }
+      expect(box[".bill"].y < box[".readings"].y && box[".readings"].y < box[".breakdown"].y, "bill → readings → breakdown");
+      expect(box[".bill"].x === box[".readings"].x && box[".bill"].x === box[".breakdown"].x, "one column");
+      const order = await page.$$eval(".readings .label", (l) => l.map((x) => x.textContent));
+      expect(order[0] === "Показание днес", "today's reading first");
       await page.close2();
     });
     await test("ui", `U2 every button has a name and is big enough to tap (${dev})`, async () => {
@@ -703,7 +716,7 @@ async function ui() {
       const r = await page.evaluate(() => {
         const m = document.getElementById("menu"), b = m.getBoundingClientRect();
         return { open: !m.hidden, left: b.left, right: b.right, w: innerWidth, scroll: m.scrollWidth > m.clientWidth + 1,
-          expanded: document.getElementById("menu-btn").getAttribute("aria-expanded"), sum: document.getElementById("menu-tariff-sum").textContent };
+          expanded: document.getElementById("menu-btn").getAttribute("aria-expanded"), sum: document.getElementById("tariff-summary").textContent };
       });
       expect(r.open && r.expanded === "true", "menu opens");
       expect(r.left === 0 && r.right < r.w, "menu sits on the left, narrower than the screen");
@@ -715,8 +728,8 @@ async function ui() {
       expect(await page.$eval("#menu", (e) => e.hidden), "Escape closes the menu");
       await page.click("#chart-btn"); await settle(800);
       expect(await page.$eval("#menu", (e) => e.hidden) && !(await page.$eval("#chart-panel", (e) => e.hidden)), "an action closes the menu and opens its panel");
-      await page.click("#menu-tariff");
-      expect(await page.$eval("#tariff-toggle", (e) => e.getAttribute("aria-expanded")) === "true", "tariff line opens the tariff settings");
+      await page.click("#tariff-toggle");
+      expect(await page.$eval("#tariff-toggle", (e) => e.getAttribute("aria-expanded")) === "true" && !(await page.$eval("#menu", (e) => e.hidden)), "tariff settings open inside the menu");
       expect(!page.errors.length, page.errors.join(" | "));
       await page.close2();
     });

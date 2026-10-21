@@ -2,6 +2,20 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.0.1",
+      "date": "2026-10-21",
+      "bg": [
+        "Под заглавието е цената за текущия месец с ДДС – за MWh и за m³.",
+        "Тарифните настройки са само в менюто ☰; на компютър страницата е в една колона.",
+        "Менюто ☰ се плъзга плавно при отваряне и затваряне."
+      ],
+      "en": [
+        "Under the title: this month's price incl. VAT – per MWh and per m³.",
+        "Tariff settings are only in the ☰ menu; on computers the page is one column.",
+        "The ☰ menu slides smoothly in and out."
+      ]
+    },
+    {
       "version": "2.0.0",
       "date": "2026-10-21",
       "bg": [
