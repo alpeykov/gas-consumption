@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.6",
+      "date": "2026-10-22",
+      "bg": [
+        "Поправка: фактурата на Овергаз е с дата последния ден от месеца, за който е, затова месецът на фактурата вече е и месецът на потреблението (без „месец назад“). Вече въведените стари фактури се връщат сами на правилния месец.",
+        "Месечна история: за по-стари месеци се изтеглят точните kWh/m³ на Булгартрансгаз за съответния месец."
+      ],
+      "en": [
+        "Fix: an Overgas invoice is dated the last day of the month it is for, so the invoice month is now also the month of use (no more “one month back”). Old bills already entered move back to the right month by themselves.",
+        "Monthly history: older months use Bulgartransgaz's exact kWh/m³ for that month."
+      ]
+    },
+    {
       "version": "2.1.5",
       "date": "2026-10-22",
       "bg": [

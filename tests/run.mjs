@@ -458,14 +458,14 @@ async function sanity() {
     await page.click("#history-btn");
     expect(!(await page.$eval("#mh-empty", (e) => e.hidden)) === false, "the running month is listed, so no empty note");
     await page.click("#mh-add");
-    expect(await page.$eval("#mh-add", (e) => e.hidden) && (await page.$eval("#mh-month", (e) => e.options[0].value)) === "2026-10", "form open, this month's invoice first");
+    expect(await page.$eval("#mh-add", (e) => e.hidden) && (await page.$eval("#mh-month", (e) => e.options[0].value)) === "2026-09", "form open, last month first");
     await page.select("#mh-month", "2026-06");
-    expect((await text(page, "#mh-usage")) === "Потреблението е за май 2026 и се смята по цената на Овергаз за май 2026.", "invoice of June = use in May: " + await text(page, "#mh-usage"));
+    expect((await text(page, "#mh-usage")) === "Потреблението през юни 2026 се смята по цената на Овергаз за юни 2026.", "invoice of June = use in June: " + await text(page, "#mh-usage"));
     await setVal(page, "#mh-start", "2410"); await setVal(page, "#mh-end", "2414"); await setVal(page, "#mh-bill", "4,10");
-    expect(/цена за май 2026/.test(await text(page, "#mh-calc")), "estimate with May's price: " + await text(page, "#mh-calc"));
+    expect(/цена за юни 2026/.test(await text(page, "#mh-calc")), "estimate with June's price: " + await text(page, "#mh-calc"));
     await page.click("#mh-save");
-    expect(JSON.stringify((await monthsOf(page))["2026-05"]) === JSON.stringify({ start: 2410, end: 2414, date: null, bill: 4.1, invoice: "2026-06" }), "saved as May, invoice June: " + JSON.stringify(await monthsOf(page)));
-    expect((await page.$eval("#mh-rows tr[data-m='2026-05']", (tr) => tr.cells[0].textContent)) === "Май 2026✎2410 → 2414 · фактура юни 2026", "row shows the invoice month");
+    expect(JSON.stringify((await monthsOf(page))["2026-06"]) === JSON.stringify({ start: 2410, end: 2414, date: null, bill: 4.1 }), "saved as June: " + JSON.stringify(await monthsOf(page)));
+    expect((await page.$eval("#mh-rows tr[data-m='2026-06']", (tr) => tr.cells[0].textContent)) === "Юни 2026✎2410 → 2414", "row");
     await page.click("#mh-add");
     expect(!(await page.$eval("#mh-month", (e) => [...e.options].some((o) => o.value === "2026-06"))), "that invoice isn't offered again");
     await page.click("#mh-cancel");
@@ -542,48 +542,50 @@ async function sanity() {
     await page.click("#history-btn");
     await page.click("#mh-add");
     await page.select("#mh-month", "2026-01");
-    expect((await text(page, "#mh-bill-label")) === "Сметка € (от Овергаз)" && await page.$eval("#mh-bgn-note", (e) => e.hidden), "invoice of January 2026 (use in December 2025): in euro");
+    expect((await text(page, "#mh-bill-label")) === "Сметка € (от Овергаз)" && await page.$eval("#mh-bgn-note", (e) => e.hidden), "invoice of January 2026: in euro");
     await page.select("#mh-month", "2025-12");
     expect((await text(page, "#mh-bill-label")) === "Сметка лв. (от Овергаз)" && !(await page.$eval("#mh-bgn-note", (e) => e.hidden)), "invoice of December 2025: in leva");
     await setVal(page, "#mh-start", "1900"); await setVal(page, "#mh-end", "2100"); await setVal(page, "#mh-bill", "300");
     expect(/разлика със сметката [+−][\d,]+ € \/ [\d,]+ лв\.$/.test(await text(page, "#mh-calc")), "difference in both: " + await text(page, "#mh-calc"));
     await page.click("#mh-save");
-    expect(JSON.stringify((await monthsOf(page))["2025-11"]) === JSON.stringify({ start: 1900, end: 2100, date: null, bill: 300, invoice: "2025-12", billCur: "BGN" }), "kept in leva: " + JSON.stringify(await monthsOf(page)));
-    const row = await page.$eval("#mh-rows tr[data-m='2025-11']", (tr) => tr.cells[3].textContent);
+    expect(JSON.stringify((await monthsOf(page))["2025-12"]) === JSON.stringify({ start: 1900, end: 2100, date: null, bill: 300, billCur: "BGN" }), "kept in leva: " + JSON.stringify(await monthsOf(page)));
+    const row = await page.$eval("#mh-rows tr[data-m='2025-12']", (tr) => tr.cells[3].textContent);
     expect(row.startsWith("153,39 €300,00 лв."), "shown as € with the leva from the bill: " + row);
-    await page.click(".mh-ed[data-m='2025-11']");
+    await page.click(".mh-ed[data-m='2025-12']");
     expect((await page.$eval("#mh-bill", (e) => e.value)) === "300,00" && (await text(page, "#mh-bill-label")) === "Сметка лв. (от Овергаз)", "edit shows the leva amount");
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
-  await test("sanity", "N33 months typed from old bills before 2.1.4 move back to their month of use, once", async () => {
-    const old = { "2023-10": { start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }, "2023-11": { start: 41, end: 207, date: null, bill: 217.47, billCur: "BGN" },
-      "2023-12": { start: 207, end: 413, date: null, bill: 297.3, billCur: "BGN" }, "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: null } };
-    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": old } });
+  await test("sanity", "N33 old bills filed one month early by 2.1.4–2.1.5 move back to their invoice month, once; the October 2024 invoice matches", async () => {
+    const old = { "2024-09": { start: 0, end: 41, date: null, bill: 53.71, invoice: "2024-10", billCur: "BGN" },
+      "2023-10": { start: 41, end: 207, date: null, bill: 217.47, invoice: "2023-11", billCur: "BGN" }, "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: null } };
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": old, "gas-bill-months-invoice-fix": "1" } });
     const m = await monthsOf(page);
-    expect(Object.keys(m).sort().join() === "2023-09,2023-10,2023-11,2026-09", "moved: " + Object.keys(m).sort().join());
-    expect(m["2023-10"].invoice === "2023-11" && m["2023-10"].end === 207 && m["2023-11"].invoice === "2023-12" && !m["2026-09"].invoice, "invoice months kept; read months untouched");
+    expect(Object.keys(m).sort().join() === "2023-11,2024-10,2026-09", "moved: " + Object.keys(m).sort().join());
+    expect(JSON.stringify(m["2024-10"]) === JSON.stringify({ start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }) && !m["2026-09"].invoice, "invoice key dropped; read months untouched");
     await page.reload({ waitUntil: "networkidle0" });
-    expect(Object.keys(await monthsOf(page)).sort().join() === "2023-09,2023-10,2023-11,2026-09", "only once");
-    await page.click("#history-btn");
-    const nov = await page.$eval("#mh-rows tr[data-m='2023-10']", (tr) => [...tr.cells].map((c) => c.textContent));
-    expect(nov[0] === "Октомври 2023✎41 → 207 · фактура ноември 2023", "row: " + nov.join(" | "));
+    expect(Object.keys(await monthsOf(page)).sort().join() === "2023-11,2024-10,2026-09", "only once");
+    await page.click("#history-btn"); await settle(600);
+    const oct = await page.$eval("#mh-rows tr[data-m='2024-10']", (tr) => [...tr.cells].map((c) => c.textContent));
+    // Invoice of 31.10.2024: 41 m³, 0.440955 MWh, 53.71 lv. – the estimate is within a stotinka.
+    expect(oct[0] === "Октомври 2024✎0 → 41" && oct[2] === "27,47 €53,72 лв." && oct[3].startsWith("27,46 €53,71 лв."), "row: " + oct.join(" | "));
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
-  await test("sanity", "N35 history: editing a month can change its invoice month (wrong year) – the row moves and is priced for its new month", async () => {
+  await test("sanity", "N35 history: editing a month can change its month (wrong year) – the row moves and is priced for its new month", async () => {
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-invoice-fix": "1",
-      "gas-bill-months-v1": { "2023-09": { start: 0, end: 41, date: null, bill: 53.71, invoice: "2023-10", billCur: "BGN" } } } });
+      "gas-bill-months-v1": { "2023-10": { start: 0, end: 41, date: null, bill: 51.73, billCur: "BGN" } } } });
     await page.click("#history-btn");
-    await page.click(".mh-ed[data-m='2023-09']");
-    expect((await page.$eval("#mh-month", (e) => e.value)) === "2023-10" && (await text(page, "#mh-usage")).includes("септември 2023"), "form shows the invoice month");
+    await page.click(".mh-ed[data-m='2023-10']");
+    expect((await page.$eval("#mh-month", (e) => e.value)) === "2023-10" && (await text(page, "#mh-usage")).includes("октомври 2023"), "form shows the month");
     await page.select("#mh-month", "2024-10");
-    expect((await text(page, "#mh-usage")) === "Потреблението е за септември 2024 и се смята по цената на Овергаз за септември 2024." && /цена за септември 2024/.test(await text(page, "#mh-calc")), "priced for September 2024: " + await text(page, "#mh-calc"));
+    await setVal(page, "#mh-bill", "53,71"); await settle(600); await setVal(page, "#mh-bill", "53,71");
+    expect((await text(page, "#mh-usage")) === "Потреблението през октомври 2024 се смята по цената на Овергаз за октомври 2024." && /цена за октомври 2024\) = 27,47 € \/ 53,72 лв\./.test(await text(page, "#mh-calc")), "priced for October 2024: " + await text(page, "#mh-calc"));
     expect((await text(page, "#mh-bill-label")) === "Сметка лв. (от Овергаз)", "an invoice of 2024 is still in leva");
     await page.click("#mh-save");
     const m = await monthsOf(page);
-    expect(Object.keys(m).join() === "2024-09" && JSON.stringify(m["2024-09"]) === JSON.stringify({ start: 0, end: 41, date: null, bill: 53.71, invoice: "2024-10", billCur: "BGN" }), "moved: " + JSON.stringify(m));
-    expect((await page.$eval("#mh-rows tr[data-m='2024-09']", (tr) => tr.cells[0].textContent)) === "Септември 2024✎0 → 41 · фактура октомври 2024", "row shows the new invoice month");
+    expect(Object.keys(m).join() === "2024-10" && JSON.stringify(m["2024-10"]) === JSON.stringify({ start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }), "moved: " + JSON.stringify(m));
+    expect((await page.$eval("#mh-rows tr[data-m='2024-10']", (tr) => tr.cells[0].textContent)) === "Октомври 2024✎0 → 41", "row");
     // An invoice whose month of use is already saved isn't offered.
     await page.click("#mh-add");
     expect(!(await page.$eval("#mh-month", (e) => [...e.options].some((o) => o.value === "2024-10"))), "taken months aren't offered");
