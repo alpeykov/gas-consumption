@@ -842,6 +842,8 @@ async function regression() {
       return document.getElementById("chart-tip").innerText;
     });
     expect(/септември 2026[\s\S]*79,07/.test(await hover()), "EUR value");
+    const dots = await page.$$eval("#chart-svg .chart-pt", (c) => c.map((e) => e.dataset.m));
+    expect(dots.includes("2026-09") && dots.length === (await page.$$eval("#chart-svg .chart-pt", (c) => new Set(c.map((e) => e.dataset.m)).size)) && dots.length > 50, "a dot per month with a price: " + dots.length);
     await page.select("#chart-cur", "BGN"); await settle(200);
     expect(/154,64[\s\S]*128,87/.test(await hover()), "BGN value and price without VAT");
     await page.close2();

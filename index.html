@@ -1956,6 +1956,10 @@
     };
     out += '<path d="' + path(false) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-linejoin="round"/>';
     out += '<path d="' + path(true) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-dasharray="5 4"/>';
+    // A dot per month, sized to the spacing; approximate (blog) months are hollow like their dashed line.
+    const pr = Math.max(1.5, Math.min(3.5, (months.length > 1 ? x(1) - x(0) : 8) / 3));
+    pts.forEach((p, i) => { if (p) out += '<circle class="chart-pt" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + pr.toFixed(1) + '" fill="' +
+      (p.basis === "blog" ? "var(--panel)" : "var(--flame)") + '" stroke="var(--flame)" stroke-width="' + (p.basis === "blog" ? 1.5 : 0) + '"/>'; });
     out += '<line id="chart-cross" y1="' + M.t + '" y2="' + (H - M.b) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>';
     out += '<circle id="chart-dot" r="4.5" fill="var(--flame)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>';
     out += '<rect x="' + M.l + '" y="' + M.t + '" width="' + (W - M.l - M.r) + '" height="' + (H - M.t - M.b) + '" fill="transparent" id="chart-hit"/>';
