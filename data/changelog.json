@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.4.0",
+      "date": "2026-10-22",
+      "bg": [
+        "На телефона шрифтът е по-малък, а прогнозата и цената за текуща консумация са една до друга – така прогнозата, текущата цена и двете показания се виждат без скрол.",
+        "Долу се показва „Още отдолу“, когато страницата продължава под екрана; докосването превърта надолу."
+      ],
+      "en": [
+        "On phones the type is smaller and the forecast and the cost so far sit side by side, so the forecast, the cost so far and both readings fit without scrolling.",
+        "“More below” shows at the bottom while the page goes on under the screen; a tap scrolls down."
+      ]
+    },
+    {
       "version": "2.3.1",
       "date": "2026-10-22",
       "bg": [

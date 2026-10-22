@@ -675,6 +675,58 @@
   .update-notes ul { margin: 0 0 10px; padding-left: 18px; }
   .update-bar button:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   .app-version { color: var(--muted); font-size: 0.8rem; text-align: center; grid-column: 1 / -1; }
+  /* Phones: smaller type so the forecast, the cost so far and both readings fit on the first screen;
+     the forecast and the cost so far sit side by side. */
+  @media (max-width: 460px) {
+    body { font-size: 13.5px; }
+    .wrap { padding-block: 12px 40px; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+    .main { gap: 12px; grid-template-columns: minmax(0, 1fr); }
+    header h1 { font-size: 1.3rem; }
+    header p { margin-top: 2px; font-size: 0.85rem; line-height: 1.35; }
+    .head-text { overflow: hidden; }
+    .head-line { display: grid; }
+    #head-price { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .head-sep { display: none; }
+    .head-line .head-link { justify-self: start; padding: 3px 0; }
+    .menu-btn { width: 36px; height: 36px; }
+    .bill { padding: 14px 16px; gap: 6px; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 14px; }
+    .bill > * { grid-column: 1 / -1; }
+    .bill > .fc-head, .bill > #out-fc-eur, .bill > #out-fc-bgn { grid-column: 1; }
+    .bill > .sofar { grid-column: 2; grid-row: 1 / span 3; border-top: 0; border-left: 1px solid var(--line); padding: 0 0 0 14px; margin: 0;
+      flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: stretch; gap: 2px; }
+    .bill .sofar-val b { display: block; font-size: 1.2rem; }
+    .bill .fc-head .label, .bill .sofar .label { font-size: 0.62rem; }
+    .bill .fc-big { font-size: 1.9rem; }
+    .bill .fc-sub { font-size: 0.78rem; }
+    #out-rate { font-size: 0.75rem; }
+    .cmp { padding-top: 4px; gap: 0; }
+    .cmp-row { min-height: 30px; padding: 2px 0; }
+    .cmp-pct { font-size: 0.95rem; }
+    .cmp-what { font-size: 0.85rem; }
+    .tl { margin-top: 22px; }
+    .readings { gap: 10px; }
+    .reading { padding: 10px 12px; gap: 6px; }
+    .dial { padding: 3px 8px; }
+    .dial input { font-size: 1.25rem; }
+    .date-field { padding: 4px 8px; font-size: 0.85rem; }
+  }
+  @media (max-width: 340px) {
+    /* Too narrow for two sums side by side: the cost so far goes back under the forecast. */
+    .bill { grid-template-columns: minmax(0, 1fr); }
+    .bill > .sofar { grid-column: 1; grid-row: auto; border-left: 0; border-top: 1px solid var(--line); padding: 8px 0 0; }
+  }
+  /* "More below": a fade at the bottom edge with a small chip while there is more page under the screen. */
+  .scroll-hint {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; height: 64px; pointer-events: none;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to bottom, transparent, var(--bg) 85%);
+  }
+  .scroll-hint button {
+    pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer;
+    font: 600 0.8rem var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 12px 4px 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+  .scroll-hint svg { width: 14px; height: 14px; color: var(--flame); }
 </style>
 </head>
 <body>
@@ -696,7 +748,7 @@
     </button>
     <div class="head-text">
       <h1 data-i18n="title">Консумация на газ</h1>
-      <p><span id="head-price">Битова тарифа на Овергаз · показания в m³ · цени в евро</span> · <button type="button" class="head-link" id="head-tariff" aria-controls="menu" data-i18n="tariffH">Тарифни настройки</button></p>
+      <p class="head-line"><span id="head-price">Битова тарифа на Овергаз · показания в m³ · цени в евро</span><span class="head-sep"> · </span><button type="button" class="head-link" id="head-tariff" aria-controls="menu" data-i18n="tariffH">Тарифни настройки</button></p>
     </div>
     <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
     <div class="ios-help" id="ios-help" role="note" hidden>
@@ -869,6 +921,7 @@
   </nav>
 
   <div class="toast" id="toast" role="status" hidden></div>
+  <div class="scroll-hint" id="scroll-hint" hidden><button type="button" id="scroll-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="scrollMore">Още отдолу</span></button></div>
   <div class="bill-view" id="bill-view" role="dialog" aria-modal="true" data-i18n-aria="billAlt" aria-label="" hidden>
     <button type="button" id="bill-view-close" data-i18n-aria="close" aria-label="Затвори">×</button>
     <img src="icons/bill-where-v1.webp" width="1188" height="1140" data-i18n-alt="billAlt" alt="" loading="lazy">
@@ -1087,6 +1140,7 @@
       mhChart: "Графика",
       mhShow: "Покажи",
       cmpVs: "спрямо {month}",
+      scrollMore: "Още отдолу",
       cmpDet: "≈ {m3} срещу {m3b} · {e} срещу {eb}",
       cmpBillTag: " (по сметка)",
       cmpOpen: "Месечна история ›",
@@ -1279,6 +1333,7 @@
       mhChart: "Chart",
       mhShow: "Show",
       cmpVs: "vs {month}",
+      scrollMore: "More below",
       cmpDet: "≈ {m3} vs {m3b} · {e} vs {eb}",
       cmpBillTag: " (bill)",
       cmpOpen: "Monthly history ›",
@@ -2574,6 +2629,21 @@
     });
   }
   ["start-reading", "start-date", "cur-reading", "cur-date"].forEach((id) => $(id).addEventListener("change", recordFromMain));
+  // "More below" while the page goes on under the screen (not with the menu or a dialog open); a tap scrolls down.
+  const syncScrollHint = () => {
+    const more = document.documentElement.scrollHeight - (scrollY + innerHeight) > 40;
+    $("scroll-hint").hidden = !more || menuOpen() || !$("bill-view").hidden;
+  };
+  addEventListener("scroll", syncScrollHint, { passive: true });
+  addEventListener("resize", syncScrollHint);
+  try { new ResizeObserver(syncScrollHint).observe(document.body); } catch (e) {}
+  new MutationObserver(syncScrollHint).observe($("menu-btn"), { attributes: true, attributeFilter: ["aria-expanded"] });
+  $("scroll-more").addEventListener("click", () => {
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    scrollBy({ top: Math.round(innerHeight * 0.7), behavior: smooth ? "smooth" : "auto" });
+  });
+  syncScrollHint();
+
   // The forecast against the same month last year (first) and last month (second), each only when it is in the history.
   // By m³, the real use; a row opens the m³ and € behind it and a link to the monthly history.
   const cmpOpen = new Set();

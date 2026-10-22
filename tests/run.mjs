@@ -711,6 +711,35 @@ async function sanity() {
       await page.close2();
     }
   });
+  await test("sanity", "N38 phone: forecast, cost so far and both readings fit on the first screen; 'More below' shows while there is more", async () => {
+    const H = { "2025-10": { start: 1300, end: 1418, date: null, bill: null }, ...SEPT };
+    const page = await open({ width: 412, height: 790, storage: { ...readings(2445, 2489, "2026-10-01", "2026-10-22"), "gas-bill-months-v1": H, "gas-bill-breakdown-open": "1" } });
+    const r = await page.evaluate(() => {
+      const b = (s) => document.querySelector(s).getBoundingClientRect();
+      return { readings: b(".readings").bottom, h: innerHeight, fc: b("#out-fc-eur").top, now: b("#out-now-eur").top, fcR: b("#out-fc-eur").right, nowL: b("#out-now-eur").left,
+        wide: document.documentElement.scrollWidth > innerWidth, link: !!b("#head-tariff").height };
+    });
+    expect(r.readings <= r.h, "both readings above the fold: " + r.readings + " / " + r.h);
+    expect(r.nowL > r.fcR && Math.abs(r.now - r.fc) < 30, "forecast and cost so far side by side: " + JSON.stringify(r));
+    expect(!r.wide && r.link, "no sideways scroll; the tariff link stays");
+    expect(!(await page.$eval("#scroll-hint", (e) => e.hidden)) && (await text(page, "#scroll-more")) === "Още отдолу", "hint shown at the top");
+    await page.click("#scroll-more"); await settle(400);
+    expect(await page.evaluate(() => scrollY > 200), "a tap scrolls down");
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await settle(150);
+    expect(await page.$eval("#scroll-hint", (e) => e.hidden), "hidden at the bottom");
+    await page.evaluate(() => scrollTo(0, 0)); await settle(150);
+    await page.click("#menu-btn"); await settle(100);
+    expect(await page.$eval("#scroll-hint", (e) => e.hidden), "hidden while the menu is open");
+    await page.click("#menu-close"); await settle(400);
+    expect(!(await page.$eval("#scroll-hint", (e) => e.hidden)), "back after the menu closes");
+    await page.click('.lang button[data-lang="en"]').catch(() => {});
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    // Desktop with everything on screen: no hint.
+    const d = await open({ width: 1280, height: 2000, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
+    expect(await d.$eval("#scroll-hint", (e) => e.hidden), "no hint when nothing is below");
+    await d.close2();
+  });
   await test("sanity", "N24 'Last updated' under today's reading when it wasn't changed today", async () => {
     const note = (p) => p.$eval("#cur-updated", (e) => e.hidden ? "" : e.textContent);
     // An older save without the stamp: the last day it was saved counts.
