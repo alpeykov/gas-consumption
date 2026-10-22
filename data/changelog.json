@@ -2,6 +2,20 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.8",
+      "date": "2026-10-22",
+      "bg": [
+        "Сметката в € и в лв.: при промяна на едното поле другото се превалутира, без да се заключва.",
+        "Месеците в „От“ и „До“ на графиката са с най-новия най-отгоре.",
+        "Текущият месец в графиката показва прогнозата до края на месеца (пунктир), а в подсказката – и потреблението до момента."
+      ],
+      "en": [
+        "The bill in € and lv.: changing one field converts the other, nothing is locked.",
+        "The “From” and “To” months of the chart list the newest first.",
+        "This month in the chart shows the forecast to the end of the month (dashed); the tooltip also gives the use so far."
+      ]
+    },
+    {
       "version": "2.1.7",
       "date": "2026-10-22",
       "bg": [

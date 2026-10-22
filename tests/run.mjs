@@ -438,7 +438,7 @@ async function sanity() {
     await setVal(page, "#mh-start", "2430");
     expect((await page.$eval("#mh-m3", (e) => e.value)) === "19", "a reading recalculates m³");
     await setVal(page, "#mh-bill", "16,50");
-    expect((await page.$eval("#mh-bill-bgn", (e) => [e.disabled, e.value].join())) === "true,32,27", "leva filled and locked: " + await page.$eval("#mh-bill-bgn", (e) => [e.disabled, e.value].join()));
+    expect((await page.$eval("#mh-bill-bgn", (e) => [e.disabled, e.value].join())) === "false,32,27", "leva filled, still editable: " + await page.$eval("#mh-bill-bgn", (e) => [e.disabled, e.value].join()));
     expect(/разлика със сметката [+−]\d/.test(await text(page, "#mh-calc")), "difference from the bill shown");
     await page.click("#mh-save");
     expect(JSON.stringify((await monthsOf(page))["2026-09"]) === JSON.stringify({ start: 2430, end: 2449, date: null, bill: 16.5 }), "saved: " + JSON.stringify((await monthsOf(page))["2026-09"]));
@@ -549,9 +549,11 @@ async function sanity() {
     await page.select("#mh-month", "2025-12");
     expect((await text(page, "#mh-bgn-note")).startsWith("Фактурите преди 1 януари 2026 г. са в лева"), "invoice of December 2025: leva note");
     await setVal(page, "#mh-start", "1900"); await setVal(page, "#mh-end", "2100"); await setVal(page, "#mh-bill-bgn", "300");
-    expect((await page.$eval("#mh-bill", (e) => [e.disabled, e.value].join())) === "true,153,39", "euro filled and locked");
+    expect((await page.$eval("#mh-bill", (e) => [e.disabled, e.value].join())) === "false,153,39", "euro filled, still editable");
+    await setVal(page, "#mh-bill", "150");
+    expect((await page.$eval("#mh-bill-bgn", (e) => e.value)) === "293,37", "typing euro recalculates leva");
     await setVal(page, "#mh-bill-bgn", "");
-    expect((await page.$eval("#mh-bill", (e) => [e.disabled, e.value].join())) === "false,", "cleared: both open again");
+    expect((await page.$eval("#mh-bill", (e) => e.value)) === "", "cleared: both empty");
     await setVal(page, "#mh-bill-bgn", "300");
     expect(/разлика със сметката [+−][\d,]+ € \/ [\d,]+ лв\.$/.test(await text(page, "#mh-calc")), "difference in both: " + await text(page, "#mh-calc"));
     await page.click("#mh-save");
@@ -559,7 +561,7 @@ async function sanity() {
     const row = await page.$eval("#mh-rows tr[data-m='2025-12']", (tr) => tr.cells[3].textContent);
     expect(row.startsWith("153,39 €300,00 лв."), "shown as € with the leva from the bill: " + row);
     await page.click(".mh-ed[data-m='2025-12']");
-    expect((await page.$eval("#mh-bill-bgn", (e) => [e.disabled, e.value].join())) === "false,300,00" && (await page.$eval("#mh-bill", (e) => [e.disabled, e.value].join())) === "true,153,39", "edit shows the leva amount, euro locked");
+    expect((await page.$eval("#mh-bill-bgn", (e) => [e.disabled, e.value].join())) === "false,300,00" && (await page.$eval("#mh-bill", (e) => [e.disabled, e.value].join())) === "false,153,39", "edit shows the leva amount and the euro");
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
@@ -589,7 +591,7 @@ async function sanity() {
     await page.select("#mh-month", "2024-10");
     await setVal(page, "#mh-bill-bgn", "53,71"); await settle(600); await setVal(page, "#mh-bill-bgn", "53,71");
     expect((await text(page, "#mh-usage")) === "Потреблението през октомври 2024 се смята по цената на Овергаз за октомври 2024." && /цена за октомври 2024\) = 27,47 € \/ 53,72 лв\./.test(await text(page, "#mh-calc")), "priced for October 2024: " + await text(page, "#mh-calc"));
-    expect(await page.$eval("#mh-bill", (e) => e.disabled), "a bill kept in leva stays in leva");
+    expect((await page.$eval("#mh-bill", (e) => e.value)) === "27,46", "the leva bill is shown in euro too");
     await page.click("#mh-save");
     const m = await monthsOf(page);
     expect(Object.keys(m).join() === "2024-10" && JSON.stringify(m["2024-10"]) === JSON.stringify({ start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }), "moved: " + JSON.stringify(m));
@@ -608,17 +610,21 @@ async function sanity() {
     await page.click("#mh-chart-toggle"); await settle(300);
     const v = (id) => page.$eval("#" + id, (e) => e.value);
     expect((await v("mh-unit")) === "eur" && (await v("mh-from")) === "2025-10" && (await v("mh-to")) === "2026-10", "€, last 12 months up to now: " + [await v("mh-unit"), await v("mh-from"), await v("mh-to")]);
-    expect((await page.$eval("#mh-from", (e) => e.options[0].value)) === "2025-03", "the period can reach back to the oldest month");
+    expect((await page.$eval("#mh-from", (e) => [e.options[0].value, e.options[e.options.length - 1].value].join())) === "2026-10,2025-03", "newest month on top, back to the oldest");
     const pts = () => page.$$eval("#mh-svg .mh-pt", (c) => c.map((x) => x.dataset.m).join());
     expect((await pts()) === "2026-08,2026-09,2026-10", "points for Aug, Sep and October so far: " + await pts());
     expect((await page.$$eval("#mh-svg path", (p) => p.map((x) => !!x.getAttribute("d")))).join() === "true,true", "a solid line and a dashed one into this month");
     expect(/^25 m³ · [\d,]+ € \/ [\d,]+ лв\.$/.test(await text(page, "#mh-total-val")), "period total: " + await text(page, "#mh-total-val"));
+    // This month: the forecast, not the use so far (30 m³ in 16 days → 30/16 × 31 ≈ 58 m³).
+    const oc = await page.$eval("#mh-svg .mh-pt[data-m='2026-10']", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+    await page.mouse.move(oc[0], oc[1]); await settle(100);
+    expect(/^Октомври 2026 · прогноза до края на месеца≈ 58 m³ · [\d,]+ € \/ [\d,]+ лв\.до момента \(17\.10\): 30 m³ · 26,79 € \/ 52,39 лв\.$/.test(await text(page, "#mh-tip")), "forecast tooltip: " + await text(page, "#mh-tip"));
     // Tooltip on September.
     const pt = await page.$eval("#mh-svg .mh-pt[data-m='2026-09']", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
     await page.mouse.move(pt[0], pt[1]); await settle(100);
     expect((await text(page, "#mh-tip")) === "Септември 202616 m³ · 13,61 € / 26,62 лв.", "tooltip: " + await text(page, "#mh-tip"));
     await page.select("#mh-unit", "m3");
-    expect((await page.$eval("#mh-svg", (s) => s.textContent)).includes("m³") && (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).includes("10"), "m³ axis: " + (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).join());
+    expect((await page.$eval("#mh-svg", (s) => s.textContent)).includes("m³") && (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).includes("20"), "m³ axis: " + (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).join());
     await page.select("#mh-from", "2025-03"); await page.select("#mh-to", "2025-06");
     expect((await pts()) === "2025-03" && (await text(page, "#mh-total-val")).startsWith("100 m³ · "), "a chosen period: " + await pts() + " · " + await text(page, "#mh-total-val"));
     await page.reload({ waitUntil: "networkidle0" });

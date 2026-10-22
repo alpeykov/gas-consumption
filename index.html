@@ -476,7 +476,6 @@
   .mh-grid label { display: grid; gap: 4px; align-content: end; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   .mh-grid input, .mh-grid select { font: inherit; font-size: 1rem; letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; min-width: 0; width: 100%; }
   .mh-grid input.mh-key { border-color: var(--flame); }
-  .mh-grid input:disabled { border-color: var(--line); border-style: dashed; color: var(--muted); background: transparent; opacity: 1; -webkit-text-fill-color: var(--muted); }
   .mh-grid .mh-wide { grid-column: 1 / -1; }
   .mh-calc { margin: 0; font-size: 0.85rem; color: var(--muted); }
   .mh-calc b { color: var(--fg); }
@@ -1081,6 +1080,8 @@
       mhPrognosis: "Прогноза",
       mhBill: "Сметка",
       mhSoFar: "до момента · {d}",
+      mhTipFc: "прогноза до края на месеца",
+      mhTipNow: "до момента ({d}): {v}",
       mhReadOn: "показание от {d}",
       mhEmpty: "Още няма записани месеци. Месецът се записва сам на 1-во число с последното показание от него. Можете да добавите и стар месец от сметка.",
       mhAdd: "+ Добави месец от стара сметка",
@@ -1267,6 +1268,8 @@
       mhPrognosis: "Estimate",
       mhBill: "Bill",
       mhSoFar: "so far · {d}",
+      mhTipFc: "forecast to the end of the month",
+      mhTipNow: "so far ({d}): {v}",
       mhReadOn: "reading of {d}",
       mhEmpty: "No months saved yet. A month is saved by itself on the 1st, with its last reading. You can also add an old month from a bill.",
       mhAdd: "+ Add a month from an old bill",
@@ -2282,7 +2285,7 @@
     const first = keys.length && keys[0] < ymAdd(curYm, -12) ? keys[0] : ymAdd(curYm, -12);
     const all = []; for (let m = first; m <= curYm; m = ymAdd(m, 1)) all.push(m);
     const fill = (sel, val, fallback) => {
-      sel.innerHTML = all.map((m) => '<option value="' + m + '">' + capFirst(monthName(Number(m.slice(5)) - 1).slice(0, 3)) + " ’" + m.slice(2, 4) + "</option>").join("");
+      sel.innerHTML = [...all].reverse().map((m) => '<option value="' + m + '">' + capFirst(monthName(Number(m.slice(5)) - 1).slice(0, 3)) + " ’" + m.slice(2, 4) + "</option>").join("");
       sel.value = all.includes(val) ? val : fallback;
     };
     fill($("mh-from"), mhView.from, ymAdd(curYm, -12));
@@ -2294,9 +2297,11 @@
     const unit = $("mh-unit").value, inM3 = unit === "m3", inBgn = unit === "bgn";
     const cur = inBgn ? (lang === "bg" ? "лв." : "lv.") : "€";
     const unitText = inM3 ? "m³" : cur + " " + t("vatIncl");
-    // Saved months, plus this month so far (drawn dashed, hollow dot).
+    // Saved months, plus this month's forecast at today's daily rate (drawn dashed, hollow dot).
+    const el = so == null ? 0 : Math.round((parseDate($("cur-date").value) - parseDate($("start-date").value)) / DAY);
+    const fc = so == null ? null : el > 0 ? so / el * Math.round((parseDate(ymAdd(curYm, 1) + "-01") - parseDate($("start-date").value)) / DAY) : so;
     const pts = span.map((m) => {
-      const r = months[m], m3 = r ? r.end - r.start : m === curYm ? so : null;
+      const r = months[m], m3 = r ? r.end - r.start : m === curYm ? fc : null;
       if (m3 == null) return null;
       const c = monthCost(m, m3);
       const v = inM3 ? m3 : c ? c.gross * (inBgn ? BGN_PER_EUR : 1) : null;
@@ -2373,7 +2378,9 @@
       ["x1", "x2"].forEach((k) => $("mh-cross").setAttribute(k, x(best)));
       $("mh-cross").setAttribute("visibility", "visible");
       $("mh-dot").setAttribute("cx", x(best)); $("mh-dot").setAttribute("cy", y(p.v)); $("mh-dot").setAttribute("visibility", "visible");
-      tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhSoFar", { d: ddmm($("cur-date").value) }) : "") + "<br><b>" + num(p.m3, 0, 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
+      const now = p.part ? monthCost(p.m, so) : null;
+      tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") + "<br><b>" + (p.part ? "≈ " : "") + num(p.m3, 0, p.part ? 0 : 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
+        (p.part ? "<br>" + t("mhTipNow", { d: ddmm($("cur-date").value), v: num(so, 0, 2) + " m³ · " + (now ? both(now.gross) : "–") }) : "") +
         (p.r && p.r.bill != null ? "<br>" + t("mhTipBill", { b: both(billEur(p.r)) }) : "");
       tip.hidden = false;
       const scale = r.width / W, left = x(best) * scale, tw = tip.offsetWidth;
@@ -2394,16 +2401,17 @@
     const isNew = mhEdit === "new", r = isNew ? null : months[mhEdit];
     const field = (id, label, val, cls = "", ph = "", wide = false, off = false) => '<label' + (wide ? ' class="mh-wide"' : "") + "><span>" + t(label) + '</span><input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + val + '"' +
       (cls ? ' class="' + cls + '"' : "") + (ph ? ' placeholder="' + t(ph) + '"' : "") + (off ? " disabled" : "") + "></label>";
-    // The bill in euro and in leva: the one typed (or saved) is the amount, the other shows it converted and is locked.
+    // The bill in euro and in leva: the one typed last (or saved) is the amount, the other shows it converted.
     const rb = r && r.bill != null ? r.bill : null, inBgn = r && r.billCur === "BGN";
-    const bills = field("mh-bill", "mhBillField", rb == null ? "" : mhAmt(inBgn ? rb / BGN_PER_EUR : rb), "mh-key", "mhOptional", false, rb != null && inBgn) +
-      field("mh-bill-bgn", "mhBillFieldBgn", rb == null ? "" : mhAmt(inBgn ? rb : rb * BGN_PER_EUR), "mh-key", "mhOptional", false, rb != null && !inBgn);
+    const bills = field("mh-bill", "mhBillField", rb == null ? "" : mhAmt(inBgn ? rb / BGN_PER_EUR : rb), "mh-key", "mhOptional") +
+      field("mh-bill-bgn", "mhBillFieldBgn", rb == null ? "" : mhAmt(inBgn ? rb : rb * BGN_PER_EUR), "mh-key", "mhOptional");
     // Months from last month back five years that are free (or the month being edited); this month is still running.
     const free = Array.from({ length: 60 }, (_, i) => ymAdd(ymOf(todayStr()), -1 - i)).filter((m) => !months[m] || m === mhEdit);
     const inv0 = isNew ? free[0] || "" : mhEdit;
     if (inv0 && !free.includes(inv0)) free.push(inv0);
     const pick = '<label class="mh-wide">' + t("mhInvoice") + '<select id="mh-month">' +
       free.map((m) => '<option value="' + m + '"' + (m === inv0 ? " selected" : "") + ">" + mLabel(m) + "</option>").join("") + "</select></label>";
+    box.dataset.cur = inBgn ? "BGN" : "EUR";
     box.innerHTML = '<div class="mh-form">' +
       "<h3>" + (isNew ? t("mhNewH") : mLabel(mhEdit)) + '</h3><div class="mh-grid">' +
       pick +
@@ -2422,8 +2430,8 @@
   const mhMonthNow = () => $("mh-month").value;
   const mhInvoiceNow = mhMonthNow;
   const mhAmt = (v) => v.toLocaleString(locale(), { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  // The bill as typed: in leva when the euro field is locked, else in euro.
-  const mhBill = () => $("mh-bill").disabled ? { v: mhNum($("mh-bill-bgn").value), cur: "BGN" } : { v: mhNum($("mh-bill").value), cur: "EUR" };
+  // The bill as typed last: in leva or in euro.
+  const mhBill = () => $("mh-form").dataset.cur === "BGN" ? { v: mhNum($("mh-bill-bgn").value), cur: "BGN" } : { v: mhNum($("mh-bill").value), cur: "EUR" };
   function updateMhCalc() {
     const m = mhMonthNow(), s = mhNum($("mh-start").value), e = mhNum($("mh-end").value), b = mhBill(), bill = b.v;
     if ($("mh-usage")) $("mh-usage").textContent = m ? t("mhUsage", { month: monthLabel(m) }) : "";
@@ -2443,11 +2451,11 @@
       if (id === "mh-m3") { const m3 = mhNum($("mh-m3").value); if (isFinite(s) && isFinite(m3)) $("mh-end").value = String(Math.round((s + m3) * 1000) / 1000); }
       else if ((id === "mh-start" || id === "mh-end") && isFinite(s) && isFinite(e)) $("mh-m3").value = String(Math.round((e - s) * 1000) / 1000);
     }
-    // A bill typed in one currency fills the other, which is locked until the typed one is cleared.
+    // A bill typed in one currency fills the other converted; both stay editable and the last typed one counts.
     if (id === "mh-bill" || id === "mh-bill-bgn") {
       const other = $(id === "mh-bill" ? "mh-bill-bgn" : "mh-bill"), v = mhNum(ev.target.value);
-      if (!ev.target.value.trim()) { other.value = ""; other.disabled = false; }
-      else { other.disabled = true; other.value = isFinite(v) ? mhAmt(id === "mh-bill" ? v * BGN_PER_EUR : v / BGN_PER_EUR) : ""; }
+      $("mh-form").dataset.cur = id === "mh-bill" ? "EUR" : "BGN";
+      other.value = ev.target.value.trim() && isFinite(v) ? mhAmt(id === "mh-bill" ? v * BGN_PER_EUR : v / BGN_PER_EUR) : "";
     }
     $("mh-msg").hidden = true;
     updateMhCalc();
