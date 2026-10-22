@@ -529,10 +529,10 @@
   .chart-box { position: relative; min-width: 0; }
   #chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
   #chart-svg text { fill: var(--muted); font: 11px var(--font-body); font-variant-numeric: tabular-nums; }
-  /* The readout sits under the chart and keeps its height, so it never covers the line or makes the page jump. */
   .chart-tip {
-    margin-top: 8px; background: var(--tip-bg); color: var(--tip-fg); border-radius: 8px; padding: 8px 10px;
-    font-size: 0.8rem; line-height: 1.4; min-height: calc(4 * 1.4em + 16px); box-sizing: border-box; font-variant-numeric: tabular-nums;
+    position: absolute; top: 0; pointer-events: none; z-index: 4;
+    background: var(--tip-bg); color: var(--tip-fg); border-radius: 8px; padding: 8px 10px;
+    font-size: 0.8rem; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums;
   }
   .chart-tip b { font-size: 0.95rem; }
   .chart-note { margin: 0; color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; }
@@ -785,7 +785,7 @@
           </div>
           <div class="chart-box" id="mh-box">
             <svg id="mh-svg" role="img"></svg>
-            <div class="chart-tip" id="mh-tip" aria-live="polite"></div>
+            <div class="chart-tip" id="mh-tip" hidden></div>
           </div>
           <div class="mh-total" id="mh-total" hidden><span data-i18n="mhTotal">Общо за периода</span><span id="mh-total-val"></span></div>
         </div>
@@ -819,7 +819,7 @@
         </div>
         <div class="chart-box" id="chart-box">
           <svg id="chart-svg" role="img"></svg>
-          <div class="chart-tip" id="chart-tip" aria-live="polite"></div>
+          <div class="chart-tip" id="chart-tip" hidden></div>
         </div>
         <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
         <p class="chart-note" data-i18n="chartNote"></p>
@@ -1886,9 +1886,17 @@
     const raw = range / 5, pow = Math.pow(10, Math.floor(Math.log10(raw)));
     return [1, 2, 2.5, 5, 10].map((k) => k * pow).find((s) => s >= raw);
   };
+  // A tooltip beside the crosshair (on the side with room) and above or below the month's point,
+  // whichever has room, so it never covers that point however high the value is.
+  function placeTip(tip, svg, W, px, py) {
+    tip.hidden = false;
+    const r = svg.getBoundingClientRect(), k = r.width / W, cx = px * k, cy = py * k, tw = tip.offsetWidth, th = tip.offsetHeight, gap = 12;
+    tip.style.left = (cx + gap + tw <= r.width ? cx + gap : cx - gap - tw >= 0 ? cx - gap - tw : Math.max(0, Math.min(r.width - tw, cx - tw / 2))) + "px";
+    tip.style.top = (cy - gap - th >= 0 ? cy - gap - th : cy + gap) + "px";
+  }
   function drawChart() {
     const svg = $("chart-svg");
-    $("chart-tip").textContent = "";
+    $("chart-tip").hidden = true;
     let from = +$("chart-from").value, to = +$("chart-to").value;
     if (from > to) { [from, to] = [to, from]; }
     // Every calendar month in the chosen years, up to the latest month with data; gaps stay empty.
@@ -1957,28 +1965,26 @@
 
     // Crosshair + tooltip on the nearest month with data.
     const hit = $("chart-hit"), tip = $("chart-tip");
-    // The readout under the chart shows the latest month, or the month under the finger / pointer.
-    const latest = pts.length - 1 - [...pts].reverse().findIndex(Boolean);
-    const showAt = (best, mark) => {
+    const showAt = (best) => {
       const p = pts[best];
       $("chart-cross").setAttribute("x1", x(best)); $("chart-cross").setAttribute("x2", x(best));
-      $("chart-cross").setAttribute("visibility", mark ? "visible" : "hidden");
-      $("chart-dot").setAttribute("cx", x(best)); $("chart-dot").setAttribute("cy", y(p.v)); $("chart-dot").setAttribute("visibility", mark ? "visible" : "hidden");
+      $("chart-cross").setAttribute("visibility", "visible");
+      $("chart-dot").setAttribute("cx", x(best)); $("chart-dot").setAttribute("cy", y(p.v)); $("chart-dot").setAttribute("visibility", "visible");
       const notes = [];
       if (p.basis === "blog") notes.push(t("tipApprox"));
       if (p.basis === "old") notes.push(t("tipOld"));
       tip.innerHTML = monthLabel(p.m) + "<br><b>" + fmt(p.v) + " " + unitText + "</b><br>" +
         fmt(p.v / 1.2) + " " + cur + "/MWh " + t("vatExcl") +
         (notes.length ? "<br>" + notes.join(" · ") : "");
+      placeTip(tip, svg, W, x(best), y(p.v));
     };
     const show = (evt) => {
       const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width);
       let best = -1, dist = Infinity;
       pts.forEach((p, i) => { if (p && Math.abs(x(i) - px) < dist) { dist = Math.abs(x(i) - px); best = i; } });
-      if (best >= 0) showAt(best, true);
+      if (best >= 0) showAt(best);
     };
-    const hide = () => showAt(latest, false);
-    hide();
+    const hide = () => { tip.hidden = true; $("chart-cross").setAttribute("visibility", "hidden"); $("chart-dot").setAttribute("visibility", "hidden"); };
     hit.addEventListener("pointermove", show);
     hit.addEventListener("pointerdown", show);
     hit.addEventListener("pointerleave", hide);
@@ -2308,7 +2314,7 @@
     });
     const vals = pts.filter(Boolean).map((p) => p.v);
     const svg = $("mh-svg"), tip = $("mh-tip");
-    tip.textContent = "";
+    tip.hidden = true;
     const W = Math.max(260, $("mh-box").clientWidth), H = Math.round(Math.min(280, Math.max(190, W * 0.5)));
     const M = { l: 40, r: 10, t: 22, b: 30 };
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
@@ -2368,26 +2374,24 @@
     const f = pts.find(Boolean), l = [...pts].reverse().find(Boolean);
     svg.setAttribute("aria-label", t("mhAria", { unit: unitText, from: monthLabel(f.m), to: monthLabel(l.m) }));
 
-    // The readout under the chart shows the latest month, or the month under the finger / pointer.
-    const latest = pts.length - 1 - [...pts].reverse().findIndex(Boolean);
-    const showAt = (best, mark) => {
+    const showAt = (best) => {
       const p = pts[best];
       ["x1", "x2"].forEach((k) => $("mh-cross").setAttribute(k, x(best)));
-      $("mh-cross").setAttribute("visibility", mark ? "visible" : "hidden");
-      $("mh-dot").setAttribute("cx", x(best)); $("mh-dot").setAttribute("cy", y(p.v)); $("mh-dot").setAttribute("visibility", mark ? "visible" : "hidden");
+      $("mh-cross").setAttribute("visibility", "visible");
+      $("mh-dot").setAttribute("cx", x(best)); $("mh-dot").setAttribute("cy", y(p.v)); $("mh-dot").setAttribute("visibility", "visible");
       const now = p.part ? monthCost(p.m, so) : null;
       tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") + "<br><b>" + (p.part ? "≈ " : "") + num(p.m3, 0, p.part ? 0 : 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
         (p.part ? "<br>" + t("mhTipNow", { d: ddmm($("cur-date").value), v: num(so, 0, 2) + " m³ · " + (now ? both(now.gross) : "–") }) : "") +
         (p.r && p.r.bill != null ? "<br>" + t("mhTipBill", { b: both(billEur(p.r)) }) : "");
+      placeTip(tip, svg, W, x(best), y(p.v));
     };
     const show = (evt) => {
       const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width);
       let best = -1, dist = Infinity;
       pts.forEach((p, i) => { if (p && Math.abs(x(i) - px) < dist) { dist = Math.abs(x(i) - px); best = i; } });
-      if (best >= 0) showAt(best, true);
+      if (best >= 0) showAt(best);
     };
-    const hide = () => showAt(latest, false);
-    hide();
+    const hide = () => { tip.hidden = true; $("mh-cross").setAttribute("visibility", "hidden"); $("mh-dot").setAttribute("visibility", "hidden"); };
     $("mh-hit").addEventListener("pointermove", show);
     $("mh-hit").addEventListener("pointerdown", show);
     $("mh-hit").addEventListener("pointerleave", hide);
