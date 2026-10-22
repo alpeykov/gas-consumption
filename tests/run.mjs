@@ -388,7 +388,7 @@ async function sanity() {
     let page = await open({ now: "2026-11-01T08:00:00", storage: stamped("2026-10-01") });
     expect(JSON.stringify((await monthsOf(page))["2026-10"]) === JSON.stringify({ start: 2445, end: 2502, date: "2026-10-28", bill: null }), "October saved: " + JSON.stringify(await monthsOf(page)));
     expect((await page.$eval("#start-reading", (e) => e.value)) === "2502" && (await page.$eval("#start-date", (e) => e.value)) === "2026-11-01", "last bill reading moves to 2502 on 1 November");
-    expect(/^Октомври 2026 е записан в историята \(57 m³ · .+ €\)\. „Показание от последната сметка“ е 2502 от 1-ви ноември\./.test(await text(page, "#toast")), "toast: " + await text(page, "#toast"));
+    expect(/^Октомври 2026 е записан в историята \(57 m³ · .+ € \/ .+ лв\.\)\. „Показание от последната сметка“ е 2502 от 1-ви ноември\./.test(await text(page, "#toast")), "toast: " + await text(page, "#toast"));
     expect((await text(page, "#out-now-eur")) === "0,00 €" && (await text(page, "#out-fc-eur")) === "–" && (await text(page, "#out-days")) === "Първи ден от периода на сметката – прогнозата се появява от утре.", "1st day: no warning, forecast from tomorrow");
     await page.click("#toast-undo");
     expect(!(await monthsOf(page))["2026-10"] && (await page.$eval("#start-reading", (e) => e.value)) === "2445" && (await page.$eval("#start-date", (e) => e.value)) === "2026-10-01", "Undo puts everything back");
@@ -408,7 +408,7 @@ async function sanity() {
     expect(!Object.keys(await monthsOf(page)).length, "nothing for the current month");
     await setVal(page, "#cur-date", "2026-09-30", "change");
     expect(JSON.stringify(await monthsOf(page)) === JSON.stringify({ "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: null } }), "September saved: " + JSON.stringify(await monthsOf(page)));
-    expect((await text(page, "#toast")).startsWith("Записано в историята: Септември 2026 · 16 m³ · 13,61 €"), "toast: " + await text(page, "#toast"));
+    expect((await text(page, "#toast")).startsWith("Записано в историята: Септември 2026 · 16 m³ · 13,61 € / 26,62 лв."), "toast: " + await text(page, "#toast"));
     await setVal(page, "#cur-reading", "2447", "change");
     expect((await monthsOf(page))["2026-09"].end === 2447, "a changed reading overwrites the month");
     await page.click("#toast-undo");
@@ -426,14 +426,14 @@ async function sanity() {
     const rows = () => page.$$eval("#mh-rows tr", (trs) => trs.map((tr) => [...tr.cells].map((c) => c.textContent.trim())));
     let r = await rows();
     expect(r[0][0].startsWith("Октомври 2026до момента") && r[0][1] === "30", "this month so far first: " + r[0].join(" | "));
-    expect(r[1][0] === "Септември 2026✎2429 → 2445" && r[1][1] === "16" && r[1][2] === "13,61 €" && r[1][3] === "–", "September row: " + r[1].join(" | "));
+    expect(r[1][0] === "Септември 2026✎2429 → 2445" && r[1][1] === "16" && r[1][2] === "13,61 €26,62 лв." && r[1][3] === "–", "September row: " + r[1].join(" | "));
     expect(await page.$eval("#mh-rows tr.mh-cur", (tr) => !tr.querySelector(".mh-ed")), "no ✎ on the month still running");
     await page.click(".mh-ed[data-m='2026-09']");
-    expect((await page.$eval("#mh-m3", (e) => e.value)) === "16" && /= 13,61 €/.test(await text(page, "#mh-calc")), "form shows m³ and the estimate");
+    expect((await page.$eval("#mh-m3", (e) => e.value)) === "16" && /= 13,61 € \/ 26,62 лв\.$/.test(await text(page, "#mh-calc")), "form shows m³ and the estimate in both currencies: " + await text(page, "#mh-calc"));
     await setVal(page, "#mh-m3", "20");
     expect((await page.$eval("#mh-end", (e) => e.value)) === "2449", "m³ moves the end reading");
     const c20 = await text(page, "#mh-calc");
-    expect(/^Прогноза: 20 m³ × 10,76 kWh\/m³ × .+\/MWh с ДДС \(цена за септември 2026\) = 17,0\d €$/.test(c20), "estimate follows m³: " + c20);
+    expect(/^Прогноза: 20 m³ × 10,76 kWh\/m³ × .+\/MWh с ДДС \(цена за септември 2026\) = 17,0\d € \/ 33,\d\d лв\.$/.test(c20), "estimate follows m³: " + c20);
     await setVal(page, "#mh-start", "2430");
     expect((await page.$eval("#mh-m3", (e) => e.value)) === "19", "a reading recalculates m³");
     await setVal(page, "#mh-bill", "16,50");
@@ -441,7 +441,7 @@ async function sanity() {
     await page.click("#mh-save");
     expect(JSON.stringify((await monthsOf(page))["2026-09"]) === JSON.stringify({ start: 2430, end: 2449, date: null, bill: 16.5 }), "saved: " + JSON.stringify((await monthsOf(page))["2026-09"]));
     r = await rows();
-    expect(r[1][1] === "19" && r[1][3].startsWith("16,50 €") && /[+−]\d/.test(r[1][3]), "row updated: " + r[1].join(" | "));
+    expect(r[1][1] === "19" && r[1][3].startsWith("16,50 €32,27 лв.") && /[+−]\d/.test(r[1][3]), "row updated: " + r[1].join(" | "));
     await page.click(".mh-ed[data-m='2026-09']");
     await setVal(page, "#mh-end", "2420");
     await page.click("#mh-save");
@@ -471,6 +471,38 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N31 menu actions open their panel and scroll to it, also from far down the page (backup on a computer)", async () => {
+    const page = await open({ width: 1366, height: 768, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-breakdown-open": "1" } });
+    await page.click("#chart-btn"); await settle(800);
+    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#help-btn", "#about"], ["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"], ["#history-btn", "#mh-panel"]]) {
+      await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+      await page.click(btn); await settle(150);
+      const r = await page.$eval(panel, (e) => { const b = e.getBoundingClientRect(); return { shown: !e.hidden, inView: b.top >= -1 && b.top < innerHeight }; });
+      expect(r.shown && r.inView, btn + ": " + JSON.stringify(r));
+    }
+    await page.click("#backup-close");
+    expect(await page.$eval("#backup", (e) => e.hidden), "× closes it");
+    await page.close2();
+  });
+  await test("sanity", "N30 history: bills before 2026 are typed in leva, converted to euro, shown in both", async () => {
+    const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await page.click("#history-btn");
+    await page.click("#mh-add");
+    await page.select("#mh-month", "2026-01");
+    expect((await text(page, "#mh-bill-label")) === "Сметка € (от Овергаз)" && await page.$eval("#mh-bgn-note", (e) => e.hidden), "2026: bill in euro");
+    await page.select("#mh-month", "2025-12");
+    expect((await text(page, "#mh-bill-label")) === "Сметка лв. (от Овергаз)" && !(await page.$eval("#mh-bgn-note", (e) => e.hidden)), "December 2025: bill in leva");
+    await setVal(page, "#mh-start", "1900"); await setVal(page, "#mh-end", "2100"); await setVal(page, "#mh-bill", "300");
+    expect(/разлика със сметката [+−][\d,]+ € \/ [\d,]+ лв\.$/.test(await text(page, "#mh-calc")), "difference in both: " + await text(page, "#mh-calc"));
+    await page.click("#mh-save");
+    expect(JSON.stringify((await monthsOf(page))["2025-12"]) === JSON.stringify({ start: 1900, end: 2100, date: null, bill: 300, billCur: "BGN" }), "kept in leva: " + JSON.stringify((await monthsOf(page))["2025-12"]));
+    const row = await page.$eval("#mh-rows tr[data-m='2025-12']", (tr) => tr.cells[3].textContent);
+    expect(row.startsWith("153,39 €300,00 лв."), "shown as € with the leva from the bill: " + row);
+    await page.click(".mh-ed[data-m='2025-12']");
+    expect((await page.$eval("#mh-bill", (e) => e.value)) === "300,00" && (await text(page, "#mh-bill-label")) === "Сметка лв. (от Овергаз)", "edit shows the leva amount");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N29 history chart: folded at first, € first, m³ switch, remembered; English", async () => {
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": SEPT } });
     await page.click("#history-btn");
@@ -482,7 +514,7 @@ async function sanity() {
     expect((await page.$eval(".mh-bar[data-m='2026-09'] b", (b) => b.textContent)) === "14", "September bar in €");
     await page.click("#mh-unit [data-unit=m3]");
     expect((await page.$eval(".mh-bar[data-m='2026-09'] b", (b) => b.textContent)) === "16", "m³ switch");
-    expect((await text(page, "#mh-total-val")) === "16 m³ · 13,61 €", "12-month total: " + await text(page, "#mh-total-val"));
+    expect((await text(page, "#mh-total-val")) === "16 m³ · 13,61 € / 26,62 лв.", "12-month total: " + await text(page, "#mh-total-val"));
     await page.click(".mh-bar[data-m='2026-09']");
     expect(!!(await page.$("#mh-m3")), "a bar opens its month for editing");
     await page.reload({ waitUntil: "networkidle0" });
@@ -863,7 +895,8 @@ async function ui() {
       await page.click("#breakdown-toggle"); expect(!(await hidden(".breakdown")), "breakdown opens");
       await page.click("#breakdown-toggle"); expect(await hidden(".breakdown"), "breakdown closes");
       await page.click("#chart-btn"); await settle(800); expect(!(await hidden("#chart-panel")), "chart opens");
-      await page.click("#chart-btn"); expect(await hidden("#chart-panel"), "chart closes with its button");
+      await page.click("#chart-btn"); expect(!(await hidden("#chart-panel")), "the menu item keeps it open");
+      await page.click("#chart-close"); expect(await hidden("#chart-panel"), "chart closes with ×");
       await page.click("#help-btn"); expect(!(await hidden("#about")), "help opens");
       await page.click(".bill-link"); expect(!(await hidden("#bill-example")), "bill example opens");
       await page.click("#about-close"); expect(await hidden("#about"), "help closes with ×");

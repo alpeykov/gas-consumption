@@ -1063,6 +1063,8 @@
       mhNew: "Ново (от сметката)",
       mhM3: "m³ за месеца",
       mhBillField: "Сметка € (от Овергаз)",
+      mhBillFieldBgn: "Сметка лв. (от Овергаз)",
+      mhBgnNote: "Сметките преди 1 януари 2026 г. са в лева: въведете сумата в лева, приложението я превръща в евро (1 € = 1,95583 лв.).",
       mhOptional: "по желание",
       mhCalc: "Прогноза: {m3} m³ × {f} kWh/m³ × {p}/MWh с ДДС (цена за {month}) = {sum}",
       mhNoPrice: "Няма цена на Овергаз за {month}, затова прогнозата не може да се изчисли.",
@@ -1240,6 +1242,8 @@
       mhNew: "New (from the bill)",
       mhM3: "m³ for the month",
       mhBillField: "Bill € (from Overgas)",
+      mhBillFieldBgn: "Bill lv. (from Overgas)",
+      mhBgnNote: "Bills before 1 January 2026 are in leva: enter the amount in leva and the app converts it to euro (€1 = 1.95583 lv.).",
       mhOptional: "optional",
       mhCalc: "Estimate: {m3} m³ × {f} kWh/m³ × {p}/MWh incl. VAT ({month} price) = {sum}",
       mhNoPrice: "There's no Overgas price for {month}, so the estimate can't be worked out.",
@@ -1932,7 +1936,7 @@
     }
     drawChart();
   }
-  $("chart-btn").addEventListener("click", () => openChart($("chart-panel").hidden));
+  $("chart-btn").addEventListener("click", () => openChart(true));
   $("chart-close").addEventListener("click", () => openChart(false));
   ["chart-from", "chart-to", "chart-cur"].forEach((id) => $(id).addEventListener("change", () => { saveChartPrefs(); drawChart(); }));
   addEventListener("resize", () => { if (!$("chart-panel").hidden && chartData) drawChart(); });
@@ -1979,7 +1983,7 @@
 
   // "?" button: a few sentences about the app, in the current language.
   const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); if (!open) $("bill-example").hidden = true; };
-  $("help-btn").addEventListener("click", () => setAbout($("about").hidden));
+  $("help-btn").addEventListener("click", () => setAbout(true));
   $("about-close").addEventListener("click", () => setAbout(false));
   // ---- ☰ menu: settings and the less used actions in a panel from the left ----
   // It slides in and out; `hidden` is set only once the slide out has finished.
@@ -2010,11 +2014,12 @@
     $("menu").scrollTop = 0;
   });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
-  // Actions close the menu and show what they opened; language and theme keep it open.
+  // Actions close the menu and show what they opened (each opens its panel; × closes it); language and theme keep it open.
+  // The scroll waits for the action's own handler, so the panel is already shown even when the page was scrolled away from it.
   ["history-btn", "chart-btn", "share-btn", "backup-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
     setMenu(false);
     const panel = $(id).getAttribute("aria-controls");
-    if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" });
+    setTimeout(() => { if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" }); });
   }));
 
   // ---- First-run guide: four steps with example readings that are put back afterwards ----
@@ -2133,7 +2138,14 @@
   const readingMonth = (iso) => iso.slice(8) === "01" ? ymAdd(ymOf(iso), -1) : ymOf(iso);
   // An end reading before the month's last day (or the 1st after it) is shown with its date.
   const endsMonth = (ym, iso) => !iso || iso === ymAdd(ym, 1) + "-01" || ymOf(new Date(parseDate(iso) + DAY).toISOString()) !== ym;
-  const mhSum = (c) => (c ? eur(c.gross) : "–");
+  // Bulgaria uses the euro from 1 January 2026; bills before that are in leva. Amounts show in both currencies.
+  const EURO_FROM = "2026-01";
+  const inLeva = (ym) => ym < EURO_FROM;
+  const both = (e) => eur(e) + " / " + bgn(e * BGN_PER_EUR);
+  const mhSum = (c) => (c ? both(c.gross) : "–");
+  const mhCell = (e) => eur(e) + "<small>" + bgn(e * BGN_PER_EUR) + "</small>";
+  // A bill typed in leva stays in leva (exact as on the bill); in euro it is that amount over the fixed rate.
+  const billEur = (r) => (r.bill == null ? null : r.billCur === "BGN" ? r.bill / BGN_PER_EUR : r.bill);
 
   let mhEdit = null; // the month open in the form, "new" for a month from an old bill
   function renderMonths() {
@@ -2162,19 +2174,20 @@
     const sr = parseFloat($("start-reading").value), cr = parseFloat($("cur-reading").value);
     if (ymOf($("start-date").value || "") === curYm && isFinite(sr) && isFinite(cr) && cr >= sr) {
       rows.push('<tr class="mh-cur"><td>' + mLabel(curYm) + "<small>" + t("mhSoFar", { d: ddmm($("cur-date").value) }) + "</small></td><td>" + num(cr - sr, 0, 2) +
-        "</td><td>" + mhSum(monthCost(curYm, cr - sr)) + "</td><td>–</td></tr>");
+        "</td><td>" + (monthCost(curYm, cr - sr) ? mhCell(monthCost(curYm, cr - sr).gross) : "–") + "</td><td>–</td></tr>");
     }
     Object.keys(months).sort().reverse().forEach((m) => {
       const r = months[m], m3 = r.end - r.start, c = monthCost(m, m3);
       const sub = rd(r.start) + " → " + rd(r.end) + (endsMonth(m, r.date) ? "" : " · " + t("mhReadOn", { d: ddmm(r.date) }));
       let bill = "–";
       if (r.bill != null) {
-        bill = eur(r.bill);
-        const d = c ? r.bill - c.gross : NaN;
+        const be = billEur(r);
+        bill = eur(be) + "<small>" + bgn(r.billCur === "BGN" ? r.bill : be * BGN_PER_EUR) + "</small>";
+        const d = c ? be - c.gross : NaN;
         if (Math.abs(d) >= 0.005) bill += '<small class="mh-diff">' + (d > 0 ? "+" : "−") + eur(Math.abs(d)) + "</small>";
       }
       rows.push('<tr data-m="' + m + '"><td>' + mLabel(m) + '<button type="button" class="mh-ed" data-m="' + m + '" aria-label="' + t("mhEditAria", { month: mLabel(m) }) + '">✎</button><small>' + sub +
-        "</small></td><td>" + num(m3, 0, 2) + "</td><td>" + mhSum(c) + "</td><td>" + bill + "</td></tr>");
+        "</small></td><td>" + num(m3, 0, 2) + "</td><td>" + (c ? mhCell(c.gross) : "–") + "</td><td>" + bill + "</td></tr>");
     });
     $("mh-rows").innerHTML = rows.join("");
     $("mh-table").hidden = !rows.length;
@@ -2185,7 +2198,7 @@
     if (inSpan.length) {
       const m3 = inSpan.reduce((a, m) => a + months[m].end - months[m].start, 0);
       const costs = inSpan.map((m) => monthCost(m, months[m].end - months[m].start));
-      $("mh-total-val").innerHTML = "<b>" + num(m3, 0, 1) + " m³</b> · <b>" + (costs.every(Boolean) ? eur(costs.reduce((a, c) => a + c.gross, 0)) : "–") + "</b>";
+      $("mh-total-val").innerHTML = "<b>" + num(m3, 0, 1) + " m³</b> · <b>" + (costs.every(Boolean) ? both(costs.reduce((a, c) => a + c.gross, 0)) : "–") + "</b>";
     }
     $("mh-add").hidden = mhEdit === "new";
     renderMhForm();
@@ -2197,17 +2210,18 @@
     if (box.dataset.for === mhEdit) { updateMhCalc(); return; } // keep what is being typed
     box.dataset.for = mhEdit;
     const isNew = mhEdit === "new", r = isNew ? null : months[mhEdit];
-    const field = (id, label, val, cls = "", ph = "") => '<label>' + t(label) + '<input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + val + '"' +
+    const field = (id, label, val, cls = "", ph = "") => '<label><span' + (id === "mh-bill" ? ' id="mh-bill-label"' : "") + ">" + t(label) + '</span><input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + val + '"' +
       (cls ? ' class="' + cls + '"' : "") + (ph ? ' placeholder="' + t(ph) + '"' : "") + "></label>";
     const free = Array.from({ length: 36 }, (_, i) => ymAdd(ymOf(todayStr()), -1 - i)).filter((m) => !months[m]);
     box.innerHTML = '<div class="mh-form">' +
       "<h3>" + (isNew ? t("mhNewH") : mLabel(mhEdit)) + '</h3><div class="mh-grid">' +
       (isNew ? '<label>' + t("mhMonth") + '<select id="mh-month">' + free.map((m) => '<option value="' + m + '">' + mLabel(m) + "</option>").join("") + "</select></label>" +
-        field("mh-bill", "mhBillField", "", "mh-key", "mhOptional") +
+        field("mh-bill", free[0] && inLeva(free[0]) ? "mhBillFieldBgn" : "mhBillField", "", "mh-key", "mhOptional") +
         field("mh-start", "mhOld", "") + field("mh-end", "mhNew", "")
       : field("mh-start", "mhStart", r.start) + field("mh-end", "mhEnd", r.end) +
-        field("mh-m3", "mhM3", rd(r.end - r.start), "mh-key") + field("mh-bill", "mhBillField", r.bill != null ? r.bill.toLocaleString(locale(), { useGrouping: false, minimumFractionDigits: 2 }) : "", "mh-key", "mhOptional")) +
+        field("mh-m3", "mhM3", rd(r.end - r.start), "mh-key") + field("mh-bill", inLeva(mhEdit) ? "mhBillFieldBgn" : "mhBillField", r.bill != null ? r.bill.toLocaleString(locale(), { useGrouping: false, minimumFractionDigits: 2 }) : "", "mh-key", "mhOptional")) +
       '</div><p class="mh-calc" id="mh-calc"></p>' + (isNew ? "" : '<p class="mh-hint">' + t("mhHint") + "</p>") +
+      '<p class="mh-hint" id="mh-bgn-note"' + (isNew ? (free[0] && inLeva(free[0]) ? "" : " hidden") : inLeva(mhEdit) ? "" : " hidden") + ">" + t("mhBgnNote") + "</p>" +
       '<p class="mh-msg" id="mh-msg" role="alert" hidden></p><div class="mh-btns">' +
       (isNew ? "" : '<button type="button" class="mh-del" id="mh-del">' + t("mhDelete") + "</button>") +
       '<span><button type="button" id="mh-cancel">' + t("mhCancel") + '</button><button type="button" class="mh-pri" id="mh-save">' + t(isNew ? "mhAddBtn" : "mhSave") + "</button></span></div></div>";
@@ -2219,8 +2233,9 @@
     if (!m || !isFinite(s) || !isFinite(e) || e < s) { $("mh-calc").textContent = ""; return; }
     const c = monthCost(m, e - s);
     if (!c) { $("mh-calc").textContent = t("mhNoPrice", { month: monthLabel(m) }); return; }
-    $("mh-calc").innerHTML = t("mhCalc", { m3: num(e - s, 0, 2), f: num(c.factor, 2, 3), p: eur(c.mwhVat), month: monthLabel(m), sum: "<b>" + eur(c.gross) + "</b>" }) +
-      (isFinite(bill) ? " · " + t("mhDiff", { d: "<b>" + (bill - c.gross >= 0 ? "+" : "−") + eur(Math.abs(bill - c.gross)) + "</b>" }) : "");
+    const be = isFinite(bill) ? (inLeva(m) ? bill / BGN_PER_EUR : bill) : NaN, d = be - c.gross;
+    $("mh-calc").innerHTML = t("mhCalc", { m3: num(e - s, 0, 2), f: num(c.factor, 2, 3), p: eur(c.mwhVat), month: monthLabel(m), sum: "<b>" + both(c.gross) + "</b>" }) +
+      (isFinite(be) ? " · " + t("mhDiff", { d: "<b>" + (d >= 0 ? "+" : "−") + both(Math.abs(d)) + "</b>" }) : "");
   }
   const openMhForm = (m) => { mhEdit = m; delete $("mh-form").dataset.for; renderMonths(); $("mh-form").scrollIntoView({ block: "nearest" }); };
   const closeMhForm = () => { mhEdit = null; delete $("mh-form").dataset.for; renderMonths(); };
@@ -2234,7 +2249,13 @@
     $("mh-msg").hidden = true;
     updateMhCalc();
   });
-  $("mh-form").addEventListener("change", (ev) => { if (ev.target.id === "mh-month") updateMhCalc(); });
+  // The month picked for an old bill decides the bill's currency.
+  $("mh-form").addEventListener("change", (ev) => {
+    if (ev.target.id !== "mh-month") return;
+    $("mh-bill-label").textContent = t(inLeva(ev.target.value) ? "mhBillFieldBgn" : "mhBillField");
+    $("mh-bgn-note").hidden = !inLeva(ev.target.value);
+    updateMhCalc();
+  });
   $("mh-form").addEventListener("click", (ev) => {
     const id = ev.target.id;
     if (id === "mh-cancel") closeMhForm();
@@ -2248,6 +2269,7 @@
       if (!m || !isFinite(s) || !isFinite(e) || e < s) { $("mh-msg").textContent = t("mhBad"); $("mh-msg").hidden = false; return; }
       const prev = months[m];
       months[m] = { start: s, end: e, date: prev && prev.end === e ? prev.date : null, bill: isFinite(bill) ? Math.round(bill * 100) / 100 : null };
+      if (inLeva(m) && isFinite(bill)) months[m].billCur = "BGN";
       saveMonths(); closeMhForm();
     }
   });
@@ -2261,7 +2283,7 @@
     $("history-btn").setAttribute("aria-expanded", String(open));
     if (open) renderMonths(); else closeMhForm();
   };
-  $("history-btn").addEventListener("click", () => openMonths($("mh-panel").hidden));
+  $("history-btn").addEventListener("click", () => openMonths(true));
   $("mh-close").addEventListener("click", () => openMonths(false));
 
   // The 1st of a new month (or the first time the app is opened after it): the month of the last reading is saved
@@ -2326,7 +2348,7 @@
     location.reload();
   };
   const setBackup = (open) => { $("backup").hidden = !open; $("backup-btn").setAttribute("aria-expanded", String(open)); if (!open) $("backup-msg").textContent = ""; };
-  $("backup-btn").addEventListener("click", () => setBackup($("backup").hidden));
+  $("backup-btn").addEventListener("click", () => setBackup(true));
   $("backup-close").addEventListener("click", () => setBackup(false));
   $("backup-save").addEventListener("click", () => {
     const file = "gas-consumption-backup-" + todayStr() + ".json";

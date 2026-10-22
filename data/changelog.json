@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.1",
+      "date": "2026-10-22",
+      "bg": [
+        "Месечна история: сметките преди 1 януари 2026 г. се въвеждат в лева и се превръщат в евро. Всички суми се показват в евро и в лева.",
+        "Бутоните в менюто ☰ (Резервно копие, Месечна история, Архив Цени, За приложението) винаги отварят панела и превъртат до него, дори когато страницата е превъртяна надолу."
+      ],
+      "en": [
+        "Monthly history: bills before 1 January 2026 are entered in leva and converted to euro. Every amount shows in euro and in leva.",
+        "The ☰ menu items (Backup, Monthly history, Price archive, About) always open their panel and scroll to it, even when the page is scrolled down."
+      ]
+    },
+    {
       "version": "2.1.0",
       "date": "2026-10-22",
       "bg": [
