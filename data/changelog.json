@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.2.2",
+      "date": "2026-10-22",
+      "bg": [
+        "Информацията за месеца отново е в постоянно поле под графиката (в двете графики) и никога не я закрива; по подразбиране показва последния месец."
+      ],
+      "en": [
+        "The month's details are back in a fixed box under the chart (in both charts) and never cover it; by default they show the latest month."
+      ]
+    },
+    {
       "version": "2.2.1",
       "date": "2026-10-22",
       "bg": [

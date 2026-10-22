@@ -615,7 +615,7 @@ async function sanity() {
     expect((await pts()) === "2026-08,2026-09,2026-10", "points for Aug, Sep and October so far: " + await pts());
     expect((await page.$$eval("#mh-svg path", (p) => p.map((x) => !!x.getAttribute("d")))).join() === "true,true", "a solid line and a dashed one into this month");
     expect(/^25 m³ · [\d,]+ € \/ [\d,]+ лв\.$/.test(await text(page, "#mh-total-val")), "period total: " + await text(page, "#mh-total-val"));
-    expect(await page.$eval("#mh-tip", (e) => e.hidden), "no tooltip until a month is pointed at");
+    expect((await text(page, "#mh-tip")).startsWith("Октомври 2026 · прогноза"), "the readout shows the latest month at first: " + await text(page, "#mh-tip"));
     // This month: the forecast, not the use so far (30 m³ in 16 days → 30/16 × 31 ≈ 58 m³).
     const oc = await page.$eval("#mh-svg .mh-pt[data-m='2026-10']", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
     await page.mouse.move(oc[0], oc[1]); await settle(100);
@@ -624,20 +624,12 @@ async function sanity() {
     const pt = await page.$eval("#mh-svg .mh-pt[data-m='2026-09']", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
     await page.mouse.move(pt[0], pt[1]); await settle(100);
     expect((await text(page, "#mh-tip")) === "Септември 202616 m³ · 13,61 € / 26,62 лв.", "tooltip: " + await text(page, "#mh-tip"));
-    // The tooltip never covers the month's point, low or high, in either chart.
-    const covers = (tip, dot) => page.evaluate((a, b) => { const r = document.getElementById(a).getBoundingClientRect(), d = document.getElementById(b).getBoundingClientRect();
-      const x = d.left + d.width / 2, y = d.top + d.height / 2; return !document.getElementById(a).hidden && x >= r.left - 2 && x <= r.right + 2 && y >= r.top - 2 && y <= r.bottom + 2; }, tip, dot);
-    for (const m of ["2026-08", "2026-10"]) {
-      const c = await page.$eval("#mh-svg .mh-pt[data-m='" + m + "']", (e) => { const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
-      await page.mouse.move(c[0], c[1]); await settle(50);
-      expect(!(await covers("mh-tip", "mh-dot")), m + ": the tooltip covers the point");
-    }
-    await page.mouse.move(5, 5);
+    // The readout sits under the chart and never covers it, in either chart.
+    const clear = (tip, svg) => page.evaluate((a, b) => { const r = document.getElementById(a).getBoundingClientRect(), s = document.getElementById(b).getBoundingClientRect(); return r.top >= s.bottom - 1; }, tip, svg);
+    expect(await clear("mh-tip", "mh-svg"), "history readout is under the chart");
     await page.click("#chart-btn"); await settle(1200);
-    for (const f of [0.1, 0.5, 0.9]) {
-      await page.evaluate((f) => { const h = document.getElementById("chart-hit"), r = h.getBoundingClientRect(); h.dispatchEvent(new PointerEvent("pointermove", { clientX: r.left + r.width * f, clientY: r.top + 10, bubbles: true })); }, f);
-      expect(!(await covers("chart-tip", "chart-dot")), "price chart at " + f + ": the tooltip covers the point");
-    }
+    await page.evaluate(() => { const h = document.getElementById("chart-hit"), r = h.getBoundingClientRect(); h.dispatchEvent(new PointerEvent("pointermove", { clientX: r.left + r.width / 2, clientY: r.top + 10, bubbles: true })); });
+    expect(await clear("chart-tip", "chart-svg") && (await text(page, "#chart-tip")).length > 5, "price readout is under the chart");
     await page.click("#chart-btn");
     await page.select("#mh-unit", "m3");
     expect((await page.$eval("#mh-svg", (s) => s.textContent)).includes("m³") && (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).includes("20"), "m³ axis: " + (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).join());
