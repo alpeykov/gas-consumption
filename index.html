@@ -377,7 +377,17 @@
   .menu-item svg { width: 20px; height: 20px; flex: none; color: var(--flame); }
   .mi-text { display: grid; gap: 2px; min-width: 0; flex: 1; }
   .mi-text small { color: var(--muted); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mi-chev { margin-left: auto; color: var(--muted); font-size: 1.3rem; line-height: 1; }
+  .mi-chev { margin-left: auto; color: var(--muted); font-size: 1.3rem; line-height: 1; transition: transform 0.2s; }
+  .menu-item[aria-expanded="true"] .mi-chev { transform: rotate(90deg); }
+  /* Backup and the monthly history open under their item, inside the menu; the menu widens for the history table. */
+  .menu-panel { display: grid; gap: 12px; padding: 6px 4px 12px; min-width: 0; font-size: 0.9rem; }
+  .menu-panel > p { margin: 0; }
+  .menu-panel .about-actions button {
+    font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--flame);
+    background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer;
+  }
+  .mh-sub { color: var(--muted); font-size: 0.8rem; }
+  .menu.wide { width: min(460px, 100vw); }
   .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
   .lang button {
     font: inherit; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
@@ -525,7 +535,7 @@
     border: 0; padding: 4px 6px; margin-left: 6px; min-height: 28px; cursor: pointer;
   }
   .toast {
-    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 45;
     background: var(--tip-bg); color: var(--tip-fg); border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 0.9rem;
     width: max-content; max-width: calc(100vw - 32px);
   }
@@ -678,16 +688,6 @@
         <figcaption data-i18n="billCaption"></figcaption>
       </figure>
     </div>
-    <div class="ios-help" id="backup" role="region" data-i18n-aria="backupBtn" aria-label="Резервно копие" hidden>
-      <span data-i18n="backupText"></span>
-      <button type="button" id="backup-close" data-i18n-aria="close" aria-label="Затвори">×</button>
-      <p class="about-actions">
-        <button type="button" class="ghost" id="backup-save" data-i18n="backupSave">Запази копие</button>
-        <button type="button" class="ghost" id="backup-load" data-i18n="backupLoad">Възстанови от файл</button>
-        <input type="file" id="backup-file" accept=".json,application/json" hidden>
-        <span id="backup-msg" role="status"></span>
-      </p>
-    </div>
     <div class="ios-help" id="ios-help" role="note" hidden>
       <span data-i18n="iosHelp"></span>
       <button type="button" id="ios-help-close" data-i18n-aria="close" aria-label="Затвори">×</button>
@@ -769,43 +769,45 @@
       </div>
     </div>
     <div class="menu-sec">
-      <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Месечна история</span></button>
+      <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Месечна история</span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <section class="menu-panel mh-panel" id="mh-panel" role="region" data-i18n-aria="historyBtn" aria-label="Месечна история" hidden>
+        <p class="mh-sub" data-i18n="mhSub"></p>
+        <div class="mh-tog" id="mh-tog">
+          <button type="button" id="mh-chart-toggle" aria-expanded="false" aria-controls="mh-cbox"><span class="mh-chev" aria-hidden="true"></span><span data-i18n="mhChart">Графика</span></button>
+          <span class="mh-seg" id="mh-unit" hidden><button type="button" data-unit="eur" aria-pressed="true">€</button><button type="button" data-unit="m3" aria-pressed="false">m³</button></span>
+        </div>
+        <div class="mh-cbox" id="mh-cbox" hidden>
+          <span class="mh-cap" id="mh-cap"></span>
+          <div class="mh-bars" id="mh-bars"></div>
+          <div class="mh-ticks" id="mh-ticks" aria-hidden="true"></div>
+        </div>
+        <div id="mh-form"></div>
+        <table class="mh-table" id="mh-table">
+          <thead><tr><th data-i18n="mhMonth">Месец</th><th>m³</th><th data-i18n="mhPrognosis">Прогноза</th><th data-i18n="mhBill">Сметка</th></tr></thead>
+          <tbody id="mh-rows"></tbody>
+        </table>
+        <p class="mh-empty" id="mh-empty" data-i18n="mhEmpty" hidden></p>
+        <button type="button" class="mh-add" id="mh-add" data-i18n="mhAdd">+ Добави месец от стара сметка</button>
+        <div class="mh-total" id="mh-total" hidden><span data-i18n="mhTotal">Общо за 12 месеца</span><span id="mh-total-val"></span></div>
+      </section>
       <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span></button>
       <button type="button" class="menu-item" id="share-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="shareBtn">Сподели</span></button>
-      <button type="button" class="menu-item" id="backup-btn" aria-expanded="false" aria-controls="backup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 14V4M6 7l3-3 3 3M15 4v10M12 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="backupBtn">Резервно копие</span></button>
+      <button type="button" class="menu-item" id="backup-btn" aria-expanded="false" aria-controls="backup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 14V4M6 7l3-3 3 3M15 4v10M12 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="backupBtn">Резервно копие</span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <div class="menu-panel" id="backup" role="region" data-i18n-aria="backupBtn" aria-label="Резервно копие" hidden>
+        <p data-i18n="backupText"></p>
+        <p class="about-actions">
+          <button type="button" class="ghost" id="backup-save" data-i18n="backupSave">Запази копие</button>
+          <button type="button" class="ghost" id="backup-load" data-i18n="backupLoad">Възстанови от файл</button>
+          <input type="file" id="backup-file" accept=".json,application/json" hidden>
+          <span id="backup-msg" role="status"></span>
+        </p>
+      </div>
     </div>
     <div class="menu-sec">
       <button type="button" class="menu-item" id="help-btn" aria-expanded="false" aria-controls="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="helpLabel">За приложението</span></button>
       <button type="button" class="menu-item" id="menu-guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10l4 4v12H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="guideMenu">Упътване за първо ползване</span></button>
     </div>
   </nav>
-
-  <section class="chart-panel mh-panel" id="mh-panel" aria-labelledby="mh-h" hidden>
-    <div class="chart-head">
-      <button type="button" class="chart-close" id="mh-close" data-i18n-aria="close" aria-label="Затвори">×</button>
-      <div>
-        <h2 id="mh-h" data-i18n="historyBtn">Месечна история</h2>
-        <p class="chart-sub" data-i18n="mhSub"></p>
-      </div>
-    </div>
-    <div class="mh-tog" id="mh-tog">
-      <button type="button" id="mh-chart-toggle" aria-expanded="false" aria-controls="mh-cbox"><span class="mh-chev" aria-hidden="true"></span><span data-i18n="mhChart">Графика</span></button>
-      <span class="mh-seg" id="mh-unit" hidden><button type="button" data-unit="eur" aria-pressed="true">€</button><button type="button" data-unit="m3" aria-pressed="false">m³</button></span>
-    </div>
-    <div class="mh-cbox" id="mh-cbox" hidden>
-      <span class="mh-cap" id="mh-cap"></span>
-      <div class="mh-bars" id="mh-bars"></div>
-      <div class="mh-ticks" id="mh-ticks" aria-hidden="true"></div>
-    </div>
-    <div id="mh-form"></div>
-    <table class="mh-table" id="mh-table">
-      <thead><tr><th data-i18n="mhMonth">Месец</th><th>m³</th><th data-i18n="mhPrognosis">Прогноза</th><th data-i18n="mhBill">Сметка</th></tr></thead>
-      <tbody id="mh-rows"></tbody>
-    </table>
-    <p class="mh-empty" id="mh-empty" data-i18n="mhEmpty" hidden></p>
-    <button type="button" class="mh-add" id="mh-add" data-i18n="mhAdd">+ Добави месец от стара сметка</button>
-    <div class="mh-total" id="mh-total" hidden><span data-i18n="mhTotal">Общо за 12 месеца</span><span id="mh-total-val"></span></div>
-  </section>
 
   <section class="chart-panel" id="chart-panel" aria-labelledby="chart-h" hidden>
     <div class="chart-head">
@@ -1144,6 +1146,7 @@
       msgLower: "Днешното показание е по-малко от показанието в сметката.",
       msgDate: "Днешната дата трябва да е след датата на сметката.",
       msgFirstDay: "Първи ден от периода на сметката – прогнозата се появява от утре.",
+      msgSpans: "Двете показания са от различни месеци. Показана е само цената на текущата консумация, по цената за {month}. Прогнозата за сметката за текущия месец няма да бъде точна, затова не се показва.",
       dayOf: "Ден {e} от {p} от периода на сметката",
       perDay: "{m3}/ден · {money}/ден",
       priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата е базирана на същото дневно потребление до края на месеца.",
@@ -1323,6 +1326,7 @@
       msgLower: "Today’s reading is lower than the bill reading.",
       msgDate: "Today’s date must be after the bill date.",
       msgFirstDay: "First day of the billing period – the forecast appears from tomorrow.",
+      msgSpans: "The two readings are from different months. Only the cost of the use so far is shown, at the {month} price. A forecast of this month's bill would not be accurate, so it isn't shown.",
       dayOf: "Day {e} of {p} of the billing period",
       perDay: "{m3}/day · {money}/day",
       priceLine: "Price with VAT: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Forecast assumes the same daily use for the rest of the month.",
@@ -1625,9 +1629,19 @@
     }
     const bad = Object.values(v).some((x) => typeof x === "number" ? !isFinite(x) : !x);
     if (bad) { clear(t("msgFill")); return; }
-    const r = calc(v);
+    let r = calc(v);
     if (r.now.m3 < 0) { clear('<span class="warn">' + t("msgLower") + "</span>"); return; }
     if (r.elapsed < 0) { clear('<span class="warn">' + t("msgDate") + "</span>"); return; }
+    // Today's reading after the end of the last bill's period (readings from different months): only the cost so far,
+    // at this month's price and kWh/m³; no forecast, since it would not be right.
+    const spans = parseDate(v.curDate) > r.end;
+    if (spans) {
+      const ov = parseFloat($("override").value), typedF = parseFloat($("factor").value), curMonth = v.curDate.slice(0, 7);
+      const v2 = { ...v, fee: 0, price: ov > 0 ? ov : selectedRegion().price, factor: typedF > 0 ? typedF : gcvFor(curMonth).value };
+      r = calc(v2);
+      const mwh2 = v2.price * (1 + v2.vat / 100);
+      $("head-price").textContent = t("headPrice", { month: monthLabel(curMonth), mwh: eur(mwh2), m3: eur(mwh2 * v2.factor / 1000, 3), region: regionLabel(tariffSummary.region) });
+    }
 
     $("out-now-eur").textContent = eur(r.now.gross);
     $("out-now-bgn").textContent = bgn(r.now.bgn) + " · " + n1(r.now.m3, "m³");
@@ -1657,6 +1671,14 @@
     $("t-tot-now").textContent = eur(r.now.gross); $("t-tot-fc").textContent = eur(r.fc.gross);
     $("t-bgn-now").textContent = bgn(r.now.bgn); $("t-bgn-fc").textContent = bgn(r.fc.bgn);
     $("t-price-line").textContent = t("priceLine", { mwh: eur(r.grossPerKwh * 1000), kwh: eur(r.grossPerKwh, 5), m3: eur(r.perM3, 4) });
+    if (spans) {
+      ["out-fc-eur", "out-fc-bgn", "out-rate", "t-m3-fc", "t-kwh-fc", "t-net-fc", "t-fee-fc", "t-vat-fc", "t-tot-fc", "t-bgn-fc"].forEach((id) => { $(id).textContent = "–"; });
+      $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(Date.UTC(today.getFullYear(), today.getMonth() + 1, 1)) });
+      $("out-bar").style.width = "0%";
+      $("tl-today").hidden = true; $("tl-start").textContent = ""; $("tl-end").textContent = "";
+      $("out-days").innerHTML = '<span class="warn">' + t("msgSpans", { month: monthLabel(v.curDate.slice(0, 7)) }) + "</span>";
+      return;
+    }
     // First day of the period (a new month starts on the 1st with both dates the same): no daily rate yet to forecast from.
     if (r.elapsed === 0) {
       ["out-fc-eur", "out-fc-bgn", "out-rate", "t-m3-fc", "t-kwh-fc", "t-net-fc", "t-fee-fc", "t-vat-fc", "t-tot-fc", "t-bgn-fc"].forEach((id) => { $(id).textContent = "–"; });
@@ -2016,7 +2038,12 @@
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
   // Actions close the menu and show what they opened (each opens its panel; × closes it); language and theme keep it open.
   // The scroll waits for the action's own handler, so the panel is already shown even when the page was scrolled away from it.
-  ["history-btn", "chart-btn", "share-btn", "backup-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
+  // Backup and the monthly history open and close inside the menu instead.
+  ["history-btn", "backup-btn"].forEach((id) => $(id).addEventListener("click", () => {
+    const panel = $($(id).getAttribute("aria-controls"));
+    setTimeout(() => { if (!panel.hidden) panel.scrollIntoView({ block: "nearest" }); });
+  }));
+  ["chart-btn", "share-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
     setMenu(false);
     const panel = $(id).getAttribute("aria-controls");
     setTimeout(() => { if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" }); });
@@ -2281,10 +2308,10 @@
   const openMonths = (open) => {
     $("mh-panel").hidden = !open;
     $("history-btn").setAttribute("aria-expanded", String(open));
+    $("menu").classList.toggle("wide", open);
     if (open) renderMonths(); else closeMhForm();
   };
-  $("history-btn").addEventListener("click", () => openMonths(true));
-  $("mh-close").addEventListener("click", () => openMonths(false));
+  $("history-btn").addEventListener("click", () => openMonths($("mh-panel").hidden));
 
   // The 1st of a new month (or the first time the app is opened after it): the month of the last reading is saved
   // with that reading, and the new month starts from it.
@@ -2348,8 +2375,7 @@
     location.reload();
   };
   const setBackup = (open) => { $("backup").hidden = !open; $("backup-btn").setAttribute("aria-expanded", String(open)); if (!open) $("backup-msg").textContent = ""; };
-  $("backup-btn").addEventListener("click", () => setBackup(true));
-  $("backup-close").addEventListener("click", () => setBackup(false));
+  $("backup-btn").addEventListener("click", () => setBackup($("backup").hidden));
   $("backup-save").addEventListener("click", () => {
     const file = "gas-consumption-backup-" + todayStr() + ".json";
     const json = JSON.stringify({ app: "gas-consumption", version: swVersion, created: new Date().toISOString(), data: backupNow() }, null, 2);

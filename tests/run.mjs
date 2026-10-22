@@ -422,7 +422,7 @@ async function sanity() {
   await test("sanity", "N27 history: list, edit m³ and bill, estimate follows, delete with Undo", async () => {
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": SEPT } });
     await page.click("#history-btn");
-    expect(!(await page.$eval("#mh-panel", (e) => e.hidden)) && (await page.$eval("#menu", (e) => e.hidden)), "panel opens, menu closes");
+    expect(!(await page.$eval("#mh-panel", (e) => e.hidden)) && !(await page.$eval("#menu", (e) => e.hidden)) && (await page.$eval("#mh-panel", (e) => !!e.closest("#menu"))), "opens inside the menu, menu stays open");
     const rows = () => page.$$eval("#mh-rows tr", (trs) => trs.map((tr) => [...tr.cells].map((c) => c.textContent.trim())));
     let r = await rows();
     expect(r[0][0].startsWith("Октомври 2026до момента") && r[0][1] === "30", "this month so far first: " + r[0].join(" | "));
@@ -471,17 +471,44 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
-  await test("sanity", "N31 menu actions open their panel and scroll to it, also from far down the page (backup on a computer)", async () => {
+  await test("sanity", "N31 backup and monthly history open and close inside the ☰ menu; other actions open on the page and scroll to it", async () => {
     const page = await open({ width: 1366, height: 768, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-breakdown-open": "1" } });
-    await page.click("#chart-btn"); await settle(800);
-    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#help-btn", "#about"], ["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"], ["#history-btn", "#mh-panel"]]) {
-      await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    const st = (sel) => page.$eval(sel, (e) => { const b = e.getBoundingClientRect(), m = document.getElementById("menu");
+      return { shown: !e.hidden, inMenu: !!e.closest("#menu"), menuOpen: !m.hidden, inView: b.top >= -1 && b.top < innerHeight }; });
+    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"]]) {
       await page.click(btn); await settle(150);
-      const r = await page.$eval(panel, (e) => { const b = e.getBoundingClientRect(); return { shown: !e.hidden, inView: b.top >= -1 && b.top < innerHeight }; });
-      expect(r.shown && r.inView, btn + ": " + JSON.stringify(r));
+      let r = await st(panel);
+      expect(r.shown && r.inMenu && r.menuOpen && r.inView, btn + " opens in the menu: " + JSON.stringify(r));
+      expect((await page.$eval(btn, (b) => b.getAttribute("aria-expanded"))) === "true", btn + " expanded");
+      await page.click(btn); await settle(150);
+      r = await st(panel);
+      expect(!r.shown && r.menuOpen, btn + " collapses, menu stays open");
     }
-    await page.click("#backup-close");
-    expect(await page.$eval("#backup", (e) => e.hidden), "× closes it");
+    expect(await page.evaluate(() => !document.querySelector("main #backup, .main #backup, header #backup, main #mh-panel")), "not on the main page");
+    await page.click("#history-btn"); await settle(100);
+    expect(await page.$eval("#menu", (m) => m.getBoundingClientRect().width > 400), "menu widens for the history table");
+    await page.click("#history-btn");
+    expect(await page.$eval("#menu", (m) => m.getBoundingClientRect().width <= 330), "and narrows again");
+    await page.click("#chart-btn"); await settle(800);
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    await page.click("#help-btn"); await settle(150);
+    const h = await page.$eval("#about", (e) => { const b = e.getBoundingClientRect(); return !e.hidden && b.top >= -1 && b.top < innerHeight; });
+    expect(h && (await page.$eval("#menu", (m) => m.hidden)), "help closes the menu and scrolls to its panel");
+    await page.close2();
+  });
+  await test("sanity", "N32 readings from different months: only the cost so far at this month's price, no forecast, a note", async () => {
+    const page = await open({ width: 390, storage: readings(2445, 2489, "2024-10-31", "2026-10-17") });
+    const tx = async (id) => text(page, "#" + id);
+    expect((await tx("out-fc-eur")) === "–" && (await tx("out-rate")) === "–", "no forecast, no daily rate");
+    expect((await tx("out-now-bgn")).endsWith("44 m³"), "cost of 44 m³");
+    // 44 m³ × this month's kWh/m³ × October 2026 price × 1.2 – the same as typing a last bill of 1 October 2026.
+    const p2 = await open({ width: 390, storage: readings(2445, 2489, "2026-10-01", "2026-10-17") });
+    expect((await tx("out-now-eur")) === (await text(p2, "#out-now-eur")), "priced like this month: " + await tx("out-now-eur") + " vs " + await text(p2, "#out-now-eur"));
+    expect((await tx("head-price")) === (await text(p2, "#head-price")), "header shows this month's price");
+    await p2.close2();
+    expect((await tx("out-days")).startsWith("Двете показания са от различни месеци.") && (await tx("out-days")).includes("октомври 2026"), "note: " + await tx("out-days"));
+    expect((await tx("out-forecast-label")) === "Прогнозна сметка до 1-ви ноември" && (await tx("tl-start")) === "", "label for this month, no timeline");
+    expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
   await test("sanity", "N30 history: bills before 2026 are typed in leva, converted to euro, shown in both", async () => {
@@ -521,7 +548,6 @@ async function sanity() {
     await page.click("#history-btn");
     expect(!(await page.$eval("#mh-cbox", (e) => e.hidden)) && (await page.$eval("#mh-unit [data-unit=m3]", (b) => b.getAttribute("aria-pressed"))) === "true", "open and m³ remembered");
     await page.click('.lang button[data-lang="en"]'); await settle(100);
-    await page.click("#history-btn");
     const en = await page.$$eval("#mh-rows tr", (trs) => trs.map((tr) => tr.cells[0].textContent));
     expect(en[1] === "September 2026✎2429 → 2445" && !/[А-я]/.test(await text(page, "#mh-panel")), "English: " + en.join(" | "));
     expect(!page.errors.length, page.errors.join(" | "));

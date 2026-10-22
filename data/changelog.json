@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.2",
+      "date": "2026-10-22",
+      "bg": [
+        "„Резервно копие“ и „Месечна история“ (с добавянето на стари месеци) се отварят и затварят вътре в менюто ☰, а не на главната страница.",
+        "Поправка: ако двете показания са от различни месеци, се показва само цената на текущата консумация по цената за текущия месец, без прогнозна сметка, и бележка защо."
+      ],
+      "en": [
+        "“Backup” and “Monthly history” (with adding old months) open and close inside the ☰ menu instead of on the main page.",
+        "Fix: when the two readings are from different months, only the cost so far is shown, at this month's price, with no forecast and a note explaining why."
+      ]
+    },
+    {
       "version": "2.1.1",
       "date": "2026-10-22",
       "bg": [
