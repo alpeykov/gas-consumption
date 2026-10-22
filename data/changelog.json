@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.4",
+      "date": "2026-10-22",
+      "bg": [
+        "„Добави месец от стара сметка“: избирате месеца на фактурата, а потреблението се записва и смята за предишния месец (фактурата е за него). Валутата следва датата на фактурата.",
+        "Вече въведените месеци от стари сметки се преместват сами с един месец назад."
+      ],
+      "en": [
+        "“Add a month from an old bill”: you pick the month of the invoice, and the use is saved and priced for the month before (the invoice is for it). The currency follows the invoice date.",
+        "Months already typed from old bills move back one month by themselves."
+      ]
+    },
+    {
       "version": "2.1.3",
       "date": "2026-10-22",
       "bg": [
