@@ -477,7 +477,7 @@ async function sanity() {
     const page = await open({ width: 1366, height: 768, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-breakdown-open": "1" } });
     const st = (sel) => page.$eval(sel, (e) => { const b = e.getBoundingClientRect(), m = document.getElementById("menu");
       return { shown: !e.hidden, inMenu: !!e.closest("#menu"), menuOpen: !m.hidden, inView: b.top >= -1 && b.top < innerHeight }; });
-    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"], ["#chart-btn", "#chart-panel"]]) {
+    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"], ["#chart-btn", "#chart-panel"], ["#help-btn", "#about"]]) {
       await page.click(btn); await settle(150);
       let r = await st(panel);
       expect(r.shown && r.inMenu && r.menuOpen && r.inView, btn + " opens in the menu: " + JSON.stringify(r));
@@ -494,12 +494,34 @@ async function sanity() {
     await page.click("#chart-btn"); await settle(800);
     expect(await page.$eval("#menu", (m) => m.getBoundingClientRect().width > 400) && (await page.$$eval("#chart-svg path", (p) => p.filter((x) => x.getAttribute("d")).length)) >= 1, "the chart is drawn in the wider menu");
     await page.click("#chart-btn");
-    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
-    await page.click("#help-btn"); await settle(150);
-    const h = await page.$eval("#about", (e) => { const b = e.getBoundingClientRect(); return !e.hidden && b.top >= -1 && b.top < innerHeight; });
-    expect(h && (await page.$eval("#menu", (m) => m.hidden)), "help closes the menu and scrolls to its panel");
     await page.close2();
   });
+  // Rule: every ☰ menu option that shows something shows it inside the menu, never on the main page.
+  for (const [dev, w] of [["desktop", 1280], ["phone", 390]]) {
+    await test("sanity", `N34 every ☰ menu option with a panel opens it inside the menu, not on the main page (${dev})`, async () => {
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": { "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: null } } } });
+      const items = await page.$$eval("#menu .menu-item[aria-controls]", (bs) => bs.map((b) => [b.id, b.getAttribute("aria-controls")]));
+      expect(items.length >= 4, "menu items with a panel: " + items.map((x) => x[0]).join());
+      for (const [id, panel] of items) {
+        const before = await page.evaluate(() => document.querySelector("main, .main").innerHTML.length);
+        await page.click("#" + id); await settle(id === "chart-btn" ? 900 : 150);
+        const r = await page.evaluate((p) => {
+          const el = document.getElementById(p), m = document.getElementById("menu");
+          const b = el.getBoundingClientRect(), mb = m.getBoundingClientRect();
+          return { shown: !el.hidden, inMenu: !!el.closest("#menu"), menuOpen: !m.hidden, inside: b.left >= mb.left - 1 && b.right <= mb.right + 1 };
+        }, panel);
+        expect(r.shown && r.inMenu && r.menuOpen && r.inside, `${id} → #${panel}: ${JSON.stringify(r)}`);
+        const outside = await page.evaluate(() => [...document.querySelectorAll("section, [role=region], .ios-help, .chart-panel, .menu-panel")]
+          .filter((e) => !e.hidden && e.getClientRects().length && !e.closest("#menu") && !e.closest(".main, main") && e.id !== "ios-help").map((e) => e.id || e.className));
+        expect(!outside.length, `${id}: something opened outside the menu: ${outside.join()}`);
+        expect((await page.evaluate(() => document.querySelector("main, .main").innerHTML.length)) === before, `${id}: the main page changed`);
+        await page.click("#" + id); await settle(100);
+        expect(await page.$eval("#" + panel, (e) => e.hidden), `${id} closes it again`);
+      }
+      expect(!page.errors.length, page.errors.join(" | "));
+      await page.close2();
+    });
+  }
   await test("sanity", "N32 readings from different months: only the cost so far at this month's price, no forecast, a note", async () => {
     const page = await open({ width: 390, storage: readings(2445, 2489, "2024-10-31", "2026-10-17") });
     const tx = async (id) => text(page, "#" + id);
@@ -546,6 +568,25 @@ async function sanity() {
     await page.click("#history-btn");
     const nov = await page.$eval("#mh-rows tr[data-m='2023-10']", (tr) => [...tr.cells].map((c) => c.textContent));
     expect(nov[0] === "Октомври 2023✎41 → 207 · фактура ноември 2023", "row: " + nov.join(" | "));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
+  await test("sanity", "N35 history: editing a month can change its invoice month (wrong year) – the row moves and is priced for its new month", async () => {
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-invoice-fix": "1",
+      "gas-bill-months-v1": { "2023-09": { start: 0, end: 41, date: null, bill: 53.71, invoice: "2023-10", billCur: "BGN" } } } });
+    await page.click("#history-btn");
+    await page.click(".mh-ed[data-m='2023-09']");
+    expect((await page.$eval("#mh-month", (e) => e.value)) === "2023-10" && (await text(page, "#mh-usage")).includes("септември 2023"), "form shows the invoice month");
+    await page.select("#mh-month", "2024-10");
+    expect((await text(page, "#mh-usage")) === "Потреблението е за септември 2024 и се смята по цената на Овергаз за септември 2024." && /цена за септември 2024/.test(await text(page, "#mh-calc")), "priced for September 2024: " + await text(page, "#mh-calc"));
+    expect((await text(page, "#mh-bill-label")) === "Сметка лв. (от Овергаз)", "an invoice of 2024 is still in leva");
+    await page.click("#mh-save");
+    const m = await monthsOf(page);
+    expect(Object.keys(m).join() === "2024-09" && JSON.stringify(m["2024-09"]) === JSON.stringify({ start: 0, end: 41, date: null, bill: 53.71, invoice: "2024-10", billCur: "BGN" }), "moved: " + JSON.stringify(m));
+    expect((await page.$eval("#mh-rows tr[data-m='2024-09']", (tr) => tr.cells[0].textContent)) === "Септември 2024✎0 → 41 · фактура октомври 2024", "row shows the new invoice month");
+    // An invoice whose month of use is already saved isn't offered.
+    await page.click("#mh-add");
+    expect(!(await page.$eval("#mh-month", (e) => [...e.options].some((o) => o.value === "2024-10"))), "taken months aren't offered");
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
@@ -852,7 +893,7 @@ async function ui() {
       await page.evaluate(() => { document.getElementById("update-bar").hidden = false; });
       for (const th of Object.keys(THEMES)) {
         await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(60);
-        const c = await page.evaluate(() => ["#update-bar", "#about", ".bill"].map((s) => getComputedStyle(document.querySelector(s)).backgroundColor));
+        const c = await page.evaluate(() => ["#update-bar", "#menu", ".bill"].map((s) => getComputedStyle(document.querySelector(s)).backgroundColor));
         expect(c[0] === c[2] && c[1] === c[2], `${th}: update bar ${c[0]}, help ${c[1]}, cards ${c[2]}`);
       }
       await page.close2();
@@ -943,7 +984,7 @@ async function ui() {
       await page.click("#chart-btn"); expect(await hidden("#chart-panel"), "chart closes with its menu item");
       await page.click("#help-btn"); expect(!(await hidden("#about")), "help opens");
       await page.click(".bill-link"); expect(!(await hidden("#bill-example")), "bill example opens");
-      await page.click("#about-close"); expect(await hidden("#about"), "help closes with ×");
+      await page.click("#help-btn"); expect(await hidden("#about"), "help closes with its menu item");
       expect(await hidden("#bill-example"), "bill example closes with the help");
       expect(!page.errors.length, page.errors.join(" | "));
       await page.close2();
@@ -983,8 +1024,8 @@ async function ui() {
       expect(!(await page.$eval("#menu", (e) => e.hidden)), "theme choice keeps the menu open");
       await page.keyboard.press("Escape");
       expect(await page.$eval("#menu", (e) => e.hidden), "Escape closes the menu");
-      await page.click("#help-btn"); await settle(300);
-      expect(await page.$eval("#menu", (e) => e.hidden) && !(await page.$eval("#about", (e) => e.hidden)), "an action closes the menu and opens its panel");
+      await page.click("#share-btn"); await settle(300);
+      expect(await page.$eval("#menu", (e) => e.hidden), "share closes the menu");
       await page.click("#chart-btn"); await settle(800);
       expect(!(await page.$eval("#menu", (e) => e.hidden)) && (await page.$eval("#chart-panel", (e) => !e.hidden && !!e.closest("#menu"))), "the price archive opens inside the menu");
       await page.click("#tariff-toggle");

@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.5",
+      "date": "2026-10-22",
+      "bg": [
+        "„За приложението“ също се отваря и затваря вътре в менюто ☰. Всичко от менюто вече се показва там, а не на главния екран.",
+        "При редакция на месец от историята може да смените и месеца на фактурата (напр. грешна година); месецът се премества и се преизчислява."
+      ],
+      "en": [
+        "“About this app” also opens and closes inside the ☰ menu. Everything from the menu now shows there, not on the main screen.",
+        "When editing a month in the history you can also change its invoice month (e.g. a wrong year); the month moves and is recalculated."
+      ]
+    },
+    {
       "version": "2.1.4",
       "date": "2026-10-22",
       "bg": [

@@ -387,6 +387,11 @@
     background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer;
   }
   .mh-sub { color: var(--muted); font-size: 0.8rem; }
+  .menu-panel a { color: var(--flame); font-weight: 700; }
+  .menu-panel .about-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .menu-panel .about-actions .feedback-link {
+    font-size: 0.85rem; text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px;
+  }
   .menu.wide { width: min(460px, 100vw); }
   .menu .chart-panel { background: none; border: 0; border-radius: 0; padding: 6px 4px 12px; }
   .menu .chart-head { padding-right: 0; }
@@ -470,6 +475,7 @@
   .mh-grid label { display: grid; gap: 4px; align-content: end; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   .mh-grid input, .mh-grid select { font: inherit; font-size: 1rem; letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; min-width: 0; width: 100%; }
   .mh-grid input.mh-key { border-color: var(--flame); }
+  .mh-grid .mh-wide { grid-column: 1 / -1; }
   .mh-calc { margin: 0; font-size: 0.85rem; color: var(--muted); }
   .mh-calc b { color: var(--fg); }
   .mh-hint { margin: 0; font-size: 0.75rem; color: var(--muted); }
@@ -676,20 +682,6 @@
       <p><span id="head-price">Битова тарифа на Овергаз · показания в m³ · цени в евро</span> · <button type="button" class="head-link" id="head-tariff" aria-controls="menu" data-i18n="tariffH">Тарифни настройки</button></p>
     </div>
     <button type="button" class="install-btn" id="install-btn" data-i18n="install" hidden>Инсталирай</button>
-    <div class="ios-help" id="about" role="note" hidden>
-      <span data-i18n-html="about"></span>
-      <button type="button" id="about-close" data-i18n-aria="close" aria-label="Затвори">×</button>
-      <p class="about-actions">
-        <button type="button" class="ghost" id="check-update" data-i18n="checkUpdate">Провери за обновление</button>
-        <button type="button" class="ghost" id="guide-show" data-i18n="guideShow">Покажи упътването</button>
-        <a class="feedback-link" id="feedback" href="mailto:aleksandar.peykov@gmail.com" data-i18n="feedback">Изпрати отзив</a>
-        <span id="check-update-msg" role="status"></span>
-      </p>
-      <figure class="bill-example" id="bill-example" hidden>
-        <img src="icons/bill-where-v1.webp" width="1188" height="1140" data-i18n-alt="billAlt" alt="">
-        <figcaption data-i18n="billCaption"></figcaption>
-      </figure>
-    </div>
     <div class="ios-help" id="ios-help" role="note" hidden>
       <span data-i18n="iosHelp"></span>
       <button type="button" id="ios-help-close" data-i18n-aria="close" aria-label="Затвори">×</button>
@@ -827,7 +819,20 @@
       </div>
     </div>
     <div class="menu-sec">
-      <button type="button" class="menu-item" id="help-btn" aria-expanded="false" aria-controls="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="helpLabel">За приложението</span></button>
+      <button type="button" class="menu-item" id="help-btn" aria-expanded="false" aria-controls="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="helpLabel">За приложението</span><span class="mi-chev" aria-hidden="true">›</span></button>
+        <div class="menu-panel" id="about" role="region" data-i18n-aria="helpLabel" aria-label="За приложението" hidden>
+          <p data-i18n-html="about"></p>
+          <p class="about-actions">
+            <button type="button" class="ghost" id="check-update" data-i18n="checkUpdate">Провери за обновление</button>
+            <button type="button" class="ghost" id="guide-show" data-i18n="guideShow">Покажи упътването</button>
+            <a class="feedback-link" id="feedback" href="mailto:aleksandar.peykov@gmail.com" data-i18n="feedback">Изпрати отзив</a>
+            <span id="check-update-msg" role="status"></span>
+          </p>
+          <figure class="bill-example" id="bill-example" hidden>
+            <img src="icons/bill-where-v1.webp" width="1188" height="1140" data-i18n-alt="billAlt" alt="">
+            <figcaption data-i18n="billCaption"></figcaption>
+          </figure>
+        </div>
       <button type="button" class="menu-item" id="menu-guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10l4 4v12H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="guideMenu">Упътване за първо ползване</span></button>
     </div>
   </nav>
@@ -2011,8 +2016,7 @@
 
   // "?" button: a few sentences about the app, in the current language.
   const setAbout = (open) => { $("about").hidden = !open; $("help-btn").setAttribute("aria-expanded", String(open)); if (!open) $("bill-example").hidden = true; };
-  $("help-btn").addEventListener("click", () => setAbout(true));
-  $("about-close").addEventListener("click", () => setAbout(false));
+  $("help-btn").addEventListener("click", () => setAbout($("about").hidden));
   // ---- ☰ menu: settings and the less used actions in a panel from the left ----
   // It slides in and out; `hidden` is set only once the slide out has finished.
   let menuTimer;
@@ -2044,14 +2048,14 @@
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
   // Actions close the menu and show what they opened (each opens its panel; × closes it); language and theme keep it open.
   // The scroll waits for the action's own handler, so the panel is already shown even when the page was scrolled away from it.
-  // Backup, the monthly history and the price archive open and close inside the menu instead.
+  // Everything with a panel (backup, monthly history, price archive, about) opens and closes inside the menu instead.
   // The chart and the history table need a wider menu.
   function syncMenuWidth() { $("menu").classList.toggle("wide", !$("chart-panel").hidden || !$("mh-panel").hidden); }
-  ["history-btn", "backup-btn", "chart-btn"].forEach((id) => $(id).addEventListener("click", () => {
+  ["history-btn", "backup-btn", "chart-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
     const panel = $($(id).getAttribute("aria-controls"));
     setTimeout(() => { if (!panel.hidden) panel.scrollIntoView({ block: "nearest" }); });
   }));
-  ["share-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
+  ["share-btn"].forEach((id) => $(id).addEventListener("click", () => {
     setMenu(false);
     const panel = $(id).getAttribute("aria-controls");
     setTimeout(() => { if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" }); });
@@ -2263,25 +2267,29 @@
     const isNew = mhEdit === "new", r = isNew ? null : months[mhEdit];
     const field = (id, label, val, cls = "", ph = "") => '<label><span' + (id === "mh-bill" ? ' id="mh-bill-label"' : "") + ">" + t(label) + '</span><input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + val + '"' +
       (cls ? ' class="' + cls + '"' : "") + (ph ? ' placeholder="' + t(ph) + '"' : "") + "></label>";
-    // Invoice months from this one back three years whose month of use isn't saved yet.
-    const free = Array.from({ length: 36 }, (_, i) => ymAdd(ymOf(todayStr()), -i)).filter((m) => !months[ymAdd(m, -1)]);
+    // Invoice months from this one back five years whose month of use is free (or is the month being edited).
+    const free = Array.from({ length: 60 }, (_, i) => ymAdd(ymOf(todayStr()), -i)).filter((m) => !months[ymAdd(m, -1)] || ymAdd(m, -1) === mhEdit);
+    const inv0 = isNew ? free[0] || "" : invoiceOf(mhEdit);
+    if (inv0 && !free.includes(inv0)) free.push(inv0);
+    const pick = '<label class="mh-wide">' + t("mhInvoice") + '<select id="mh-month">' +
+      free.map((m) => '<option value="' + m + '"' + (m === inv0 ? " selected" : "") + ">" + mLabel(m) + "</option>").join("") + "</select></label>";
     box.innerHTML = '<div class="mh-form">' +
       "<h3>" + (isNew ? t("mhNewH") : mLabel(mhEdit) + (r.invoice ? " · " + t("mhInvoiceOf", { month: monthLabel(r.invoice) }) : "")) + '</h3><div class="mh-grid">' +
-      (isNew ? '<label>' + t("mhInvoice") + '<select id="mh-month">' + free.map((m) => '<option value="' + m + '">' + mLabel(m) + "</option>").join("") + "</select></label>" +
-        field("mh-bill", free[0] && inLeva(free[0]) ? "mhBillFieldBgn" : "mhBillField", "", "mh-key", "mhOptional") +
-        field("mh-start", "mhOld", "") + field("mh-end", "mhNew", "")
+      pick +
+      (isNew ? 
+        field("mh-start", "mhOld", "") + field("mh-end", "mhNew", "") + field("mh-bill", inLeva(inv0) ? "mhBillFieldBgn" : "mhBillField", "", "mh-key", "mhOptional")
       : field("mh-start", "mhStart", r.start) + field("mh-end", "mhEnd", r.end) +
-        field("mh-m3", "mhM3", rd(r.end - r.start), "mh-key") + field("mh-bill", inLeva(invoiceOf(mhEdit)) ? "mhBillFieldBgn" : "mhBillField", r.bill != null ? r.bill.toLocaleString(locale(), { useGrouping: false, minimumFractionDigits: 2 }) : "", "mh-key", "mhOptional")) +
-      '</div>' + (isNew ? '<p class="mh-hint" id="mh-usage"></p>' : "") + '<p class="mh-calc" id="mh-calc"></p>' + (isNew ? "" : '<p class="mh-hint">' + t("mhHint") + "</p>") +
-      '<p class="mh-hint" id="mh-bgn-note"' + (inLeva(isNew ? free[0] || "" : invoiceOf(mhEdit)) ? "" : " hidden") + ">" + t("mhBgnNote") + "</p>" +
+        field("mh-m3", "mhM3", rd(r.end - r.start), "mh-key") + field("mh-bill", inLeva(inv0) ? "mhBillFieldBgn" : "mhBillField", r.bill != null ? r.bill.toLocaleString(locale(), { useGrouping: false, minimumFractionDigits: 2 }) : "", "mh-key", "mhOptional")) +
+      '</div><p class="mh-hint" id="mh-usage"></p><p class="mh-calc" id="mh-calc"></p>' + (isNew ? "" : '<p class="mh-hint">' + t("mhHint") + "</p>") +
+      '<p class="mh-hint" id="mh-bgn-note"' + (inLeva(inv0) ? "" : " hidden") + ">" + t("mhBgnNote") + "</p>" +
       '<p class="mh-msg" id="mh-msg" role="alert" hidden></p><div class="mh-btns">' +
       (isNew ? "" : '<button type="button" class="mh-del" id="mh-del">' + t("mhDelete") + "</button>") +
       '<span><button type="button" id="mh-cancel">' + t("mhCancel") + '</button><button type="button" class="mh-pri" id="mh-save">' + t(isNew ? "mhAddBtn" : "mhSave") + "</button></span></div></div>";
     updateMhCalc();
   }
   // The month of use: for an old bill, the month before the chosen invoice month.
-  const mhMonthNow = () => (mhEdit === "new" ? ($("mh-month").value ? ymAdd($("mh-month").value, -1) : "") : mhEdit);
-  const mhInvoiceNow = () => (mhEdit === "new" ? $("mh-month").value : invoiceOf(mhEdit));
+  const mhMonthNow = () => ($("mh-month").value ? ymAdd($("mh-month").value, -1) : "");
+  const mhInvoiceNow = () => $("mh-month").value;
   function updateMhCalc() {
     const m = mhMonthNow(), s = mhNum($("mh-start").value), e = mhNum($("mh-end").value), bill = mhNum($("mh-bill").value);
     if ($("mh-usage")) $("mh-usage").textContent = m ? t("mhUsage", { month: monthLabel(m) }) : "";
@@ -2322,9 +2330,11 @@
     if (id === "mh-save") {
       const m = mhMonthNow(), s = mhNum($("mh-start").value), e = mhNum($("mh-end").value), bill = mhNum($("mh-bill").value);
       if (!m || !isFinite(s) || !isFinite(e) || e < s) { $("mh-msg").textContent = t("mhBad"); $("mh-msg").hidden = false; return; }
-      const prev = months[m], inv = mhInvoiceNow();
-      months[m] = { start: s, end: e, date: prev && prev.end === e ? prev.date : null, bill: isFinite(bill) ? Math.round(bill * 100) / 100 : null };
-      if (mhEdit === "new" || (prev && prev.invoice)) months[m].invoice = inv;
+      // A changed invoice month moves the row to its new month of use.
+      const prev = mhEdit === "new" ? null : months[mhEdit], inv = mhInvoiceNow(), moved = prev && m !== mhEdit;
+      if (moved) delete months[mhEdit];
+      months[m] = { start: s, end: e, date: prev && !moved && prev.end === e ? prev.date : null, bill: isFinite(bill) ? Math.round(bill * 100) / 100 : null };
+      if (!prev || prev.invoice || moved) months[m].invoice = inv;
       if (inLeva(inv) && isFinite(bill)) months[m].billCur = "BGN";
       saveMonths(); closeMhForm();
     }
