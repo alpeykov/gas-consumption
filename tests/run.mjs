@@ -49,7 +49,7 @@ async function open({ width = 1280, height = 900, storage = {}, waitChart = fals
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/favicon|fonts\.g/.test(m.text())) errors.push("console: " + m.text()); });
   await page.setViewport({ width, height, isMobile: width < 500, hasTouch: width < 500 });
-  if (!motion) await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+  await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: motion ? "no-preference" : "reduce" }]);
   await page.evaluateOnNewDocument((iso) => {
     const Real = Date; let off = new Real(iso).getTime() - Real.now();
     class FakeDate extends Real { constructor(...a) { if (a.length) super(...a); else super(Real.now() + off); } static now() { return Real.now() + off; } }
@@ -378,6 +378,26 @@ async function sanity() {
       expect(!p2.errors.length, p2.errors.join(" | "));
       await p2.close2();
     }
+  });
+  await test("sanity", "N23 guide wording; 'новото показание' opens the bill picture above the guide", async () => {
+    const page = await open({ width: 390 });
+    expect((await text(page, "#g-text")) === "В полето „ПОКАЗАНИЕ ДНЕС“ въвеждате числото от газомера в m³. За демонстрацията сме попълнили 163.", "step 1: " + await text(page, "#g-text"));
+    await page.click("#g-next");
+    expect((await text(page, "#g-text")) === "В полето „ПОКАЗАНИЕ ОТ ПОСЛЕДНАТА СМЕТКА“ въведете числото от последната ви сметка от Овергаз – от полето „новото показание“. За демонстрацията сме попълнили 127.", "step 2: " + await text(page, "#g-text"));
+    await page.click(".g-bill");
+    expect(!(await page.$eval("#bill-view", (e) => e.hidden)), "bill picture opens");
+    await page.waitForFunction(() => { const i = document.querySelector("#bill-view img"); return i.complete && i.naturalWidth === 1188; }, { timeout: 5000 });
+    expect(await page.evaluate(() => { const r = document.querySelector("#bill-view img").getBoundingClientRect(); return r.width > 300 && r.right <= innerWidth; }), "picture fits the phone");
+    await page.keyboard.press("Escape");
+    expect((await page.$eval("#bill-view", (e) => e.hidden)) && !(await page.$eval("#guide", (e) => e.hidden)), "Escape closes the picture, the guide stays");
+    await page.click(".g-bill"); await page.click("#bill-view-close");
+    expect((await page.$eval("#bill-view", (e) => e.hidden)) && (await text(page, "#g-title")).startsWith("2"), "× closes it, still on step 2");
+    await page.click("#g-next");
+    expect(/^В секцията „Прогнозна сметка до .+“ виждате цената на текущото ви потребление \(163 − 127 = 36 m³\) и прогнозната сметка\.$/.test(await text(page, "#g-text")), "step 3: " + await text(page, "#g-text"));
+    await page.click("#g-next");
+    expect((await text(page, "#g-text")).startsWith("В менюто ☰ може да намерите настройки за тарифите"), "step 4");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
   });
   await test("sanity", "N22 'Tariff settings' under the title opens the menu with the tariff settings expanded", async () => {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });

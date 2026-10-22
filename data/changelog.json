@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.0.4",
+      "date": "2026-10-22",
+      "bg": [
+        "По-ясни стъпки в упътването. „Новото показание“ във втората стъпка отваря снимка на сметката, на която е показано къде да го намерите."
+      ],
+      "en": [
+        "Clearer guide steps. “New reading” in step 2 opens a picture of the bill showing where to find it."
+      ]
+    },
+    {
       "version": "2.0.3",
       "date": "2026-10-21",
       "bg": [

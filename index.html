@@ -493,6 +493,18 @@
   .g-bub > b { display: block; font-size: 1rem; }
   .g-bub p { margin: 4px 0 0; }
   .g-ex { color: var(--flame); font-weight: 800; }
+  .g-bub a { color: var(--flame); font-weight: 700; }
+  .bill-view {
+    position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; align-content: center; gap: 10px;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    background: rgba(0, 0, 0, 0.85); color: #ffffff; overflow-y: auto;
+  }
+  .bill-view img { width: 100%; max-width: 900px; height: auto; border-radius: 8px; background: #ffffff; }
+  .bill-view p { margin: 0; max-width: 900px; font-size: 0.9rem; line-height: 1.45; }
+  .bill-view button {
+    position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); right: 8px; width: 44px; height: 44px;
+    font: inherit; font-size: 1.6rem; line-height: 1; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 0; border-radius: 50%; cursor: pointer;
+  }
   .g-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
   .g-dots { display: flex; gap: 6px; }
   .g-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
@@ -611,7 +623,7 @@
         <span id="check-update-msg" role="status"></span>
       </p>
       <figure class="bill-example" id="bill-example" hidden>
-        <img src="icons/bill-new-reading.png" width="954" height="86" data-i18n-alt="billAlt" alt="">
+        <img src="icons/bill-where-v1.webp" width="1188" height="1140" data-i18n-alt="billAlt" alt="">
         <figcaption data-i18n="billCaption"></figcaption>
       </figure>
     </div>
@@ -740,6 +752,11 @@
     <p class="chart-note" data-i18n="chartNote"></p>
   </section>
   <div class="toast" id="toast" role="status" hidden></div>
+  <div class="bill-view" id="bill-view" role="dialog" aria-modal="true" data-i18n-aria="billAlt" aria-label="" hidden>
+    <button type="button" id="bill-view-close" data-i18n-aria="close" aria-label="Затвори">×</button>
+    <img src="icons/bill-where-v1.webp" width="1188" height="1140" data-i18n-alt="billAlt" alt="" loading="lazy">
+    <p data-i18n="billCaption"></p>
+  </div>
   <div class="guide" id="guide" hidden>
     <div class="g-hole" id="g-hole"></div>
     <div class="g-bub" id="g-bub" role="dialog" aria-modal="true" aria-labelledby="g-title" aria-describedby="g-text">
@@ -891,7 +908,7 @@
       staleShort: "цената е от {prev}",
       staleShortNoHistory: "текуща цена",
       billLink: "последната сметка",
-      billAlt: "Таблицата с показанията в сметката на Овергаз; колоната „Ново“ е оградена",
+      billAlt: "Сметката на Овергаз: таблицата с показанията е оградена, а колоната „Ново“ е показана отблизо",
       billCaption: "От сметката на Овергаз вземете числото в колона „Ново“ – с него започва текущият месец. Въведете го в „Показание от последната сметка“.",
       shareBtn: "Сподели",
       backupBtn: "Резервно копие",
@@ -973,13 +990,14 @@
       guideNext: "Напред",
       guideStart: "Започни",
       guide1T: "1 · Показание днес",
-      guide1: "Тук въвеждате числото от газомера в m³. За пример сме попълнили {cur}. Датата е днешна сама.",
+      guide1: "В полето „ПОКАЗАНИЕ ДНЕС“ въвеждате числото от газомера в m³. За демонстрацията сме попълнили {cur}.",
       guide2T: "2 · Показание от последната сметка",
-      guide2: "Тук – „новото показание“ от последната сметка на Овергаз и датата му. Пример: {start}.",
+      guide2: "В полето „ПОКАЗАНИЕ ОТ ПОСЛЕДНАТА СМЕТКА“ въведете числото от последната ви сметка от Овергаз – от полето „{bill}“. За демонстрацията сме попълнили {start}.",
+      guideBill: "новото показание",
       guide3T: "3 · Вашата сметка",
-      guide3: "Готово: {cur} − {start} = {diff} m³. Виждате колко струва газът досега и прогнозата за цялата сметка.",
+      guide3: "В секцията „{fc}“ виждате цената на текущото ви потребление ({cur} − {start} = {diff} m³) и прогнозната сметка.",
       guide4T: "4 · Меню",
-      guide4: "В менюто ☰ са тарифните настройки, езикът, темата, архивът на цените, споделянето, резервното копие, помощта и това упътване. Примерните числа ще изчезнат – въведете своите.",
+      guide4: "В менюто ☰ може да намерите настройки за тарифите, езика, темата, архива на цените, резервното копие и други. Примерните числа ще изчезнат – въведете своите.",
       feedbackSubject: "Gas Consumption – отзив",
       feedbackBody: "Здравейте,\n\n(Какво ви хареса, какво не работи или какво да добавим?)\n\n",
       feedbackSent: "Отваря се имейл до {email}",
@@ -1031,7 +1049,7 @@
       staleShort: "price from {prev}",
       staleShortNoHistory: "current price",
       billLink: "last bill",
-      billAlt: "The meter table on an Overgas bill with the “Ново” (new) column circled",
+      billAlt: "An Overgas bill: the meter table is outlined and the “Ново” (new) column is shown close up",
       billCaption: "On your Overgas bill, take the number in the “Ново” (new) column – the current month starts from it. Enter it as “Reading on last bill”.",
       shareBtn: "Share",
       backupBtn: "Backup",
@@ -1113,13 +1131,14 @@
       guideNext: "Next",
       guideStart: "Start",
       guide1T: "1 · Reading today",
-      guide1: "Enter the number from the gas meter here, in m³. As an example we’ve filled in {cur}. The date is today’s by itself.",
+      guide1: "In the “READING TODAY” field, enter the number from the gas meter in m³. For the demo we’ve filled in {cur}.",
       guide2T: "2 · Reading on the last bill",
-      guide2: "Here goes the “new reading” from your last Overgas bill, and its date. Example: {start}.",
+      guide2: "In the “READING ON LAST BILL” field, enter the number from your last Overgas bill – from the “{bill}” field. For the demo we’ve filled in {start}.",
+      guideBill: "new reading",
       guide3T: "3 · Your bill",
-      guide3: "Done: {cur} − {start} = {diff} m³. You see what the gas has cost so far and the forecast for the whole bill.",
+      guide3: "In the “{fc}” section you see the cost of what you’ve used so far ({cur} − {start} = {diff} m³) and the estimated bill.",
       guide4T: "4 · Menu",
-      guide4: "The ☰ menu holds the tariff settings, language, theme, price archive, sharing, backup, help and this guide. The example numbers will disappear – enter your own.",
+      guide4: "In the ☰ menu you’ll find the tariff settings, language, theme, price archive, backup and more. The example numbers will disappear – enter your own.",
       feedbackSubject: "Gas Consumption – feedback",
       feedbackBody: "Hi,\n\n(What did you like, what doesn't work, or what should be added?)\n\n",
       feedbackSent: "Opening an email to {email}",
@@ -1847,7 +1866,8 @@
     if (step.vals) setReadings(step.vals);
     const ex = (v) => '<span class="g-ex">' + v + "</span>";
     $("g-title").textContent = t("guide" + (i + 1) + "T");
-    $("g-text").innerHTML = t("guide" + (i + 1), { cur: ex(GUIDE_CUR), start: ex(GUIDE_START), diff: GUIDE_CUR - GUIDE_START });
+    $("g-text").innerHTML = t("guide" + (i + 1), { cur: ex(GUIDE_CUR), start: ex(GUIDE_START), diff: GUIDE_CUR - GUIDE_START,
+      bill: '<a href="#bill-view" class="g-bill">' + t("guideBill") + "</a>", fc: $("out-forecast-label").textContent });
     $("g-dots").innerHTML = guideSteps.map((_, j) => '<i class="' + (j === i ? "on" : "") + '"></i>').join("");
     const last = i === guideSteps.length - 1;
     $("g-skip").hidden = last;
@@ -1871,11 +1891,18 @@
     setReadings(guideBefore);
     scrollTo(0, 0);
   };
+  // "new reading" in step 2: the bill picture, on top of the guide.
+  const setBillView = (open) => {
+    $("bill-view").hidden = !open;
+    if (open) $("bill-view-close").focus(); else if (guideStep >= 0) $("g-next").focus({ preventScroll: true });
+  };
+  $("g-text").addEventListener("click", (e) => { if (e.target.closest(".g-bill")) { e.preventDefault(); setBillView(true); } });
+  $("bill-view").addEventListener("click", () => setBillView(false));
   $("g-next").addEventListener("click", () => guideStep < guideSteps.length - 1 ? showGuideStep(guideStep + 1) : endGuide());
   $("g-skip").addEventListener("click", endGuide);
   // A tap on the dimmed page also closes it.
   $("guide").addEventListener("click", (e) => { if (!e.target.closest("#g-bub")) endGuide(); });
-  addEventListener("keydown", (e) => { if (e.key === "Escape") endGuide(); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape") { if (!$("bill-view").hidden) setBillView(false); else endGuide(); } });
   addEventListener("resize", placeGuide);
   addEventListener("scroll", placeGuide, { passive: true });
   $("guide-show").addEventListener("click", startGuide);
