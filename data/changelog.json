@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.5.0",
+      "date": "2026-10-22",
+      "bg": [
+        "Езикът и темата отново са горе до заглавието (под него на телефона), а не в менюто ☰. Стъпка 4 на ръководството го казва."
+      ],
+      "en": [
+        "Language and theme are back at the top next to the title (under it on phones), not in the ☰ menu. Step 4 of the guide says so."
+      ]
+    },
+    {
       "version": "2.4.3",
       "date": "2026-10-22",
       "bg": [
