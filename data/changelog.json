@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.4.3",
+      "date": "2026-10-22",
+      "bg": [
+        "Когато сте превъртели надолу, горе се показва стрелка нагоре – като стрелката надолу."
+      ],
+      "en": [
+        "When you have scrolled down, an up arrow shows at the top – like the down arrow."
+      ]
+    },
+    {
       "version": "2.4.2",
       "date": "2026-10-22",
       "bg": [

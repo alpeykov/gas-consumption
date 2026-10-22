@@ -732,6 +732,11 @@
     color: var(--flame); background: var(--panel); border: 1px solid var(--line); border-radius: 50%; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   }
   .scroll-hint svg { width: 18px; height: 18px; }
+  /* "More above": the same arrow at the top edge once the page is scrolled down. */
+  .scroll-hint.up {
+    top: 0; bottom: auto; align-items: flex-start; padding-bottom: 0; padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    height: calc(64px + env(safe-area-inset-top, 0px)); background: linear-gradient(to top, transparent, var(--bg) 85%);
+  }
 </style>
 </head>
 <body>
@@ -928,6 +933,7 @@
   </nav>
 
   <div class="toast" id="toast" role="status" hidden></div>
+  <div class="scroll-hint up" id="scroll-hint-up" hidden><button type="button" id="scroll-up" data-i18n-aria="scrollUp" data-i18n-title="scrollUp" aria-label="Още отгоре" title="Още отгоре"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   <div class="scroll-hint" id="scroll-hint" hidden><button type="button" id="scroll-more" data-i18n-aria="scrollMore" data-i18n-title="scrollMore" aria-label="Още отдолу" title="Още отдолу"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   <div class="bill-view" id="bill-view" role="dialog" aria-modal="true" data-i18n-aria="billAlt" aria-label="" hidden>
     <button type="button" id="bill-view-close" data-i18n-aria="close" aria-label="Затвори">×</button>
@@ -1148,6 +1154,7 @@
       mhShow: "Покажи",
       cmpVs: "спрямо {month}",
       scrollMore: "Още отдолу",
+      scrollUp: "Още отгоре",
       chartBad: "„От“ е след „До“. Изберете период, в който „От“ е преди „До“ или същият.",
       cmpDet: "≈ {m3} срещу {m3b} · {e} срещу {eb}",
       cmpBillTag: " (по сметка)",
@@ -1342,6 +1349,7 @@
       mhShow: "Show",
       cmpVs: "vs {month}",
       scrollMore: "More below",
+      scrollUp: "More above",
       chartBad: "“From” is after “To”. Pick a period where “From” comes first or is the same.",
       cmpDet: "≈ {m3} vs {m3b} · {e} vs {eb}",
       cmpBillTag: " (bill)",
@@ -2642,10 +2650,11 @@
     });
   }
   ["start-reading", "start-date", "cur-reading", "cur-date"].forEach((id) => $(id).addEventListener("change", recordFromMain));
-  // "More below" while the page goes on under the screen (not with the menu or a dialog open); a tap scrolls down.
+  // Arrows while the page goes on under the screen (down) or above it (up), not with the menu or a dialog open; a tap scrolls that way.
   const syncScrollHint = () => {
-    const more = document.documentElement.scrollHeight - (scrollY + innerHeight) > 40;
-    $("scroll-hint").hidden = !more || menuOpen() || !$("bill-view").hidden;
+    const more = document.documentElement.scrollHeight - (scrollY + innerHeight) > 40, off = menuOpen() || !$("bill-view").hidden;
+    $("scroll-hint").hidden = !more || off;
+    $("scroll-hint-up").hidden = scrollY <= 40 || off;
   };
   addEventListener("scroll", syncScrollHint, { passive: true });
   addEventListener("resize", syncScrollHint);
@@ -2654,6 +2663,10 @@
   $("scroll-more").addEventListener("click", () => {
     const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
     scrollBy({ top: Math.round(innerHeight * 0.7), behavior: smooth ? "smooth" : "auto" });
+  });
+  $("scroll-up").addEventListener("click", () => {
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    scrollBy({ top: -Math.round(innerHeight * 0.7), behavior: smooth ? "smooth" : "auto" });
   });
   syncScrollHint();
 
