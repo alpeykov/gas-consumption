@@ -667,6 +667,42 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N37 forecast compared with the same month last year first, then last month – only when they are in the history", async () => {
+    const cmp = (p) => p.$$eval("#cmp .cmp-row", (r) => r.map((e) => e.textContent));
+    // No history: nothing.
+    let page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    expect(await page.$eval("#cmp", (e) => e.hidden), "hidden without history");
+    await page.close2();
+    const H = { "2025-10": { start: 1500, end: 1549, date: null, bill: 43.1 }, ...SEPT };
+    page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });
+    // 30 m³ in 16 days → 58,1 m³ forecast: +19% on 49 m³, +263% on 16 m³.
+    expect((await cmp(page)).join(" | ") === "↑ 19%спрямо октомври 2025› | ↑ 263%спрямо септември 2026›", "last year first, then last month: " + (await cmp(page)).join(" | "));
+    expect(await page.$eval("#cmp-det-2025-10", (e) => e.hidden), "details folded");
+    await page.click("#cmp .cmp-row[data-m='2025-10']");
+    expect((await text(page, "#cmp-det-2025-10")) === "≈ 58,1 m³ срещу 49 m³ · 51,90 € срещу 43,10 € (по сметка)Месечна история ›", "details: " + await text(page, "#cmp-det-2025-10"));
+    await page.click("#cmp-det-2025-10 .cmp-hist"); await settle(400);
+    expect(!(await page.$eval("#menu", (e) => e.hidden)) && !(await page.$eval("#mh-panel", (e) => e.hidden)) && !(await page.$eval("#mh-cbox", (e) => e.hidden)), "the link opens the monthly history with its chart");
+    await page.click("#menu-close"); await settle(400);
+    // Only last month in the history.
+    await page.evaluate(() => { const m = JSON.parse(localStorage.getItem("gas-bill-months-v1")); delete m["2025-10"]; localStorage.setItem("gas-bill-months-v1", JSON.stringify(m)); });
+    await page.reload({ waitUntil: "networkidle0" });
+    expect((await cmp(page)).join(" | ") === "↑ 263%спрямо септември 2026›", "only last month: " + (await cmp(page)).join(" | "));
+    // Fewer m³ than last year.
+    await page.evaluate(() => { const f = JSON.parse(localStorage.getItem("gas-bill-forecast-v1")); f["cur-reading"] = "2460"; delete f["cur-stamp"]; localStorage.setItem("gas-bill-forecast-v1", JSON.stringify(f));
+      const m = JSON.parse(localStorage.getItem("gas-bill-months-v1")); m["2025-10"] = { start: 1500, end: 1549, date: null, bill: null }; localStorage.setItem("gas-bill-months-v1", JSON.stringify(m)); });
+    await page.reload({ waitUntil: "networkidle0" });
+    expect((await cmp(page))[0].startsWith("↓ 41%спрямо октомври 2025"), "fewer m³: " + (await cmp(page)).join(" | "));
+    await page.click('.lang button[data-lang="en"]'); await settle(100);
+    expect((await cmp(page))[0] === "↓ 41%vs October 2025›", "English: " + (await cmp(page)).join(" | "));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    // No forecast (1st of the month, readings from different months): no comparison.
+    for (const [st, now] of [[readings(2445, 2445, "2026-10-01", "2026-10-01"), "2026-10-01T12:00:00"], [readings(2445, 2489, "2024-10-31", "2026-10-17"), undefined]]) {
+      page = await open({ width: 390, now, storage: { ...st, "gas-bill-months-v1": H } });
+      expect(await page.$eval("#cmp", (e) => e.hidden), "hidden without a forecast: " + await text(page, "#out-days") + " / " + await page.$eval("#cur-date", (e) => e.value) + " / " + await text(page, "#cmp"));
+      await page.close2();
+    }
+  });
   await test("sanity", "N24 'Last updated' under today's reading when it wasn't changed today", async () => {
     const note = (p) => p.$eval("#cur-updated", (e) => e.hidden ? "" : e.textContent);
     // An older save without the stamp: the last day it was saved counts.

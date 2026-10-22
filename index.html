@@ -171,6 +171,18 @@
   .fc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .fc-big { font-size: 2.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--flame); }
   .fc-sub { color: var(--muted); font-size: 0.95rem; }
+  /* Forecast compared with the same month last year, then with last month */
+  .cmp { display: grid; gap: 2px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .cmp-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); align-items: baseline; gap: 10px; width: 100%; min-height: 36px; font: inherit; color: var(--fg); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; }
+  .cmp-pct { font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cmp-up .cmp-pct { color: var(--amber); }
+  .cmp-down .cmp-pct { color: var(--flame); }
+  .cmp-same .cmp-pct { color: var(--muted); }
+  .cmp-what { font-size: 0.9rem; }
+  .cmp-chev { display: inline-block; color: var(--muted); margin-left: 4px; transition: transform 0.15s; }
+  .cmp-row[aria-expanded="true"] .cmp-chev { transform: rotate(90deg); }
+  .cmp-det { margin: 0 0 4px calc(4.6em + 10px); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cmp-det button { font: inherit; font-weight: 700; color: var(--flame); background: none; border: 0; padding: 4px 0 0; cursor: pointer; display: block; }
   .sofar { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); margin-top: 4px; }
   .sofar-main { display: grid; gap: 2px; }
   .sofar-val b { font-size: 1.45rem; font-weight: 700; color: var(--fg); }
@@ -884,6 +896,7 @@
     </div>
     <div class="fc-big eur num" id="out-fc-eur">–</div>
     <div class="fc-sub bgn num" id="out-fc-bgn">–</div>
+    <div class="cmp" id="cmp" hidden></div>
     <div class="sofar">
       <span class="sofar-main"><span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
         <span class="sofar-val"><b class="eur num" id="out-now-eur">–</b> <span class="bgn num" id="out-now-bgn">–</span></span>
@@ -1072,6 +1085,10 @@
       mhSub: "Потребление и прогноза по месеци · ✎ за редакция",
       mhChart: "Графика",
       mhShow: "Покажи",
+      cmpVs: "спрямо {month}",
+      cmpDet: "≈ {m3} срещу {m3b} · {e} срещу {eb}",
+      cmpBillTag: " (по сметка)",
+      cmpOpen: "Месечна история ›",
       mhList: "Записани месеци ({n})",
       mhEditCol: "Редакция",
       mhAria: "Месечно потребление в {unit} от {from} до {to}",
@@ -1260,6 +1277,10 @@
       mhSub: "Use and estimate by month · ✎ to edit",
       mhChart: "Chart",
       mhShow: "Show",
+      cmpVs: "vs {month}",
+      cmpDet: "≈ {m3} vs {m3b} · {e} vs {eb}",
+      cmpBillTag: " (bill)",
+      cmpOpen: "Monthly history ›",
       mhList: "Saved months ({n})",
       mhEditCol: "Edit",
       mhAria: "Monthly use in {unit} from {from} to {to}",
@@ -1614,7 +1635,11 @@
     return { price, fee };
   }
 
+  // The forecast for the comparison with the history: { ym, m3, gross } or null when there is no forecast.
+  let cmpInfo = null, cmpHook = null;
   function render() {
+    cmpInfo = null;
+    if (cmpHook) cmpHook();
     if (!$("mh-panel").hidden) renderMonths();
     document.querySelectorAll(".clr").forEach((b) => { b.hidden = !$(b.dataset.clear).value; });
     const { price, fee } = renderTariff();
@@ -1722,7 +1747,10 @@
     if (r.elapsed === 0) {
       ["out-fc-eur", "out-fc-bgn", "out-rate", "t-m3-fc", "t-kwh-fc", "t-net-fc", "t-fee-fc", "t-vat-fc", "t-tot-fc", "t-bgn-fc"].forEach((id) => { $(id).textContent = "–"; });
       $("out-days").textContent = t("msgFirstDay");
+      return;
     }
+    cmpInfo = { ym: v.startDate.slice(0, 7), m3: r.fc.m3, gross: r.fc.gross };
+    if (cmpHook) cmpHook();
   }
 
   // ---- Prices and kWh per m³ from this site's data files (refreshed daily on GitHub) ----
@@ -2183,7 +2211,7 @@
   const ymAdd = (ym, k) => { const [y, m] = ym.split("-").map(Number); const d = new Date(Date.UTC(y, m - 1 + k, 1)); return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth() + 1); };
   let months = {};
   try { months = JSON.parse(localStorage.getItem(MONTHS_KEY) || "{}") || {}; } catch (e) {}
-  const saveMonths = () => { try { localStorage.setItem(MONTHS_KEY, JSON.stringify(months)); } catch (e) {} };
+  const saveMonths = () => { try { localStorage.setItem(MONTHS_KEY, JSON.stringify(months)); } catch (e) {} if (cmpHook) cmpHook(); };
   // An Overgas invoice is dated the last day of the month it is for, so its month is the month of use.
   // Versions 2.1.4–2.1.5 wrongly filed old bills one month earlier (with `invoice` = the month picked); move them back once.
   const MONTHS_FIX_KEY = "gas-bill-months-invoice-fix2";
@@ -2545,6 +2573,43 @@
     });
   }
   ["start-reading", "start-date", "cur-reading", "cur-date"].forEach((id) => $(id).addEventListener("change", recordFromMain));
+  // The forecast against the same month last year (first) and last month (second), each only when it is in the history.
+  // By m³, the real use; a row opens the m³ and € behind it and a link to the monthly history.
+  const cmpOpen = new Set();
+  function renderCompare() {
+    const box = $("cmp"), f = cmpInfo;
+    const refs = f ? [ymAdd(f.ym, -12), ymAdd(f.ym, -1)].filter((m) => months[m] && months[m].end - months[m].start > 0) : [];
+    box.hidden = !refs.length;
+    if (!refs.length) { box.innerHTML = ""; return; }
+    box.innerHTML = refs.map((m) => {
+      const r = months[m], m3b = r.end - r.start, pct = Math.round((f.m3 - m3b) / m3b * 100);
+      const c = monthCost(m, m3b), eb = r.bill != null ? billEur(r) : c ? c.gross : null, open = cmpOpen.has(m);
+      const cls = pct > 0 ? "cmp-up" : pct < 0 ? "cmp-down" : "cmp-same";
+      const p = (pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + num(Math.abs(pct), 0, 0).replace(/\s/g, "") + "%";
+      return '<button type="button" class="cmp-row ' + cls + '" data-m="' + m + '" aria-expanded="' + open + '" aria-controls="cmp-det-' + m + '"><span class="cmp-pct">' + p +
+        '</span><span class="cmp-what">' + t("cmpVs", { month: monthLabel(m) }) + '<span class="cmp-chev" aria-hidden="true">›</span></span></button>' +
+        '<p class="cmp-det" id="cmp-det-' + m + '"' + (open ? "" : " hidden") + ">" +
+        t("cmpDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³", e: eur(f.gross), eb: eb == null ? "–" : eur(eb) + (r.bill != null ? t("cmpBillTag") : "") }) +
+        '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
+    }).join("");
+  }
+  $("cmp").addEventListener("click", (ev) => {
+    if (ev.target.closest(".cmp-hist")) {
+      setMenu(true);
+      if (!mhView.chart) { mhView.chart = true; saveMhView(); }
+      if ($("mh-panel").hidden) openMonths(true); else renderMonths();
+      setTimeout(() => $("mh-panel").scrollIntoView({ block: "start" }));
+      return;
+    }
+    const row = ev.target.closest(".cmp-row");
+    if (!row) return;
+    const m = row.dataset.m;
+    if (cmpOpen.has(m)) cmpOpen.delete(m); else cmpOpen.add(m);
+    renderCompare();
+  });
+  cmpHook = renderCompare;
+  renderCompare();
+
   closeMonth();
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") closeMonth(); });
   setInterval(closeMonth, 60000);

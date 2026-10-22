@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.3.0",
+      "date": "2026-10-22",
+      "bg": [
+        "Прогнозната сметка се сравнява с историята: първо със същия месец миналата година, после с миналия месец (по m³) – само ако ги има в „Месечна история“. Докоснете реда за m³ и € и връзка към историята."
+      ],
+      "en": [
+        "The forecast is compared with the history: first with the same month last year, then with last month (by m³) – only when they are in “Monthly history”. Tap a row for the m³ and € and a link to the history."
+      ]
+    },
+    {
       "version": "2.2.2",
       "date": "2026-10-22",
       "bg": [
