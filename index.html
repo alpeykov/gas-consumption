@@ -694,6 +694,9 @@
     .bill { padding: 14px 16px; gap: 6px; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 14px; }
     .bill > * { grid-column: 1 / -1; }
     .bill > .fc-head, .bill > #out-fc-eur, .bill > #out-fc-bgn { grid-column: 1; }
+    /* A taller cost-so-far column leaves its extra height under the forecast, not between its lines. */
+    .bill { grid-template-rows: auto auto 1fr; }
+    .bill > #out-fc-bgn { align-self: start; }
     .bill > .sofar { grid-column: 2; grid-row: 1 / span 3; border-top: 0; border-left: 1px solid var(--line); padding: 0 0 0 14px; margin: 0;
       flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: stretch; gap: 2px; }
     .bill .sofar-val b { display: block; font-size: 1.2rem; }
@@ -701,6 +704,7 @@
     .bill .fc-big { font-size: 1.9rem; }
     .bill .fc-sub { font-size: 0.78rem; }
     #out-rate { font-size: 0.75rem; }
+    .bill .sofar-val .bgn { font-size: 0.8rem; }
     .cmp { padding-top: 4px; gap: 0; }
     .cmp-row { min-height: 30px; padding: 2px 0; }
     .cmp-pct { font-size: 0.95rem; }
@@ -712,7 +716,7 @@
     .dial input { font-size: 1.25rem; }
     .date-field { padding: 4px 8px; font-size: 0.85rem; }
   }
-  @media (max-width: 340px) {
+  @media (max-width: 300px) {
     /* Too narrow for two sums side by side: the cost so far goes back under the forecast. */
     .bill { grid-template-columns: minmax(0, 1fr); }
     .bill > .sofar { grid-column: 1; grid-row: auto; border-left: 0; border-top: 1px solid var(--line); padding: 8px 0 0; }
@@ -724,11 +728,10 @@
     background: linear-gradient(to bottom, transparent, var(--bg) 85%);
   }
   .scroll-hint button {
-    pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer;
-    font: 600 0.8rem var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
-    border-radius: 999px; padding: 4px 12px 4px 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    pointer-events: auto; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; cursor: pointer;
+    color: var(--flame); background: var(--panel); border: 1px solid var(--line); border-radius: 50%; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   }
-  .scroll-hint svg { width: 14px; height: 14px; color: var(--flame); }
+  .scroll-hint svg { width: 18px; height: 18px; }
 </style>
 </head>
 <body>
@@ -925,7 +928,7 @@
   </nav>
 
   <div class="toast" id="toast" role="status" hidden></div>
-  <div class="scroll-hint" id="scroll-hint" hidden><button type="button" id="scroll-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="scrollMore">Още отдолу</span></button></div>
+  <div class="scroll-hint" id="scroll-hint" hidden><button type="button" id="scroll-more" data-i18n-aria="scrollMore" data-i18n-title="scrollMore" aria-label="Още отдолу" title="Още отдолу"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   <div class="bill-view" id="bill-view" role="dialog" aria-modal="true" data-i18n-aria="billAlt" aria-label="" hidden>
     <button type="button" id="bill-view-close" data-i18n-aria="close" aria-label="Затвори">×</button>
     <img src="icons/bill-where-v1.webp" width="1188" height="1140" data-i18n-alt="billAlt" alt="" loading="lazy">

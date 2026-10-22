@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.4.2",
+      "date": "2026-10-22",
+      "bg": [
+        "Индикаторът за още съдържание отдолу е само стрелка.",
+        "Прогнозата и текущата цена са една до друга и на по-тесни телефони (от 300 px нагоре)."
+      ],
+      "en": [
+        "The “more below” hint is just an arrow.",
+        "The forecast and the cost so far sit side by side on narrower phones too (300 px and up)."
+      ]
+    },
+    {
       "version": "2.4.1",
       "date": "2026-10-22",
       "bg": [

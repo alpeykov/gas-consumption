@@ -733,7 +733,7 @@ async function sanity() {
     expect(r.readings <= r.h, "both readings above the fold: " + r.readings + " / " + r.h);
     expect(r.nowL > r.fcR && Math.abs(r.now - r.fc) < 30, "forecast and cost so far side by side: " + JSON.stringify(r));
     expect(!r.wide && r.link, "no sideways scroll; the tariff link stays");
-    expect(!(await page.$eval("#scroll-hint", (e) => e.hidden)) && (await text(page, "#scroll-more")) === "Още отдолу", "hint shown at the top");
+    expect(!(await page.$eval("#scroll-hint", (e) => e.hidden)) && (await text(page, "#scroll-more")) === "" && (await page.$eval("#scroll-more", (e) => e.getAttribute("aria-label"))) === "Още отдолу", "hint (an arrow only) shown at the top");
     await page.click("#scroll-more"); await settle(400);
     expect(await page.evaluate(() => scrollY > 200), "a tap scrolls down");
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await settle(150);
@@ -746,6 +746,10 @@ async function sanity() {
     await page.click('.lang button[data-lang="en"]').catch(() => {});
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
+    // Narrow phones (320 px, e.g. with display zoom) keep the two sums side by side.
+    const n = await open({ width: 320, height: 640, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
+    expect(await n.evaluate(() => document.getElementById("out-now-eur").getBoundingClientRect().left > document.getElementById("out-fc-eur").getBoundingClientRect().right && document.documentElement.scrollWidth <= innerWidth), "side by side at 320 px");
+    await n.close2();
     // Desktop with everything on screen: no hint.
     const d = await open({ width: 1280, height: 2000, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
     expect(await d.$eval("#scroll-hint", (e) => e.hidden), "no hint when nothing is below");
