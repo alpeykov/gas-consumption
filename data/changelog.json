@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.4.1",
+      "date": "2026-10-22",
+      "bg": [
+        "Ако в графиките „От“ е след „До“, вместо графика се показва жълто съобщение."
+      ],
+      "en": [
+        "If “From” is after “To” in the charts, a yellow message shows instead of the chart."
+      ]
+    },
+    {
       "version": "2.4.0",
       "date": "2026-10-22",
       "bg": [

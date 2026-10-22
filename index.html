@@ -551,6 +551,8 @@
   .chart-note { margin: 0; color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; }
   .key-solid, .key-dash { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--flame); }
   .key-dash { border-top-style: dashed; }
+  /* "From" after "To": a yellow note instead of the chart. */
+  .chart-bad { margin: 0; padding: 10px 12px; border: 1px solid var(--amber); border-radius: 8px; background: var(--amber-soft); color: var(--amber); font-weight: 600; font-size: 0.85rem; }
   .chart-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
   .key { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
   .key-solid, .key-dash { flex: none; }
@@ -848,6 +850,7 @@
             <label><span data-i18n="fromYear">От</span> <select id="mh-from"></select></label>
             <label><span data-i18n="toYear">До</span> <select id="mh-to"></select></label>
           </div>
+          <p class="chart-bad" id="mh-bad" role="alert" data-i18n="chartBad" hidden></p>
           <div class="chart-box" id="mh-box">
             <svg id="mh-svg" role="img"></svg>
             <div class="chart-tip" id="mh-tip" aria-live="polite"></div>
@@ -882,6 +885,7 @@
             <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
           </div>
         </div>
+        <p class="chart-bad" id="chart-bad" role="alert" data-i18n="chartBad" hidden></p>
         <div class="chart-box" id="chart-box">
           <svg id="chart-svg" role="img"></svg>
           <div class="chart-tip" id="chart-tip" aria-live="polite"></div>
@@ -1141,6 +1145,7 @@
       mhShow: "Покажи",
       cmpVs: "спрямо {month}",
       scrollMore: "Още отдолу",
+      chartBad: "„От“ е след „До“. Изберете период, в който „От“ е преди „До“ или същият.",
       cmpDet: "≈ {m3} срещу {m3b} · {e} срещу {eb}",
       cmpBillTag: " (по сметка)",
       cmpOpen: "Месечна история ›",
@@ -1334,6 +1339,7 @@
       mhShow: "Show",
       cmpVs: "vs {month}",
       scrollMore: "More below",
+      chartBad: "“From” is after “To”. Pick a period where “From” comes first or is the same.",
       cmpDet: "≈ {m3} vs {m3b} · {e} vs {eb}",
       cmpBillTag: " (bill)",
       cmpOpen: "Monthly history ›",
@@ -1973,8 +1979,10 @@
   function drawChart() {
     const svg = $("chart-svg");
     $("chart-tip").textContent = "";
-    let from = +$("chart-from").value, to = +$("chart-to").value;
-    if (from > to) { [from, to] = [to, from]; }
+    const from = +$("chart-from").value, to = +$("chart-to").value;
+    $("chart-bad").hidden = from <= to;
+    $("chart-box").hidden = from > to;
+    if (from > to) return;
     // Every calendar month in the chosen years, up to the latest month with data; gaps stay empty.
     const lastData = chartPoints[chartPoints.length - 1].m;
     const byMonth = Object.fromEntries(chartPoints.map((p) => [p.m, p]));
@@ -2378,8 +2386,10 @@
     fill($("mh-from"), mhView.from, ymAdd(curYm, -12));
     fill($("mh-to"), mhView.to, curYm);
     $("mh-unit").value = ["eur", "bgn", "m3"].includes(mhView.unit) ? mhView.unit : "eur";
-    let from = $("mh-from").value, to = $("mh-to").value;
-    if (from > to) [from, to] = [to, from];
+    const from = $("mh-from").value, to = $("mh-to").value;
+    $("mh-bad").hidden = from <= to;
+    $("mh-box").hidden = from > to;
+    if (from > to) { $("mh-total").hidden = true; return; }
     const span = all.filter((m) => m >= from && m <= to);
     const unit = $("mh-unit").value, inM3 = unit === "m3", inBgn = unit === "bgn";
     const cur = inBgn ? (lang === "bg" ? "лв." : "lv.") : "€";

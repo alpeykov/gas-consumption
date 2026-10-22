@@ -633,7 +633,18 @@ async function sanity() {
     await page.click("#chart-btn");
     await page.select("#mh-unit", "m3");
     expect((await page.$eval("#mh-svg", (s) => s.textContent)).includes("m³") && (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).includes("20"), "m³ axis: " + (await page.$$eval("#mh-svg text", (x) => x.map((e) => e.textContent))).join());
+    // "From" after "To": a yellow note instead of the chart, in both charts.
+    await page.select("#mh-from", "2026-09"); await page.select("#mh-to", "2025-06");
+    expect((await page.$eval("#mh-box", (e) => e.hidden)) && await page.$eval("#mh-total", (e) => e.hidden) && (await text(page, "#mh-bad")).startsWith("„От“ е след „До“"), "history: note instead of the chart");
+    expect(await page.$eval("#mh-bad", (e) => { const k = document.createElement("i"); k.style.color = "var(--amber)"; document.body.append(k); const c = getComputedStyle(k).color; k.remove(); return getComputedStyle(e).color === c; }), "yellow (amber) note");
+    await page.click("#chart-btn"); await settle(1200);
+    await page.select("#chart-from", "2025"); await page.select("#chart-to", "2022");
+    expect((await page.$eval("#chart-box", (e) => e.hidden)) && !(await page.$eval("#chart-bad", (e) => e.hidden)), "price archive: note instead of the chart");
+    await page.select("#chart-to", "2026");
+    expect(!(await page.$eval("#chart-box", (e) => e.hidden)) && (await page.$eval("#chart-bad", (e) => e.hidden)), "price archive: chart back");
+    await page.click("#chart-btn");
     await page.select("#mh-from", "2025-03"); await page.select("#mh-to", "2025-06");
+    expect(!(await page.$eval("#mh-box", (e) => e.hidden)) && (await page.$eval("#mh-bad", (e) => e.hidden)), "history: chart back");
     expect((await pts()) === "2025-03" && (await text(page, "#mh-total-val")).startsWith("100 m³ · "), "a chosen period: " + await pts() + " · " + await text(page, "#mh-total-val"));
     await page.reload({ waitUntil: "networkidle0" });
     await page.click("#history-btn"); await settle(200);
