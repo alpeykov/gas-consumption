@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.3.1",
+      "date": "2026-10-22",
+      "bg": [
+        "Стрелката › в сравнението вече е винаги в края на реда, а не на нов ред на телефона."
+      ],
+      "en": [
+        "The › arrow in the comparison now always sits at the end of its row, not on a new line on phones."
+      ]
+    },
+    {
       "version": "2.3.0",
       "date": "2026-10-22",
       "bg": [

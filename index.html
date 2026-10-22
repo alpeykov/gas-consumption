@@ -173,13 +173,14 @@
   .fc-sub { color: var(--muted); font-size: 0.95rem; }
   /* Forecast compared with the same month last year, then with last month */
   .cmp { display: grid; gap: 2px; padding-top: 8px; border-top: 1px solid var(--line); }
-  .cmp-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); align-items: baseline; gap: 10px; width: 100%; min-height: 36px; font: inherit; color: var(--fg); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; }
+  .cmp-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; align-items: baseline; gap: 10px; width: 100%; min-height: 36px; font: inherit; color: var(--fg); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; }
   .cmp-pct { font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cmp-up .cmp-pct { color: var(--amber); }
   .cmp-down .cmp-pct { color: var(--flame); }
   .cmp-same .cmp-pct { color: var(--muted); }
   .cmp-what { font-size: 0.9rem; }
-  .cmp-chev { display: inline-block; color: var(--muted); margin-left: 4px; transition: transform 0.15s; }
+  /* The chevron has its own column at the end, so it never wraps under a long month name. */
+  .cmp-chev { display: inline-block; color: var(--muted); padding: 0 2px; transition: transform 0.15s; }
   .cmp-row[aria-expanded="true"] .cmp-chev { transform: rotate(90deg); }
   .cmp-det { margin: 0 0 4px calc(4.6em + 10px); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .cmp-det button { font: inherit; font-weight: 700; color: var(--flame); background: none; border: 0; padding: 4px 0 0; cursor: pointer; display: block; }
@@ -2587,7 +2588,7 @@
       const cls = pct > 0 ? "cmp-up" : pct < 0 ? "cmp-down" : "cmp-same";
       const p = (pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + num(Math.abs(pct), 0, 0).replace(/\s/g, "") + "%";
       return '<button type="button" class="cmp-row ' + cls + '" data-m="' + m + '" aria-expanded="' + open + '" aria-controls="cmp-det-' + m + '"><span class="cmp-pct">' + p +
-        '</span><span class="cmp-what">' + t("cmpVs", { month: monthLabel(m) }) + '<span class="cmp-chev" aria-hidden="true">›</span></span></button>' +
+        '</span><span class="cmp-what">' + t("cmpVs", { month: monthLabel(m) }) + '</span><span class="cmp-chev" aria-hidden="true">›</span></button>' +
         '<p class="cmp-det" id="cmp-det-' + m + '"' + (open ? "" : " hidden") + ">" +
         t("cmpDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³", e: eur(f.gross), eb: eb == null ? "–" : eur(eb) + (r.bill != null ? t("cmpBillTag") : "") }) +
         '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";

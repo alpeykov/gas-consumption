@@ -678,6 +678,14 @@ async function sanity() {
     // 30 m³ in 16 days → 58,1 m³ forecast: +19% on 49 m³, +263% on 16 m³.
     expect((await cmp(page)).join(" | ") === "↑ 19%спрямо октомври 2025› | ↑ 263%спрямо септември 2026›", "last year first, then last month: " + (await cmp(page)).join(" | "));
     expect(await page.$eval("#cmp-det-2025-10", (e) => e.hidden), "details folded");
+    // The chevron stays on the row's first line, at its end, even on a narrow phone.
+    for (const w of [390, 320]) {
+      await page.setViewport({ width: w, height: 900 }); await settle(100);
+      const ok = await page.$$eval("#cmp .cmp-row", (rs) => rs.every((r) => { const c = r.querySelector(".cmp-chev").getBoundingClientRect(), p = r.querySelector(".cmp-pct").getBoundingClientRect(), b = r.getBoundingClientRect();
+        return Math.abs(c.top - p.top) < 6 && b.right - c.right < 4; }));
+      expect(ok, "chevron on the first line at the end at " + w + "px");
+    }
+    await page.setViewport({ width: 390, height: 900 });
     await page.click("#cmp .cmp-row[data-m='2025-10']");
     expect((await text(page, "#cmp-det-2025-10")) === "≈ 58,1 m³ срещу 49 m³ · 51,90 € срещу 43,10 € (по сметка)Месечна история ›", "details: " + await text(page, "#cmp-det-2025-10"));
     await page.click("#cmp-det-2025-10 .cmp-hist"); await settle(400);
