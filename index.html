@@ -229,6 +229,7 @@
   input:focus-visible, select:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   /* The date shows as text in the app's language; the browser's date input sits invisibly on top to open its picker. */
   .date-row { display: flex; gap: 8px; }
+  .updated-note { margin: 0; font-size: 0.8rem; color: var(--muted); }
   .date-field {
     position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 0.95rem; color: var(--fg);
@@ -782,7 +783,8 @@
     <div class="fc-sub bgn num" id="out-fc-bgn">–</div>
     <div class="sofar">
       <span class="sofar-main"><span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
-        <span class="sofar-val"><b class="eur num" id="out-now-eur">–</b> <span class="bgn num" id="out-now-bgn">–</span></span></span>
+        <span class="sofar-val"><b class="eur num" id="out-now-eur">–</b> <span class="bgn num" id="out-now-bgn">–</span></span>
+        <span class="updated-note" id="now-updated" hidden></span></span>
       <span class="num muted-sm" id="out-rate">–</span>
     </div>
     <div class="tl" aria-hidden="true">
@@ -802,6 +804,7 @@
           <input class="date-native" id="cur-date" type="date" value="2026-10-17" data-i18n-aria="readingTodayDate" aria-label="Дата на текущото показание"></label>
         <button type="button" class="today-btn" id="today-btn" data-i18n="today">Днес</button>
       </div>
+      <p class="updated-note" id="cur-updated" hidden></p>
     </div>
     <button type="button" class="swap-btn" id="swap-btn" data-i18n-aria="swapReadings" aria-label="Размени двете показания"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v15M8 4l-4 4M8 4l4 4M16 20V5M16 20l-4-4M16 20l4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <div class="reading">
@@ -961,6 +964,7 @@
       readingLastAria: "Показание на уреда от последната сметка",
       readingLastDate: "Дата на показанието от сметката",
       readingToday: "Показание днес",
+      lastUpdated: "Последно обновено: {date}",
       readingTodayAria: "Текущо показание на уреда",
       clearToday: "Изчисти показанието днес",
       clearLast: "Изчисти показанието от сметката",
@@ -1102,6 +1106,7 @@
       readingLastAria: "Meter reading on last bill",
       readingLastDate: "Date of last bill reading",
       readingToday: "Reading today",
+      lastUpdated: "Last updated: {date}",
       readingTodayAria: "Current meter reading",
       clearToday: "Clear today's reading",
       clearLast: "Clear the last bill reading",
@@ -1259,6 +1264,10 @@
   ids.forEach((id) => { if (id !== "region" && !FIXED.includes(id) && saved[id] != null) $(id).value = saved[id]; });
   // 10.55 was the old fixed default; switch those users to the automatic Bulgartransgaz value.
   if ($("factor").value === "10.55") $("factor").value = "";
+  // The day the number in "Показание днес" last changed, for the "Last updated" note.
+  let curStamp = saved["cur-stamp"] && typeof saved["cur-stamp"].date === "string" ? saved["cur-stamp"]
+    : { value: $("cur-reading").value, date: /^\d{4}-\d\d-\d\d$/.test(saved["cur-date"] || "") ? saved["cur-date"] : todayStr() };
+  let prevStamp = null;
   // "Показание днес" is dated today: opening the app on another day moves the date to today.
   if ($("cur-date").value !== todayStr()) $("cur-date").value = todayStr();
 
@@ -1420,7 +1429,13 @@
       factor: factorInUse(), rate: parseFloat($("rate").value),
     };
     // The guide's example readings are never saved.
-    if (!guideOn) try { const s = {}; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    // A changed reading is dated today; undoing a change brings its old date back.
+    const curVal = $("cur-reading").value;
+    if (!guideOn && curVal !== curStamp.value) {
+      const back = prevStamp && prevStamp.value === curVal;
+      [curStamp, prevStamp] = [back ? prevStamp : { value: curVal, date: todayStr() }, curStamp];
+    }
+    if (!guideOn) try { const s = { "cur-stamp": curStamp }; ids.forEach((id) => s[id] = $(id).value); localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
     // Header: the final price (incl. VAT) of the month of today's reading.
     const mwhVat = v.price * (1 + v.vat / 100);
     $("head-price").textContent = isFinite(mwhVat) && tariffSummary
@@ -1434,6 +1449,10 @@
     // Dates as text in the app's language.
     const longDate = (iso) => iso ? new Date(parseDate(iso)).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "–";
     $("cur-date-text").textContent = longDate(v.curDate);
+    $("cur-updated").hidden = guideOn || curVal === "" || curStamp.date >= todayStr();
+    $("cur-updated").textContent = t("lastUpdated", { date: longDate(curStamp.date) });
+    $("now-updated").hidden = $("cur-updated").hidden;
+    $("now-updated").textContent = $("cur-updated").textContent;
     $("start-date-text").textContent = longDate(v.startDate);
     $("t-vat-label").textContent = t("vatRow", { v: isFinite(v.vat) ? num(v.vat, 0, 2) : "–" });
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(Date.UTC(today.getFullYear(), today.getMonth() + 1, 1)) });

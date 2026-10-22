@@ -379,6 +379,35 @@ async function sanity() {
       await p2.close2();
     }
   });
+  await test("sanity", "N24 'Last updated' under today's reading when it wasn't changed today", async () => {
+    const note = (p) => p.$eval("#cur-updated", (e) => e.hidden ? "" : e.textContent);
+    // An older save without the stamp: the last day it was saved counts.
+    let page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-15") });
+    expect((await note(page)) === "Последно обновено: 15 октомври 2026 г.", "old reading: " + await note(page));
+    expect((await page.$eval("#now-updated", (e) => e.hidden ? "" : e.textContent)) === "Последно обновено: 15 октомври 2026 г.", "also under the current cost");
+    await page.click('.lang button[data-lang="en"]'); await settle(100);
+    expect((await note(page)) === "Last updated: 15 October 2026", "English: " + await note(page));
+    await page.click('.lang button[data-lang="bg"]'); await settle(100);
+    await page.click("#cur-reading", { clickCount: 3 }); await page.type("#cur-reading", "2480"); await settle(100);
+    expect((await note(page)) === "", "a new reading today hides it");
+    await page.reload({ waitUntil: "networkidle0" });
+    expect((await note(page)) === "" && (await page.$eval("#cur-reading", (e) => e.value)) === "2480", "still hidden after reopening today");
+    await page.close2();
+    // Saved today, opened two days later.
+    const stamp = { ...readings(2445, 2475, "2026-10-01", "2026-10-17")["gas-bill-forecast-v1"], "cur-stamp": { value: "2475", date: "2026-10-17" } };
+    page = await open({ now: "2026-10-19T09:00:00", storage: { "gas-bill-forecast-v1": stamp, "gas-bill-help-seen": "1" } });
+    expect((await note(page)) === "Последно обновено: 17 октомври 2026 г.", "two days later: " + await note(page));
+    await page.click("[data-clear=cur-reading]"); await settle(100);
+    expect((await note(page)) === "", "no note for an empty field");
+    await page.click("#toast-undo"); await settle(100);
+    expect((await note(page)) === "Последно обновено: 17 октомври 2026 г.", "undo brings the old date back: " + await note(page));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    // Never shown during the guide.
+    page = await open({ width: 390 });
+    expect((await note(page)) === "", "hidden in the guide");
+    await page.close2();
+  });
   await test("sanity", "N23 guide wording; 'новото показание' opens the bill picture above the guide", async () => {
     const page = await open({ width: 390 });
     expect((await text(page, "#g-text")) === "В полето „ПОКАЗАНИЕ ДНЕС“ въвеждате числото от газомера в m³. За демонстрацията сме попълнили 163.", "step 1: " + await text(page, "#g-text"));
