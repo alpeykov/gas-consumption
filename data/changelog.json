@@ -2,6 +2,22 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.7",
+      "date": "2026-10-22",
+      "bg": [
+        "Графиката в „Месечна история“ е като тази в „Архив цени“: линия с подсказка, избор на € / лв. / m³ и на период „от – до“.",
+        "Записаните месеци са в сгъваем списък (затворен по подразбиране); ✎ е в отделна колона в края на реда.",
+        "Вече записаните месеци не се предлагат при добавяне на месец.",
+        "Сметката има две полета – в евро и в лева. Въвеждате в едното, другото се превалутира само и се заключва."
+      ],
+      "en": [
+        "The chart in “Monthly history” works like the price archive: a line with a tooltip, € / lv. / m³ and a “from – to” period.",
+        "Saved months are in a folding list (closed at first); ✎ sits in its own column at the end of the row.",
+        "Months already saved aren't offered when adding a month.",
+        "The bill has two fields – euro and leva. Type in one; the other is converted and locked."
+      ]
+    },
+    {
       "version": "2.1.6",
       "date": "2026-10-22",
       "bg": [
