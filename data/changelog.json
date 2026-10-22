@@ -2,6 +2,22 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.1.0",
+      "date": "2026-10-22",
+      "bg": [
+        "Нова „Месечна история“ в менюто ☰: m³, прогноза и сумата от сметката за всеки месец, с графика в € или m³.",
+        "На 1-во число месецът се записва сам с последното си показание, а „Показание от последната сметка“ започва новия месец от него.",
+        "Всеки месец може да се редактира (m³, показания, сума по сметката), да се изтрие или да се добави от стара сметка.",
+        "На първия ден от периода вместо предупреждение се показва, че прогнозата се появява от утре."
+      ],
+      "en": [
+        "New “Monthly history” in the ☰ menu: m³, the estimate and the bill amount for every month, with a chart in € or m³.",
+        "On the 1st the month is saved by itself with its last reading, and “Reading on last bill” starts the new month from it.",
+        "Every month can be edited (m³, readings, bill amount), deleted, or added from an old bill.",
+        "On the first day of the billing period you see that the forecast appears from tomorrow, instead of a warning."
+      ]
+    },
+    {
       "version": "2.0.5",
       "date": "2026-10-22",
       "bg": [

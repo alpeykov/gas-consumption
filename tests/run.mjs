@@ -379,6 +379,122 @@ async function sanity() {
       await p2.close2();
     }
   });
+  // ---- Monthly history ----
+  const monthsOf = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-months-v1") || "{}"));
+  const setVal = (p, sel, v, ev = "input") => p.evaluate((s, x, e) => { const el = document.querySelector(s); el.value = x; el.dispatchEvent(new Event(e, { bubbles: true })); }, sel, v, ev);
+  const SEPT = { "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: null } };
+  await test("sanity", "N25 history: on the 1st the month is saved with its last reading and the new month starts from it", async () => {
+    const stamped = (sd) => ({ "gas-bill-forecast-v1": { ...readings(2445, 2502, sd, "2026-10-28")["gas-bill-forecast-v1"], "cur-stamp": { value: "2502", date: "2026-10-28" } }, "gas-bill-help-seen": "1" });
+    let page = await open({ now: "2026-11-01T08:00:00", storage: stamped("2026-10-01") });
+    expect(JSON.stringify((await monthsOf(page))["2026-10"]) === JSON.stringify({ start: 2445, end: 2502, date: "2026-10-28", bill: null }), "October saved: " + JSON.stringify(await monthsOf(page)));
+    expect((await page.$eval("#start-reading", (e) => e.value)) === "2502" && (await page.$eval("#start-date", (e) => e.value)) === "2026-11-01", "last bill reading moves to 2502 on 1 November");
+    expect(/^Октомври 2026 е записан в историята \(57 m³ · .+ €\)\. „Показание от последната сметка“ е 2502 от 1-ви ноември\./.test(await text(page, "#toast")), "toast: " + await text(page, "#toast"));
+    expect((await text(page, "#out-now-eur")) === "0,00 €" && (await text(page, "#out-fc-eur")) === "–" && (await text(page, "#out-days")) === "Първи ден от периода на сметката – прогнозата се появява от утре.", "1st day: no warning, forecast from tomorrow");
+    await page.click("#toast-undo");
+    expect(!(await monthsOf(page))["2026-10"] && (await page.$eval("#start-reading", (e) => e.value)) === "2445" && (await page.$eval("#start-date", (e) => e.value)) === "2026-10-01", "Undo puts everything back");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    page = await open({ now: "2026-11-03T08:00:00", storage: stamped("2026-10-01") });
+    await page.reload({ waitUntil: "networkidle0" });
+    expect(Object.keys(await monthsOf(page)).join() === "2026-10" && (await page.$eval("#start-reading", (e) => e.value)) === "2502", "opening again doesn't save it twice");
+    await page.close2();
+    // The last bill is from another month than the last reading: nothing is guessed.
+    page = await open({ now: "2026-11-01T08:00:00", storage: stamped("2026-09-01") });
+    expect(!Object.keys(await monthsOf(page)).length && (await page.$eval("#start-reading", (e) => e.value)) === "2445", "dates in different months: nothing saved");
+    await page.close2();
+  });
+  await test("sanity", "N26 history: readings typed on the main screen for a past month are saved as that month; dates in different months are not", async () => {
+    const page = await open({ storage: readings(2429, 2445, "2026-09-01", "2026-10-17") });
+    expect(!Object.keys(await monthsOf(page)).length, "nothing for the current month");
+    await setVal(page, "#cur-date", "2026-09-30", "change");
+    expect(JSON.stringify(await monthsOf(page)) === JSON.stringify({ "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: null } }), "September saved: " + JSON.stringify(await monthsOf(page)));
+    expect((await text(page, "#toast")).startsWith("Записано в историята: Септември 2026 · 16 m³ · 13,61 €"), "toast: " + await text(page, "#toast"));
+    await setVal(page, "#cur-reading", "2447", "change");
+    expect((await monthsOf(page))["2026-09"].end === 2447, "a changed reading overwrites the month");
+    await page.click("#toast-undo");
+    expect((await monthsOf(page))["2026-09"].end === 2445, "Undo brings the old row back");
+    await setVal(page, "#start-date", "2026-08-15", "change");
+    await setVal(page, "#start-reading", "2400", "change");
+    expect((await monthsOf(page))["2026-09"].start === 2429 && !(await monthsOf(page))["2026-08"], "dates in different months: nothing saved");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
+  await test("sanity", "N27 history: list, edit m³ and bill, estimate follows, delete with Undo", async () => {
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": SEPT } });
+    await page.click("#history-btn");
+    expect(!(await page.$eval("#mh-panel", (e) => e.hidden)) && (await page.$eval("#menu", (e) => e.hidden)), "panel opens, menu closes");
+    const rows = () => page.$$eval("#mh-rows tr", (trs) => trs.map((tr) => [...tr.cells].map((c) => c.textContent.trim())));
+    let r = await rows();
+    expect(r[0][0].startsWith("Октомври 2026до момента") && r[0][1] === "30", "this month so far first: " + r[0].join(" | "));
+    expect(r[1][0] === "Септември 2026✎2429 → 2445" && r[1][1] === "16" && r[1][2] === "13,61 €" && r[1][3] === "–", "September row: " + r[1].join(" | "));
+    expect(await page.$eval("#mh-rows tr.mh-cur", (tr) => !tr.querySelector(".mh-ed")), "no ✎ on the month still running");
+    await page.click(".mh-ed[data-m='2026-09']");
+    expect((await page.$eval("#mh-m3", (e) => e.value)) === "16" && /= 13,61 €/.test(await text(page, "#mh-calc")), "form shows m³ and the estimate");
+    await setVal(page, "#mh-m3", "20");
+    expect((await page.$eval("#mh-end", (e) => e.value)) === "2449", "m³ moves the end reading");
+    const c20 = await text(page, "#mh-calc");
+    expect(/^Прогноза: 20 m³ × 10,76 kWh\/m³ × .+\/MWh с ДДС \(цена за септември 2026\) = 17,0\d €$/.test(c20), "estimate follows m³: " + c20);
+    await setVal(page, "#mh-start", "2430");
+    expect((await page.$eval("#mh-m3", (e) => e.value)) === "19", "a reading recalculates m³");
+    await setVal(page, "#mh-bill", "16,50");
+    expect(/разлика със сметката [+−]\d/.test(await text(page, "#mh-calc")), "difference from the bill shown");
+    await page.click("#mh-save");
+    expect(JSON.stringify((await monthsOf(page))["2026-09"]) === JSON.stringify({ start: 2430, end: 2449, date: null, bill: 16.5 }), "saved: " + JSON.stringify((await monthsOf(page))["2026-09"]));
+    r = await rows();
+    expect(r[1][1] === "19" && r[1][3].startsWith("16,50 €") && /[+−]\d/.test(r[1][3]), "row updated: " + r[1].join(" | "));
+    await page.click(".mh-ed[data-m='2026-09']");
+    await setVal(page, "#mh-end", "2420");
+    await page.click("#mh-save");
+    expect(!(await page.$eval("#mh-msg", (e) => e.hidden)) && (await monthsOf(page))["2026-09"].end === 2449, "end below start is refused");
+    await page.click("#mh-del");
+    expect(!(await monthsOf(page))["2026-09"] && (await rows()).length === 1, "deleted");
+    await page.click("#toast-undo");
+    expect((await monthsOf(page))["2026-09"].end === 2449 && (await rows()).length === 2, "Undo brings it back");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
+  await test("sanity", "N28 history: add a month from an old bill", async () => {
+    const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await page.click("#history-btn");
+    expect(!(await page.$eval("#mh-empty", (e) => e.hidden)) === false, "the running month is listed, so no empty note");
+    await page.click("#mh-add");
+    expect(await page.$eval("#mh-add", (e) => e.hidden) && (await page.$eval("#mh-month", (e) => e.options[0].value)) === "2026-09", "form open, newest free month first");
+    await page.select("#mh-month", "2026-06");
+    await setVal(page, "#mh-start", "2410"); await setVal(page, "#mh-end", "2414"); await setVal(page, "#mh-bill", "4,10");
+    expect(/цена за юни 2026/.test(await text(page, "#mh-calc")), "estimate with June's price: " + await text(page, "#mh-calc"));
+    await page.click("#mh-save");
+    expect(JSON.stringify((await monthsOf(page))["2026-06"]) === JSON.stringify({ start: 2410, end: 2414, date: null, bill: 4.1 }), "June added");
+    await page.click("#mh-add");
+    expect(!(await page.$eval("#mh-month", (e) => [...e.options].some((o) => o.value === "2026-06"))), "a saved month isn't offered again");
+    await page.click("#mh-cancel");
+    expect((await page.$eval("#mh-form", (e) => e.innerHTML)) === "", "Cancel closes the form");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
+  await test("sanity", "N29 history chart: folded at first, € first, m³ switch, remembered; English", async () => {
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": SEPT } });
+    await page.click("#history-btn");
+    expect(await page.$eval("#mh-cbox", (e) => e.hidden), "chart folded at first");
+    await page.click("#mh-chart-toggle");
+    expect(!(await page.$eval("#mh-cbox", (e) => e.hidden)) && (await page.$eval("#mh-unit [data-unit=eur]", (b) => b.getAttribute("aria-pressed"))) === "true", "opens in €");
+    const ticks = await page.$$eval("#mh-ticks span", (s) => s.map((x) => x.textContent));
+    expect(ticks.length === 12 && ticks[0] === "окт" && ticks[11] === "сеп", "last 12 months: " + ticks.join(","));
+    expect((await page.$eval(".mh-bar[data-m='2026-09'] b", (b) => b.textContent)) === "14", "September bar in €");
+    await page.click("#mh-unit [data-unit=m3]");
+    expect((await page.$eval(".mh-bar[data-m='2026-09'] b", (b) => b.textContent)) === "16", "m³ switch");
+    expect((await text(page, "#mh-total-val")) === "16 m³ · 13,61 €", "12-month total: " + await text(page, "#mh-total-val"));
+    await page.click(".mh-bar[data-m='2026-09']");
+    expect(!!(await page.$("#mh-m3")), "a bar opens its month for editing");
+    await page.reload({ waitUntil: "networkidle0" });
+    await page.click("#history-btn");
+    expect(!(await page.$eval("#mh-cbox", (e) => e.hidden)) && (await page.$eval("#mh-unit [data-unit=m3]", (b) => b.getAttribute("aria-pressed"))) === "true", "open and m³ remembered");
+    await page.click('.lang button[data-lang="en"]'); await settle(100);
+    await page.click("#history-btn");
+    const en = await page.$$eval("#mh-rows tr", (trs) => trs.map((tr) => tr.cells[0].textContent));
+    expect(en[1] === "September 2026✎2429 → 2445" && !/[А-я]/.test(await text(page, "#mh-panel")), "English: " + en.join(" | "));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N24 'Last updated' under today's reading when it wasn't changed today", async () => {
     const note = (p) => p.$eval("#cur-updated", (e) => e.hidden ? "" : e.textContent);
     // An older save without the stamp: the last day it was saved counts.
@@ -561,22 +677,23 @@ async function regression() {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes, #menu section.tariff")].map((e) => e.id || e.className.split(" ")[0]).join(",")
       + (document.querySelector(".main section.tariff") ? " + tariff on the page" : ""));
-    expect(order === "tariff,lang,themes,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
+    expect(order === "tariff,lang,themes,history-btn,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
     await page.close2();
   });
   // Layout matrix: every width × theme × language — nothing may scroll sideways or leave its card.
   const widths = [1280, 412, 360, 320, 277];
   for (const w of widths) for (const lang of ["bg", "en"]) {
     await test("regression", `R9 layout fits at ${w}px (${lang}, all themes, chart and panels open)`, async () => {
-      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang, "gas-bill-breakdown-open": "1" } });
-      await page.click("#chart-btn"); await page.click("#help-btn"); await page.click("#tariff-toggle"); await settle(1200);
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang, "gas-bill-breakdown-open": "1",
+        "gas-bill-months-v1": { "2026-09": { start: 2429, end: 2445, date: "2026-09-28", bill: 13.61 }, "2026-08": { start: 12420, end: 12429.5, date: null, bill: 107.4 } }, "gas-bill-history-view": { chart: true, unit: "eur" } } });
+      await page.click("#chart-btn"); await page.click("#help-btn"); await page.click("#tariff-toggle"); await page.click("#history-btn"); await page.click(".mh-ed[data-m='2026-09']"); await settle(1200);
       for (const th of ["dark", "light", "blue", "contrast"]) {
         await page.click(`.themes button[data-theme-choice="${th}"]`); await settle(80);
         const r = await page.evaluate((phone) => {
           const W = document.documentElement.clientWidth;
           const out = { pageWide: document.documentElement.scrollWidth > W + 1 };
           const sc = document.querySelector(".table-scroll"); out.tableShown = sc.getClientRects().length > 0; out.tableScrolls = sc.scrollWidth > sc.clientWidth + 1;
-          const cards = [".bill", ".readings", ".tariff", ".breakdown", "#chart-panel", "#about"];
+          const cards = [".bill", ".readings", ".tariff", ".breakdown", "#chart-panel", "#mh-panel", "#about"];
           out.outside = [];
           for (const c of cards) {
             const card = document.querySelector(c); if (!card || card.hidden) continue;

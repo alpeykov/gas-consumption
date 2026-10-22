@@ -424,6 +424,56 @@
   }
   .icon-btn:hover::after, .icon-btn:focus-visible::after { opacity: 1; }
 
+  /* Monthly history */
+  .mh-tog { display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px 6px 12px; }
+  .mh-tog.open { border-radius: 10px 10px 0 0; border-bottom: 0; }
+  .mh-tog > button { display: flex; align-items: center; gap: 8px; font: inherit; font-size: 0.9rem; font-weight: 700; color: var(--fg); background: none; border: 0; padding: 4px 0; cursor: pointer; flex: 1; text-align: left; }
+  .mh-chev { width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin-top: -4px; }
+  .mh-tog.open .mh-chev { transform: rotate(-135deg); margin-top: 4px; }
+  .mh-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .mh-seg button { font: inherit; font-size: 0.8rem; font-weight: 700; padding: 4px 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+  .mh-seg button[aria-pressed="true"] { background: var(--flame); color: var(--on-flame); }
+  .mh-cbox { display: grid; gap: 8px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; padding: 0 12px 12px; margin-top: -12px; }
+  .mh-cap { font-size: 0.75rem; color: var(--muted); }
+  .mh-bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: end; gap: 4px; height: 120px; padding-top: 18px; border-bottom: 1px solid var(--line); }
+  .mh-bar { position: relative; display: block; width: 100%; background: var(--flame); border: 0; border-radius: 4px 4px 0 0; padding: 0; opacity: 0.85; cursor: pointer; min-height: 2px; }
+  .mh-bar:hover, .mh-bar:focus-visible { opacity: 1; outline: 2px solid var(--fg); outline-offset: 1px; }
+  .mh-bar b { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 2px; font-size: 0.6rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .mh-ticks { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; font-size: 0.62rem; color: var(--muted); text-align: center; }
+  .mh-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+  .mh-table th { text-align: right; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 4px 6px; }
+  .mh-table td { text-align: right; padding: 9px 4px; border-top: 1px solid var(--line); white-space: nowrap; vertical-align: top; }
+  .mh-table th:first-child, .mh-table td:first-child { text-align: left; white-space: normal; }
+  .mh-table td small { display: block; font-size: 0.7rem; color: var(--muted); }
+  .mh-table .mh-diff { color: var(--amber); }
+  .mh-table tr.mh-cur td { color: var(--muted); font-style: italic; }
+  .mh-ed { font: inherit; font-size: 0.85rem; color: var(--flame); background: none; border: 0; padding: 2px 6px; margin-left: 2px; cursor: pointer; }
+  .mh-empty { margin: 0; font-size: 0.85rem; color: var(--muted); }
+  .mh-add { font: inherit; font-weight: 700; color: var(--flame); background: transparent; border: 1px dashed var(--line); border-radius: 8px; padding: 9px; cursor: pointer; }
+  .mh-total { display: flex; justify-content: space-between; gap: 10px; font-size: 0.85rem; color: var(--muted); }
+  .mh-total b { color: var(--fg); }
+  .mh-form { display: grid; gap: 10px; background: var(--flame-soft); border: 1px solid var(--flame); border-radius: 10px; padding: 12px; }
+  .mh-form h3 { margin: 0; font-size: 0.95rem; }
+  .mh-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .mh-grid label { display: grid; gap: 4px; align-content: end; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .mh-grid input, .mh-grid select { font: inherit; font-size: 1rem; letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; min-width: 0; width: 100%; }
+  .mh-grid input.mh-key { border-color: var(--flame); }
+  .mh-calc { margin: 0; font-size: 0.85rem; color: var(--muted); }
+  .mh-calc b { color: var(--fg); }
+  .mh-hint { margin: 0; font-size: 0.75rem; color: var(--muted); }
+  .mh-msg { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--amber); }
+  .mh-btns { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+  .mh-btns span { display: flex; gap: 8px; margin-left: auto; }
+  .mh-btns button { font: inherit; font-size: 0.85rem; font-weight: 700; border-radius: 6px; padding: 7px 12px; border: 1px solid var(--line); background: transparent; color: var(--flame); cursor: pointer; }
+  .mh-btns .mh-pri { background: var(--flame); color: var(--on-flame); border-color: var(--flame); }
+  .mh-btns .mh-del { color: var(--amber); }
+  @media (max-width: 360px) {
+    .mh-table { font-size: 0.8rem; }
+    .mh-table th { font-size: 0.6rem; letter-spacing: 0.02em; padding: 0 2px 6px; }
+    .mh-table td { padding: 8px 2px; }
+    .mh-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
   /* Historical price chart */
   .chart-panel {
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
@@ -719,6 +769,7 @@
       </div>
     </div>
     <div class="menu-sec">
+      <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Месечна история</span></button>
       <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span></button>
       <button type="button" class="menu-item" id="share-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="shareBtn">Сподели</span></button>
       <button type="button" class="menu-item" id="backup-btn" aria-expanded="false" aria-controls="backup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 14V4M6 7l3-3 3 3M15 4v10M12 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="backupBtn">Резервно копие</span></button>
@@ -728,6 +779,33 @@
       <button type="button" class="menu-item" id="menu-guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10l4 4v12H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="guideMenu">Упътване за първо ползване</span></button>
     </div>
   </nav>
+
+  <section class="chart-panel mh-panel" id="mh-panel" aria-labelledby="mh-h" hidden>
+    <div class="chart-head">
+      <button type="button" class="chart-close" id="mh-close" data-i18n-aria="close" aria-label="Затвори">×</button>
+      <div>
+        <h2 id="mh-h" data-i18n="historyBtn">Месечна история</h2>
+        <p class="chart-sub" data-i18n="mhSub"></p>
+      </div>
+    </div>
+    <div class="mh-tog" id="mh-tog">
+      <button type="button" id="mh-chart-toggle" aria-expanded="false" aria-controls="mh-cbox"><span class="mh-chev" aria-hidden="true"></span><span data-i18n="mhChart">Графика</span></button>
+      <span class="mh-seg" id="mh-unit" hidden><button type="button" data-unit="eur" aria-pressed="true">€</button><button type="button" data-unit="m3" aria-pressed="false">m³</button></span>
+    </div>
+    <div class="mh-cbox" id="mh-cbox" hidden>
+      <span class="mh-cap" id="mh-cap"></span>
+      <div class="mh-bars" id="mh-bars"></div>
+      <div class="mh-ticks" id="mh-ticks" aria-hidden="true"></div>
+    </div>
+    <div id="mh-form"></div>
+    <table class="mh-table" id="mh-table">
+      <thead><tr><th data-i18n="mhMonth">Месец</th><th>m³</th><th data-i18n="mhPrognosis">Прогноза</th><th data-i18n="mhBill">Сметка</th></tr></thead>
+      <tbody id="mh-rows"></tbody>
+    </table>
+    <p class="mh-empty" id="mh-empty" data-i18n="mhEmpty" hidden></p>
+    <button type="button" class="mh-add" id="mh-add" data-i18n="mhAdd">+ Добави месец от стара сметка</button>
+    <div class="mh-total" id="mh-total" hidden><span data-i18n="mhTotal">Общо за 12 месеца</span><span id="mh-total-val"></span></div>
+  </section>
 
   <section class="chart-panel" id="chart-panel" aria-labelledby="chart-h" hidden>
     <div class="chart-head">
@@ -885,6 +963,7 @@
   const PRICE_KEY = "gas-bill-prices-v1";
   const GCV_KEY = "gas-bill-gcv-v2";
   const HISTORY_KEY = "gas-bill-history-v1";
+  const MONTHS_KEY = "gas-bill-months-v1";
   const ids = Object.keys(DEFAULTS);
   const $ = (id) => document.getElementById(id);
   // ---- Language: Bulgarian by default; a chosen language is kept in this browser across updates ----
@@ -964,6 +1043,40 @@
       readingLastAria: "Показание на уреда от последната сметка",
       readingLastDate: "Дата на показанието от сметката",
       readingToday: "Показание днес",
+      historyBtn: "Месечна история",
+      mhSub: "Потребление и прогноза по месеци · ✎ за редакция",
+      mhChart: "Графика",
+      mhChartEur: "€ с ДДС · последните 12 месеца",
+      mhChartM3: "m³ · последните 12 месеца",
+      mhMonth: "Месец",
+      mhPrognosis: "Прогноза",
+      mhBill: "Сметка",
+      mhSoFar: "до момента · {d}",
+      mhReadOn: "показание от {d}",
+      mhEmpty: "Още няма записани месеци. Месецът се записва сам на 1-во число с последното показание от него. Можете да добавите и стар месец от сметка.",
+      mhAdd: "+ Добави месец от стара сметка",
+      mhTotal: "Общо за 12 месеца",
+      mhNewH: "Нов месец от стара сметка",
+      mhStart: "Начално показание",
+      mhEnd: "Крайно показание",
+      mhOld: "Старо (от сметката)",
+      mhNew: "Ново (от сметката)",
+      mhM3: "m³ за месеца",
+      mhBillField: "Сметка € (от Овергаз)",
+      mhOptional: "по желание",
+      mhCalc: "Прогноза: {m3} m³ × {f} kWh/m³ × {p}/MWh с ДДС (цена за {month}) = {sum}",
+      mhNoPrice: "Няма цена на Овергаз за {month}, затова прогнозата не може да се изчисли.",
+      mhDiff: "разлика със сметката {d}",
+      mhHint: "Промяна на m³ мести крайното показание; промяна на показанията преизчислява m³.",
+      mhDelete: "Изтрий месеца",
+      mhCancel: "Отказ",
+      mhSave: "Запази",
+      mhAddBtn: "Добави",
+      mhBad: "Въведете двете показания; крайното не може да е по-малко от началното.",
+      mhClosed: "{month} е записан в историята ({m3} m³ · {sum}). „Показание от последната сметка“ е {end} от {d}.",
+      mhSaved: "Записано в историята: {month} · {m3} m³ · {sum}",
+      mhDeleted: "{month} е изтрит от историята.",
+      mhEditAria: "Редактирай {month}",
       lastUpdated: "Последно обновено: {date}",
       readingTodayAria: "Текущо показание на уреда",
       clearToday: "Изчисти показанието днес",
@@ -1028,6 +1141,7 @@
       msgFill: "Попълнете двете дати и тарифните настройки.",
       msgLower: "Днешното показание е по-малко от показанието в сметката.",
       msgDate: "Днешната дата трябва да е след датата на сметката.",
+      msgFirstDay: "Първи ден от периода на сметката – прогнозата се появява от утре.",
       dayOf: "Ден {e} от {p} от периода на сметката",
       perDay: "{m3}/ден · {money}/ден",
       priceLine: "Цена с ДДС: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Прогнозата е базирана на същото дневно потребление до края на месеца.",
@@ -1106,6 +1220,40 @@
       readingLastAria: "Meter reading on last bill",
       readingLastDate: "Date of last bill reading",
       readingToday: "Reading today",
+      historyBtn: "Monthly history",
+      mhSub: "Use and estimate by month · ✎ to edit",
+      mhChart: "Chart",
+      mhChartEur: "€ incl. VAT · last 12 months",
+      mhChartM3: "m³ · last 12 months",
+      mhMonth: "Month",
+      mhPrognosis: "Estimate",
+      mhBill: "Bill",
+      mhSoFar: "so far · {d}",
+      mhReadOn: "reading of {d}",
+      mhEmpty: "No months saved yet. A month is saved by itself on the 1st, with its last reading. You can also add an old month from a bill.",
+      mhAdd: "+ Add a month from an old bill",
+      mhTotal: "Total for 12 months",
+      mhNewH: "New month from an old bill",
+      mhStart: "Start reading",
+      mhEnd: "End reading",
+      mhOld: "Old (from the bill)",
+      mhNew: "New (from the bill)",
+      mhM3: "m³ for the month",
+      mhBillField: "Bill € (from Overgas)",
+      mhOptional: "optional",
+      mhCalc: "Estimate: {m3} m³ × {f} kWh/m³ × {p}/MWh incl. VAT ({month} price) = {sum}",
+      mhNoPrice: "There's no Overgas price for {month}, so the estimate can't be worked out.",
+      mhDiff: "difference from the bill {d}",
+      mhHint: "Changing m³ moves the end reading; changing a reading recalculates m³.",
+      mhDelete: "Delete month",
+      mhCancel: "Cancel",
+      mhSave: "Save",
+      mhAddBtn: "Add",
+      mhBad: "Enter both readings; the end reading can't be lower than the start.",
+      mhClosed: "{month} is saved in the history ({m3} m³ · {sum}). “Reading on last bill” is now {end} from {d}.",
+      mhSaved: "Saved in the history: {month} · {m3} m³ · {sum}",
+      mhDeleted: "{month} deleted from the history.",
+      mhEditAria: "Edit {month}",
       lastUpdated: "Last updated: {date}",
       readingTodayAria: "Current meter reading",
       clearToday: "Clear today's reading",
@@ -1170,6 +1318,7 @@
       msgFill: "Fill in both dates and the tariff settings.",
       msgLower: "Today’s reading is lower than the bill reading.",
       msgDate: "Today’s date must be after the bill date.",
+      msgFirstDay: "First day of the billing period – the forecast appears from tomorrow.",
       dayOf: "Day {e} of {p} of the billing period",
       perDay: "{m3}/day · {money}/day",
       priceLine: "Price with VAT: {mwh}/MWh = {kwh}/kWh ≈ {m3}/m³. Forecast assumes the same daily use for the rest of the month.",
@@ -1419,6 +1568,7 @@
   }
 
   function render() {
+    if (!$("mh-panel").hidden) renderMonths();
     document.querySelectorAll(".clr").forEach((b) => { b.hidden = !$(b.dataset.clear).value; });
     const { price, fee } = renderTariff();
     renderGcv();
@@ -1473,7 +1623,7 @@
     if (bad) { clear(t("msgFill")); return; }
     const r = calc(v);
     if (r.now.m3 < 0) { clear('<span class="warn">' + t("msgLower") + "</span>"); return; }
-    if (r.elapsed <= 0) { clear('<span class="warn">' + t("msgDate") + "</span>"); return; }
+    if (r.elapsed < 0) { clear('<span class="warn">' + t("msgDate") + "</span>"); return; }
 
     $("out-now-eur").textContent = eur(r.now.gross);
     $("out-now-bgn").textContent = bgn(r.now.bgn) + " · " + n1(r.now.m3, "m³");
@@ -1503,6 +1653,11 @@
     $("t-tot-now").textContent = eur(r.now.gross); $("t-tot-fc").textContent = eur(r.fc.gross);
     $("t-bgn-now").textContent = bgn(r.now.bgn); $("t-bgn-fc").textContent = bgn(r.fc.bgn);
     $("t-price-line").textContent = t("priceLine", { mwh: eur(r.grossPerKwh * 1000), kwh: eur(r.grossPerKwh, 5), m3: eur(r.perM3, 4) });
+    // First day of the period (a new month starts on the 1st with both dates the same): no daily rate yet to forecast from.
+    if (r.elapsed === 0) {
+      ["out-fc-eur", "out-fc-bgn", "out-rate", "t-m3-fc", "t-kwh-fc", "t-net-fc", "t-fee-fc", "t-vat-fc", "t-tot-fc", "t-bgn-fc"].forEach((id) => { $(id).textContent = "–"; });
+      $("out-days").textContent = t("msgFirstDay");
+    }
   }
 
   // ---- Prices and kWh per m³ from this site's data files (refreshed daily on GitHub) ----
@@ -1856,7 +2011,7 @@
   });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
   // Actions close the menu and show what they opened; language and theme keep it open.
-  ["chart-btn", "share-btn", "backup-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
+  ["history-btn", "chart-btn", "share-btn", "backup-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
     setMenu(false);
     const panel = $(id).getAttribute("aria-controls");
     if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" });
@@ -1946,8 +2101,215 @@
       + "&body=" + encodeURIComponent(t("feedbackBody") + info);
     toast(t("feedbackSent", { email: FEEDBACK_EMAIL }));
   });
+  // ---- Monthly history: one row per closed month, editable; kept in this browser (and in backups) ----
+  // { "YYYY-MM": { start, end, date, bill } } – readings in m³, `date` the day of the end reading (null when typed from a bill),
+  // `bill` the € on the Overgas bill (null if not entered). The estimate is never stored: it is always m³ × that month's price.
+  let months = {};
+  try { months = JSON.parse(localStorage.getItem(MONTHS_KEY) || "{}") || {}; } catch (e) {}
+  const saveMonths = () => { try { localStorage.setItem(MONTHS_KEY, JSON.stringify(months)); } catch (e) {} };
+  const MH_VIEW_KEY = "gas-bill-history-view";
+  let mhView = { chart: false, unit: "eur" };
+  try { Object.assign(mhView, JSON.parse(localStorage.getItem(MH_VIEW_KEY) || "{}")); } catch (e) {}
+  const saveMhView = () => { try { localStorage.setItem(MH_VIEW_KEY, JSON.stringify(mhView)); } catch (e) {} };
+  const ymOf = (iso) => iso.slice(0, 7);
+  const ymAdd = (ym, k) => { const [y, m] = ym.split("-").map(Number); const d = new Date(Date.UTC(y, m - 1 + k, 1)); return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth() + 1); };
+  const capFirst = (s) => s.charAt(0).toLocaleUpperCase(locale()) + s.slice(1);
+  const mLabel = (ym) => capFirst(monthLabel(ym));
+  const ddmm = (iso) => iso.slice(8, 10) + "." + iso.slice(5, 7);
+  const mhNum = (s) => parseFloat(String(s).replace(",", "."));
+  // Meter readings as on the meter: no thousands separator.
+  const rd = (v) => v.toLocaleString(locale(), { useGrouping: false, maximumFractionDigits: 2 });
+  // The estimate for `m3` used in `month`: that month's Overgas price (incl. VAT) and Bulgartransgaz kWh/m³.
+  function monthCost(month, m3) {
+    const region = selectedRegion(), hist = historyFor(month, region);
+    let price, fee = 0;
+    if (hist) { price = hist.priceEur; fee = hist.feeEur || 0; }
+    else if (month >= region.uploaded.slice(0, 7)) price = region.price;
+    else { if (!historyRequested) loadHistory(); return null; }
+    const factor = gcvFor(month).value, vat = parseFloat($("vat").value) || 20;
+    return { factor, mwhVat: price * (1 + vat / 100), gross: (m3 * factor * price / 1000 + fee) * (1 + vat / 100) };
+  }
+  // A reading on the 1st still closes the month before: the bill period ends on the 1st.
+  const readingMonth = (iso) => iso.slice(8) === "01" ? ymAdd(ymOf(iso), -1) : ymOf(iso);
+  // An end reading before the month's last day (or the 1st after it) is shown with its date.
+  const endsMonth = (ym, iso) => !iso || iso === ymAdd(ym, 1) + "-01" || ymOf(new Date(parseDate(iso) + DAY).toISOString()) !== ym;
+  const mhSum = (c) => (c ? eur(c.gross) : "–");
+
+  let mhEdit = null; // the month open in the form, "new" for a month from an old bill
+  function renderMonths() {
+    if ($("mh-panel").hidden) return;
+    const curYm = ymOf(todayStr());
+    // Chart: the 12 months before this one.
+    const span = Array.from({ length: 12 }, (_, i) => ymAdd(curYm, i - 12));
+    const inEur = mhView.unit !== "m3";
+    const vals = span.map((m) => {
+      const r = months[m]; if (!r) return null;
+      const c = monthCost(m, r.end - r.start);
+      return inEur ? (c ? c.gross : null) : r.end - r.start;
+    });
+    const top = Math.max(1, ...vals.filter((x) => x != null));
+    $("mh-tog").classList.toggle("open", mhView.chart);
+    $("mh-chart-toggle").setAttribute("aria-expanded", String(mhView.chart));
+    $("mh-cbox").hidden = $("mh-unit").hidden = !mhView.chart;
+    $("mh-unit").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.unit === (inEur ? "eur" : "m3"))));
+    $("mh-cap").textContent = t(inEur ? "mhChartEur" : "mhChartM3");
+    $("mh-bars").innerHTML = span.map((m, i) => vals[i] == null ? "<span></span>"
+      : '<button type="button" class="mh-bar" data-m="' + m + '" style="height:' + Math.max(2, Math.round(vals[i] / top * 100)) + '%" aria-label="' + mLabel(m) + ": " + (inEur ? eur(vals[i]) : num(vals[i], 0, 2) + " m³") + '"><b>' + num(vals[i], 0, inEur ? 0 : 1) + "</b></button>").join("");
+    $("mh-ticks").innerHTML = span.map((m) => "<span>" + monthName(Number(m.slice(5)) - 1).slice(0, 3) + "</span>").join("");
+
+    // Table: this month so far (from the main screen), then every saved month, newest first.
+    const rows = [];
+    const sr = parseFloat($("start-reading").value), cr = parseFloat($("cur-reading").value);
+    if (ymOf($("start-date").value || "") === curYm && isFinite(sr) && isFinite(cr) && cr >= sr) {
+      rows.push('<tr class="mh-cur"><td>' + mLabel(curYm) + "<small>" + t("mhSoFar", { d: ddmm($("cur-date").value) }) + "</small></td><td>" + num(cr - sr, 0, 2) +
+        "</td><td>" + mhSum(monthCost(curYm, cr - sr)) + "</td><td>–</td></tr>");
+    }
+    Object.keys(months).sort().reverse().forEach((m) => {
+      const r = months[m], m3 = r.end - r.start, c = monthCost(m, m3);
+      const sub = rd(r.start) + " → " + rd(r.end) + (endsMonth(m, r.date) ? "" : " · " + t("mhReadOn", { d: ddmm(r.date) }));
+      let bill = "–";
+      if (r.bill != null) {
+        bill = eur(r.bill);
+        const d = c ? r.bill - c.gross : NaN;
+        if (Math.abs(d) >= 0.005) bill += '<small class="mh-diff">' + (d > 0 ? "+" : "−") + eur(Math.abs(d)) + "</small>";
+      }
+      rows.push('<tr data-m="' + m + '"><td>' + mLabel(m) + '<button type="button" class="mh-ed" data-m="' + m + '" aria-label="' + t("mhEditAria", { month: mLabel(m) }) + '">✎</button><small>' + sub +
+        "</small></td><td>" + num(m3, 0, 2) + "</td><td>" + mhSum(c) + "</td><td>" + bill + "</td></tr>");
+    });
+    $("mh-rows").innerHTML = rows.join("");
+    $("mh-table").hidden = !rows.length;
+    $("mh-empty").hidden = !!rows.length;
+    // Total of the months in the chart.
+    const inSpan = span.filter((m) => months[m]);
+    $("mh-total").hidden = !inSpan.length;
+    if (inSpan.length) {
+      const m3 = inSpan.reduce((a, m) => a + months[m].end - months[m].start, 0);
+      const costs = inSpan.map((m) => monthCost(m, months[m].end - months[m].start));
+      $("mh-total-val").innerHTML = "<b>" + num(m3, 0, 1) + " m³</b> · <b>" + (costs.every(Boolean) ? eur(costs.reduce((a, c) => a + c.gross, 0)) : "–") + "</b>";
+    }
+    $("mh-add").hidden = mhEdit === "new";
+    renderMhForm();
+  }
+
+  function renderMhForm() {
+    const box = $("mh-form");
+    if (!mhEdit) { box.innerHTML = ""; return; }
+    if (box.dataset.for === mhEdit) { updateMhCalc(); return; } // keep what is being typed
+    box.dataset.for = mhEdit;
+    const isNew = mhEdit === "new", r = isNew ? null : months[mhEdit];
+    const field = (id, label, val, cls = "", ph = "") => '<label>' + t(label) + '<input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + val + '"' +
+      (cls ? ' class="' + cls + '"' : "") + (ph ? ' placeholder="' + t(ph) + '"' : "") + "></label>";
+    const free = Array.from({ length: 36 }, (_, i) => ymAdd(ymOf(todayStr()), -1 - i)).filter((m) => !months[m]);
+    box.innerHTML = '<div class="mh-form">' +
+      "<h3>" + (isNew ? t("mhNewH") : mLabel(mhEdit)) + '</h3><div class="mh-grid">' +
+      (isNew ? '<label>' + t("mhMonth") + '<select id="mh-month">' + free.map((m) => '<option value="' + m + '">' + mLabel(m) + "</option>").join("") + "</select></label>" +
+        field("mh-bill", "mhBillField", "", "mh-key", "mhOptional") +
+        field("mh-start", "mhOld", "") + field("mh-end", "mhNew", "")
+      : field("mh-start", "mhStart", r.start) + field("mh-end", "mhEnd", r.end) +
+        field("mh-m3", "mhM3", rd(r.end - r.start), "mh-key") + field("mh-bill", "mhBillField", r.bill != null ? r.bill.toLocaleString(locale(), { useGrouping: false, minimumFractionDigits: 2 }) : "", "mh-key", "mhOptional")) +
+      '</div><p class="mh-calc" id="mh-calc"></p>' + (isNew ? "" : '<p class="mh-hint">' + t("mhHint") + "</p>") +
+      '<p class="mh-msg" id="mh-msg" role="alert" hidden></p><div class="mh-btns">' +
+      (isNew ? "" : '<button type="button" class="mh-del" id="mh-del">' + t("mhDelete") + "</button>") +
+      '<span><button type="button" id="mh-cancel">' + t("mhCancel") + '</button><button type="button" class="mh-pri" id="mh-save">' + t(isNew ? "mhAddBtn" : "mhSave") + "</button></span></div></div>";
+    updateMhCalc();
+  }
+  const mhMonthNow = () => (mhEdit === "new" ? $("mh-month").value : mhEdit);
+  function updateMhCalc() {
+    const m = mhMonthNow(), s = mhNum($("mh-start").value), e = mhNum($("mh-end").value), bill = mhNum($("mh-bill").value);
+    if (!m || !isFinite(s) || !isFinite(e) || e < s) { $("mh-calc").textContent = ""; return; }
+    const c = monthCost(m, e - s);
+    if (!c) { $("mh-calc").textContent = t("mhNoPrice", { month: monthLabel(m) }); return; }
+    $("mh-calc").innerHTML = t("mhCalc", { m3: num(e - s, 0, 2), f: num(c.factor, 2, 3), p: eur(c.mwhVat), month: monthLabel(m), sum: "<b>" + eur(c.gross) + "</b>" }) +
+      (isFinite(bill) ? " · " + t("mhDiff", { d: "<b>" + (bill - c.gross >= 0 ? "+" : "−") + eur(Math.abs(bill - c.gross)) + "</b>" }) : "");
+  }
+  const openMhForm = (m) => { mhEdit = m; delete $("mh-form").dataset.for; renderMonths(); $("mh-form").scrollIntoView({ block: "nearest" }); };
+  const closeMhForm = () => { mhEdit = null; delete $("mh-form").dataset.for; renderMonths(); };
+  $("mh-form").addEventListener("input", (ev) => {
+    const id = ev.target.id, s = mhNum($("mh-start").value), e = mhNum($("mh-end").value);
+    if ($("mh-m3")) {
+      // m³ moves the end reading; a reading recalculates m³.
+      if (id === "mh-m3") { const m3 = mhNum($("mh-m3").value); if (isFinite(s) && isFinite(m3)) $("mh-end").value = String(Math.round((s + m3) * 1000) / 1000); }
+      else if ((id === "mh-start" || id === "mh-end") && isFinite(s) && isFinite(e)) $("mh-m3").value = String(Math.round((e - s) * 1000) / 1000);
+    }
+    $("mh-msg").hidden = true;
+    updateMhCalc();
+  });
+  $("mh-form").addEventListener("change", (ev) => { if (ev.target.id === "mh-month") updateMhCalc(); });
+  $("mh-form").addEventListener("click", (ev) => {
+    const id = ev.target.id;
+    if (id === "mh-cancel") closeMhForm();
+    if (id === "mh-del") {
+      const m = mhEdit, prev = months[m];
+      delete months[m]; saveMonths(); closeMhForm();
+      toast(t("mhDeleted", { month: mLabel(m) }), () => { months[m] = prev; saveMonths(); renderMonths(); });
+    }
+    if (id === "mh-save") {
+      const m = mhMonthNow(), s = mhNum($("mh-start").value), e = mhNum($("mh-end").value), bill = mhNum($("mh-bill").value);
+      if (!m || !isFinite(s) || !isFinite(e) || e < s) { $("mh-msg").textContent = t("mhBad"); $("mh-msg").hidden = false; return; }
+      const prev = months[m];
+      months[m] = { start: s, end: e, date: prev && prev.end === e ? prev.date : null, bill: isFinite(bill) ? Math.round(bill * 100) / 100 : null };
+      saveMonths(); closeMhForm();
+    }
+  });
+  $("mh-rows").addEventListener("click", (ev) => { const b = ev.target.closest(".mh-ed"); if (b) openMhForm(b.dataset.m); });
+  $("mh-bars").addEventListener("click", (ev) => { const b = ev.target.closest(".mh-bar"); if (b) openMhForm(b.dataset.m); });
+  $("mh-add").addEventListener("click", () => openMhForm("new"));
+  $("mh-chart-toggle").addEventListener("click", () => { mhView.chart = !mhView.chart; saveMhView(); renderMonths(); });
+  $("mh-unit").addEventListener("click", (ev) => { const b = ev.target.closest("button"); if (!b) return; mhView.unit = b.dataset.unit; saveMhView(); renderMonths(); });
+  const openMonths = (open) => {
+    $("mh-panel").hidden = !open;
+    $("history-btn").setAttribute("aria-expanded", String(open));
+    if (open) renderMonths(); else closeMhForm();
+  };
+  $("history-btn").addEventListener("click", () => openMonths($("mh-panel").hidden));
+  $("mh-close").addEventListener("click", () => openMonths(false));
+
+  // The 1st of a new month (or the first time the app is opened after it): the month of the last reading is saved
+  // with that reading, and the new month starts from it.
+  function closeMonth() {
+    if (guideOn) return;
+    const m = ymOf(curStamp.date), now = todayStr();
+    if (m >= ymOf(now) || months[m]) return;
+    const s = parseFloat($("start-reading").value), e = parseFloat(curStamp.value);
+    if (!isFinite(s) || !isFinite(e) || e < s || ymOf($("start-date").value || "") !== m) return;
+    const before = [$("start-reading").value, $("start-date").value];
+    months[m] = { start: s, end: e, date: curStamp.date, bill: null };
+    saveMonths();
+    const first = ymOf(now) + "-01";
+    $("start-reading").value = curStamp.value; $("start-date").value = first;
+    $("start-date").dispatchEvent(new Event("input"));
+    toast(t("mhClosed", { month: mLabel(m), m3: num(e - s, 0, 2), sum: mhSum(monthCost(m, e - s)), end: curStamp.value, d: fcDate(parseDate(first)) }), () => {
+      delete months[m]; saveMonths();
+      $("start-reading").value = before[0]; $("start-date").value = before[1];
+      $("start-date").dispatchEvent(new Event("input"));
+    });
+    renderMonths();
+  }
+  // Readings typed on the main screen for a past month (both dates in that month) are saved as that month.
+  function recordFromMain() {
+    if (guideOn) return;
+    const sd = $("start-date").value, cd = $("cur-date").value;
+    if (!sd || !cd) return;
+    const m = readingMonth(cd);
+    if (m >= ymOf(todayStr()) || ymOf(sd) !== m) return;
+    const s = parseFloat($("start-reading").value), e = parseFloat($("cur-reading").value);
+    if (!isFinite(s) || !isFinite(e) || e < s) return;
+    const prev = months[m];
+    if (prev && prev.start === s && prev.end === e && prev.date === cd) return;
+    months[m] = { start: s, end: e, date: cd, bill: prev ? prev.bill : null };
+    saveMonths(); renderMonths();
+    toast(t("mhSaved", { month: mLabel(m), m3: num(e - s, 0, 2), sum: mhSum(monthCost(m, e - s)) }), () => {
+      if (prev) months[m] = prev; else delete months[m];
+      saveMonths(); renderMonths();
+    });
+  }
+  ["start-reading", "start-date", "cur-reading", "cur-date"].forEach((id) => $(id).addEventListener("change", recordFromMain));
+  closeMonth();
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") closeMonth(); });
+  setInterval(closeMonth, 60000);
+
   // ---- Backup: the readings and settings (not the downloaded price data) to a file and back ----
-  const BACKUP_KEYS = [KEY, LANG_KEY, THEME_KEY, TARIFF_OPEN_KEY, BREAKDOWN_OPEN_KEY, CHART_KEY, HELP_SEEN_KEY];
+  const BACKUP_KEYS = [KEY, MONTHS_KEY, MH_VIEW_KEY, LANG_KEY, THEME_KEY, TARIFF_OPEN_KEY, BREAKDOWN_OPEN_KEY, CHART_KEY, HELP_SEEN_KEY];
   const UNDO_RESTORE_KEY = "gas-bill-restore-undo";
   const backupNow = () => {
     const data = {};
