@@ -234,8 +234,8 @@ async function sanity() {
     expect((await text(page, "#chart-sub")).includes("лв./MWh"), "BGN subtitle");
     await page.select("#chart-from", "2022"); await page.select("#chart-to", "2022"); await settle(200);
     expect(/2022/.test(await page.$eval("#chart-svg", (s) => s.getAttribute("aria-label"))), "year range applied");
-    await page.click("#chart-close");
-    expect(await page.$eval("#chart-panel", (el) => el.hidden), "closes");
+    await page.click("#chart-btn");
+    expect(await page.$eval("#chart-panel", (el) => el.hidden), "closes with its menu item");
     await page.close2();
   });
   await test("sanity", "N12 chart defaults on first open: 2020 to the latest year, EUR", async () => {
@@ -475,7 +475,7 @@ async function sanity() {
     const page = await open({ width: 1366, height: 768, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-breakdown-open": "1" } });
     const st = (sel) => page.$eval(sel, (e) => { const b = e.getBoundingClientRect(), m = document.getElementById("menu");
       return { shown: !e.hidden, inMenu: !!e.closest("#menu"), menuOpen: !m.hidden, inView: b.top >= -1 && b.top < innerHeight }; });
-    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"]]) {
+    for (const [btn, panel] of [["#backup-btn", "#backup"], ["#history-btn", "#mh-panel"], ["#chart-btn", "#chart-panel"]]) {
       await page.click(btn); await settle(150);
       let r = await st(panel);
       expect(r.shown && r.inMenu && r.menuOpen && r.inView, btn + " opens in the menu: " + JSON.stringify(r));
@@ -490,6 +490,8 @@ async function sanity() {
     await page.click("#history-btn");
     expect(await page.$eval("#menu", (m) => m.getBoundingClientRect().width <= 330), "and narrows again");
     await page.click("#chart-btn"); await settle(800);
+    expect(await page.$eval("#menu", (m) => m.getBoundingClientRect().width > 400) && (await page.$$eval("#chart-svg path", (p) => p.filter((x) => x.getAttribute("d")).length)) >= 1, "the chart is drawn in the wider menu");
+    await page.click("#chart-btn");
     await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
     await page.click("#help-btn"); await settle(150);
     const h = await page.$eval("#about", (e) => { const b = e.getBoundingClientRect(); return !e.hidden && b.top >= -1 && b.top < innerHeight; });
@@ -878,7 +880,7 @@ async function ui() {
       const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1" } });
       await page.click("#chart-btn"); await page.click("#help-btn"); await settle(1000);
       await page.click('.lang button[data-lang="en"]'); await settle(200);
-      const en = await page.evaluate(() => [document.getElementById("chart-h").textContent, document.getElementById("tariff-toggle").textContent, document.getElementById("check-update").textContent]);
+      const en = await page.evaluate(() => [document.getElementById("chart-panel").getAttribute("aria-label"), document.getElementById("tariff-toggle").textContent, document.getElementById("check-update").textContent]);
       expect(en.join("|") === "Historical gas prices|Hide|Check for updates", "open panels in English: " + en.join(" | "));
       await page.reload({ waitUntil: "networkidle0" });
       expect((await page.evaluate(() => document.documentElement.lang)) === "en", "English remembered");
@@ -921,8 +923,7 @@ async function ui() {
       await page.click("#breakdown-toggle"); expect(!(await hidden(".breakdown")), "breakdown opens");
       await page.click("#breakdown-toggle"); expect(await hidden(".breakdown"), "breakdown closes");
       await page.click("#chart-btn"); await settle(800); expect(!(await hidden("#chart-panel")), "chart opens");
-      await page.click("#chart-btn"); expect(!(await hidden("#chart-panel")), "the menu item keeps it open");
-      await page.click("#chart-close"); expect(await hidden("#chart-panel"), "chart closes with ×");
+      await page.click("#chart-btn"); expect(await hidden("#chart-panel"), "chart closes with its menu item");
       await page.click("#help-btn"); expect(!(await hidden("#about")), "help opens");
       await page.click(".bill-link"); expect(!(await hidden("#bill-example")), "bill example opens");
       await page.click("#about-close"); expect(await hidden("#about"), "help closes with ×");
@@ -965,8 +966,10 @@ async function ui() {
       expect(!(await page.$eval("#menu", (e) => e.hidden)), "theme choice keeps the menu open");
       await page.keyboard.press("Escape");
       expect(await page.$eval("#menu", (e) => e.hidden), "Escape closes the menu");
+      await page.click("#help-btn"); await settle(300);
+      expect(await page.$eval("#menu", (e) => e.hidden) && !(await page.$eval("#about", (e) => e.hidden)), "an action closes the menu and opens its panel");
       await page.click("#chart-btn"); await settle(800);
-      expect(await page.$eval("#menu", (e) => e.hidden) && !(await page.$eval("#chart-panel", (e) => e.hidden)), "an action closes the menu and opens its panel");
+      expect(!(await page.$eval("#menu", (e) => e.hidden)) && (await page.$eval("#chart-panel", (e) => !e.hidden && !!e.closest("#menu"))), "the price archive opens inside the menu");
       await page.click("#tariff-toggle");
       expect(await page.$eval("#tariff-toggle", (e) => e.getAttribute("aria-expanded")) === "true" && !(await page.$eval("#menu", (e) => e.hidden)), "tariff settings open inside the menu");
       expect(!page.errors.length, page.errors.join(" | "));

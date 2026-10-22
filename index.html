@@ -388,6 +388,8 @@
   }
   .mh-sub { color: var(--muted); font-size: 0.8rem; }
   .menu.wide { width: min(460px, 100vw); }
+  .menu .chart-panel { background: none; border: 0; border-radius: 0; padding: 6px 4px 12px; }
+  .menu .chart-head { padding-right: 0; }
   .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
   .lang button {
     font: inherit; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
@@ -790,7 +792,28 @@
         <button type="button" class="mh-add" id="mh-add" data-i18n="mhAdd">+ Добави месец от стара сметка</button>
         <div class="mh-total" id="mh-total" hidden><span data-i18n="mhTotal">Общо за 12 месеца</span><span id="mh-total-val"></span></div>
       </section>
-      <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span></button>
+      <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <section class="menu-panel chart-panel" id="chart-panel" role="region" data-i18n-aria="chartTitle" aria-label="Исторически цени на газа" hidden>
+        <div class="chart-head">
+          <div>
+            <p class="chart-sub" id="chart-sub"></p>
+          </div>
+          <div class="chart-controls">
+            <label><span class="cur-label" data-i18n="currencyLabel">Валута</span> <select id="chart-cur">
+              <option value="EUR">EUR</option>
+              <option value="BGN">BGN</option>
+            </select></label>
+            <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
+            <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
+          </div>
+        </div>
+        <div class="chart-box" id="chart-box">
+          <svg id="chart-svg" role="img"></svg>
+          <div class="chart-tip" id="chart-tip" hidden></div>
+        </div>
+        <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
+        <p class="chart-note" data-i18n="chartNote"></p>
+      </section>
       <button type="button" class="menu-item" id="share-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="shareBtn">Сподели</span></button>
       <button type="button" class="menu-item" id="backup-btn" aria-expanded="false" aria-controls="backup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 14V4M6 7l3-3 3 3M15 4v10M12 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="backupBtn">Резервно копие</span><span class="mi-chev" aria-hidden="true">›</span></button>
       <div class="menu-panel" id="backup" role="region" data-i18n-aria="backupBtn" aria-label="Резервно копие" hidden>
@@ -809,29 +832,6 @@
     </div>
   </nav>
 
-  <section class="chart-panel" id="chart-panel" aria-labelledby="chart-h" hidden>
-    <div class="chart-head">
-      <button type="button" class="chart-close" id="chart-close" data-i18n-aria="close" aria-label="Затвори">×</button>
-      <div>
-        <h2 id="chart-h" data-i18n="chartTitle">Исторически цени на газа</h2>
-        <p class="chart-sub" id="chart-sub"></p>
-      </div>
-      <div class="chart-controls">
-        <label><span class="cur-label" data-i18n="currencyLabel">Валута</span> <select id="chart-cur">
-          <option value="EUR">EUR</option>
-          <option value="BGN">BGN</option>
-        </select></label>
-        <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
-        <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
-      </div>
-    </div>
-    <div class="chart-box" id="chart-box">
-      <svg id="chart-svg" role="img"></svg>
-      <div class="chart-tip" id="chart-tip" hidden></div>
-    </div>
-    <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
-    <p class="chart-note" data-i18n="chartNote"></p>
-  </section>
   <div class="toast" id="toast" role="status" hidden></div>
   <div class="bill-view" id="bill-view" role="dialog" aria-modal="true" data-i18n-aria="billAlt" aria-label="" hidden>
     <button type="button" id="bill-view-close" data-i18n-aria="close" aria-label="Затвори">×</button>
@@ -1948,6 +1948,7 @@
   async function openChart(open) {
     $("chart-panel").hidden = !open;
     $("chart-btn").setAttribute("aria-expanded", String(open));
+    syncMenuWidth();
     if (!open) return;
     if (!chartData) {
       $("chart-svg").innerHTML = '<text x="20" y="30">' + t("chartLoading") + "</text>";
@@ -1958,8 +1959,7 @@
     }
     drawChart();
   }
-  $("chart-btn").addEventListener("click", () => openChart(true));
-  $("chart-close").addEventListener("click", () => openChart(false));
+  $("chart-btn").addEventListener("click", () => openChart($("chart-panel").hidden));
   ["chart-from", "chart-to", "chart-cur"].forEach((id) => $(id).addEventListener("change", () => { saveChartPrefs(); drawChart(); }));
   addEventListener("resize", () => { if (!$("chart-panel").hidden && chartData) drawChart(); });
 
@@ -2038,12 +2038,14 @@
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen()) setMenu(false); });
   // Actions close the menu and show what they opened (each opens its panel; × closes it); language and theme keep it open.
   // The scroll waits for the action's own handler, so the panel is already shown even when the page was scrolled away from it.
-  // Backup and the monthly history open and close inside the menu instead.
-  ["history-btn", "backup-btn"].forEach((id) => $(id).addEventListener("click", () => {
+  // Backup, the monthly history and the price archive open and close inside the menu instead.
+  // The chart and the history table need a wider menu.
+  function syncMenuWidth() { $("menu").classList.toggle("wide", !$("chart-panel").hidden || !$("mh-panel").hidden); }
+  ["history-btn", "backup-btn", "chart-btn"].forEach((id) => $(id).addEventListener("click", () => {
     const panel = $($(id).getAttribute("aria-controls"));
     setTimeout(() => { if (!panel.hidden) panel.scrollIntoView({ block: "nearest" }); });
   }));
-  ["chart-btn", "share-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
+  ["share-btn", "help-btn"].forEach((id) => $(id).addEventListener("click", () => {
     setMenu(false);
     const panel = $(id).getAttribute("aria-controls");
     setTimeout(() => { if (panel && !$(panel).hidden) $(panel).scrollIntoView({ block: "nearest" }); });
@@ -2308,7 +2310,7 @@
   const openMonths = (open) => {
     $("mh-panel").hidden = !open;
     $("history-btn").setAttribute("aria-expanded", String(open));
-    $("menu").classList.toggle("wide", open);
+    syncMenuWidth();
     if (open) renderMonths(); else closeMhForm();
   };
   $("history-btn").addEventListener("click", () => openMonths($("mh-panel").hidden));
