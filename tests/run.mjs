@@ -940,13 +940,11 @@ async function regression() {
     expect((await page.$eval("#region", (s) => s.value)) === "Овергаз Мрежи", "stored value stays Bulgarian");
     await page.close2();
   });
-  await test("regression", "R8 the ☰ menu holds the settings and actions in order; language and theme are in the header", async () => {
+  await test("regression", "R8 the ☰ menu holds every setting and action, in order", async () => {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes, #menu section.tariff")].map((e) => e.id || e.className.split(" ")[0]).join(",")
       + (document.querySelector(".main section.tariff") ? " + tariff on the page" : ""));
-    expect(order === "tariff,history-btn,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
-    expect(await page.evaluate(() => !!document.querySelector("header .prefs .lang") && !!document.querySelector("header .prefs .themes") && !document.querySelector("#menu .lang, #menu .themes")),
-      "language and theme are in the header, not in the menu");
+    expect(order === "tariff,lang,themes,history-btn,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
     await page.close2();
   });
   // Layout matrix: every width × theme × language — nothing may scroll sideways or leave its card.
@@ -1171,8 +1169,8 @@ async function ui() {
       expect(r.left === 0 && r.right < r.w, "menu sits on the left, narrower than the screen");
       expect(!r.scroll, "menu scrolls sideways");
       expect(/€\/MWh/.test(r.sum), "tariff line shows the price: " + r.sum);
-      await page.click("#history-btn"); await page.click("#history-btn");
-      expect(!(await page.$eval("#menu", (e) => e.hidden)), "a panel item keeps the menu open");
+      await page.click('.themes button[data-theme-choice="light"]');
+      expect(!(await page.$eval("#menu", (e) => e.hidden)), "theme choice keeps the menu open");
       await page.keyboard.press("Escape");
       expect(await page.$eval("#menu", (e) => e.hidden), "Escape closes the menu");
       await page.click("#share-btn"); await settle(300);

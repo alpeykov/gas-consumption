@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.5.1",
+      "date": "2026-10-23",
+      "bg": [
+        "Езикът и темата отново са в менюто ☰."
+      ],
+      "en": [
+        "Language and theme are back in the ☰ menu."
+      ]
+    },
+    {
       "version": "2.5.0",
       "date": "2026-10-22",
       "bg": [
