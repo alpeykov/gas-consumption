@@ -786,6 +786,8 @@ async function sanity() {
     // An older save without the stamp: the last day it was saved counts.
     let page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-15") });
     expect((await note(page)) === "Последно обновено: 15 октомври 2026 г.", "old reading: " + await note(page));
+    expect(await page.evaluate(() => { const k = document.createElement("i"); k.style.color = "var(--amber)"; document.body.append(k); const c = getComputedStyle(k).color; k.remove();
+      return ["cur-updated", "now-updated"].every((id) => getComputedStyle(document.getElementById(id)).color === c); }), "yellow like the other warnings");
     expect((await page.$eval("#now-updated", (e) => e.hidden ? "" : e.textContent)) === "Последно обновено: 15 октомври 2026 г.", "also under the current cost");
     await page.click('.lang button[data-lang="en"]'); await settle(100);
     expect((await note(page)) === "Last updated: 15 October 2026", "English: " + await note(page));

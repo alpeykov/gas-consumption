@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.6.2",
+      "date": "2026-10-23",
+      "bg": [
+        "„Последно обновено“ е в жълто, като другите предупреждения."
+      ],
+      "en": [
+        "“Last updated” is yellow, like the other warnings."
+      ]
+    },
+    {
       "version": "2.6.1",
       "date": "2026-10-23",
       "bg": [
