@@ -954,6 +954,12 @@ async function regression() {
     expect(dots.includes("2026-09") && dots.length === (await page.$$eval("#chart-svg .chart-pt", (c) => new Set(c.map((e) => e.dataset.m)).size)) && dots.length > 50, "a dot per month with a price: " + dots.length);
     await page.select("#chart-cur", "BGN"); await settle(200);
     expect(/154,64[\s\S]*128,87/.test(await hover()), "BGN value and price without VAT");
+    // The month still running (October 2026) is hollow and the line into it dashed, as in the monthly history; September is solid.
+    const run = await page.evaluate(() => { const c = (m) => document.querySelector("#chart-svg .chart-pt[data-m='" + m + "']");
+      const dashed = [...document.querySelectorAll("#chart-svg path[stroke-dasharray]")].map((p) => p.getAttribute("d")).join(" ");
+      const x = (m) => c(m).getAttribute("cx");
+      return { oct: c("2026-10").getAttribute("fill"), sep: c("2026-09").getAttribute("fill"), dashedToOct: dashed.includes("L" + x("2026-10")) }; });
+    expect(run.oct === "var(--panel)" && run.sep === "var(--flame)" && run.dashedToOct, "running month hollow and dashed: " + JSON.stringify(run));
     await page.close2();
   });
   await test("regression", "R7 English shows region names in Latin letters", async () => {

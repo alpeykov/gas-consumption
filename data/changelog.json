@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.6.3",
+      "date": "2026-10-23",
+      "bg": [
+        "„Архив цени“: текущият, още неприключил месец е с пунктир и празна точка – като в месечната история."
+      ],
+      "en": [
+        "“Price archive”: the month still running is dashed with a hollow dot – as in the monthly history."
+      ]
+    },
+    {
       "version": "2.6.2",
       "date": "2026-10-23",
       "bg": [

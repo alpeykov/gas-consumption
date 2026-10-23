@@ -1161,6 +1161,7 @@
       chartLoading: "Зареждане…",
       chartEmpty: "Няма данни за избрания период.",
       tipApprox: "приблизително, по блога на Овергаз",
+      tipRunning: "текущ месец – още не е приключил",
       tipOld: "без пренос и достъп",
       chartAria: "Цена на природния газ в {unit}, {from} – {to}: от {min} до {max}.",
       about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете днешното показание на уреда и показанието от {bill}. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона в „Тарифни настройки“. Ако смените датата на последната сметка с по-стар месец, приложението зарежда цената и kWh за 1 m³ за този месец. Иконата с графиката показва историческите цени.<br><br><span class=\"about-legal\">Независимо приложение – не е свързано с Овергаз или Булгартрансгаз. Сумите са прогноза; меродавна е сметката от доставчика. Данните ви остават само на това устройство · <a href=\"privacy.html\">Поверителност</a></span>",
@@ -1357,6 +1358,7 @@
       chartLoading: "Loading…",
       chartEmpty: "No data for the chosen period.",
       tipApprox: "approximate, from the Overgas blog",
+      tipRunning: "this month – not over yet",
       tipOld: "excl. transmission and access",
       chartAria: "Natural gas price in {unit}, {from} – {to}: from {min} to {max}.",
       about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter today’s reading from the meter and the meter’s reading from your {bill}. The Overgas price and kWh per m³ update automatically; choose your region under “Tariff settings”. If you change the date of your last bill to an earlier month, the app loads that month’s price and kWh per m³. The chart icon shows historical prices.<br><br><span class=\"about-legal\">Independent app – not affiliated with Overgas or Bulgartransgaz. Amounts are a forecast; the supplier's bill is authoritative. Your data stays on this device only · <a href=\"privacy.html\">Privacy</a></span>",
@@ -2087,13 +2089,15 @@
         out += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + k.slice(0, 4) + "</text>";
       }
     });
-    // Solid line for monthly price lists, dashed where either end is an approximate blog value;
-    // a month without data leaves a gap.
+    // Solid line for monthly price lists, dashed where either end is an approximate blog value or the month
+    // still running (as in the monthly history); a month without data leaves a gap.
+    const runningYm = ymOf(todayStr());
+    const dashedPt = (p) => p.basis === "blog" || p.m === runningYm;
     const path = (approx) => {
       let d = "", penAt = -1;
       for (let i = 0; i < pts.length - 1; i++) {
         const a = pts[i], b = pts[i + 1];
-        if (!a || !b || (a.basis === "blog" || b.basis === "blog") !== approx) continue;
+        if (!a || !b || (dashedPt(a) || dashedPt(b)) !== approx) continue;
         if (penAt !== i) d += "M" + x(i).toFixed(1) + " " + y(a.v).toFixed(1);
         d += "L" + x(i + 1).toFixed(1) + " " + y(b.v).toFixed(1);
         penAt = i + 1;
@@ -2102,10 +2106,10 @@
     };
     out += '<path d="' + path(false) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-linejoin="round"/>';
     out += '<path d="' + path(true) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-dasharray="5 4"/>';
-    // A dot per month, sized to the spacing; approximate (blog) months are hollow like their dashed line.
+    // A dot per month, sized to the spacing; approximate (blog) months and the month still running are hollow like their dashed line.
     const pr = Math.max(1.5, Math.min(3.5, (months.length > 1 ? x(1) - x(0) : 8) / 3));
     pts.forEach((p, i) => { if (p) out += '<circle class="chart-pt" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + pr.toFixed(1) + '" fill="' +
-      (p.basis === "blog" ? "var(--panel)" : "var(--flame)") + '" stroke="var(--flame)" stroke-width="' + (p.basis === "blog" ? 1.5 : 0) + '"/>'; });
+      (dashedPt(p) ? "var(--panel)" : "var(--flame)") + '" stroke="var(--flame)" stroke-width="' + (dashedPt(p) ? 1.5 : 0) + '"/>'; });
     out += '<line id="chart-cross" y1="' + M.t + '" y2="' + (H - M.b) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>';
     out += '<circle id="chart-dot" r="4.5" fill="var(--flame)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>';
     out += '<rect x="' + M.l + '" y="' + M.t + '" width="' + (W - M.l - M.r) + '" height="' + (H - M.t - M.b) + '" fill="transparent" id="chart-hit"/>';
@@ -2125,6 +2129,7 @@
       const notes = [];
       if (p.basis === "blog") notes.push(t("tipApprox"));
       if (p.basis === "old") notes.push(t("tipOld"));
+      if (p.m === runningYm) notes.push(t("tipRunning"));
       tip.innerHTML = monthLabel(p.m) + "<br><b>" + fmt(p.v) + " " + unitText + "</b><br>" +
         fmt(p.v / 1.2) + " " + cur + "/MWh " + t("vatExcl") +
         (notes.length ? "<br>" + notes.join(" · ") : "");
