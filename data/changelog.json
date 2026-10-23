@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.6.0",
+      "date": "2026-10-23",
+      "bg": [
+        "На телефона: двете показания са едно до друго (датите кратко, напр. 22.10.2026), сравнението е на два етикета, а лентата на периода е на един ред с „ден 21 от 31“ – така и двете показания се виждат изцяло без скрол."
+      ],
+      "en": [
+        "On phones: the two readings sit side by side (short dates, e.g. 22.10.2026), the comparison is two chips and the period bar is one line with “day 21 of 31” – so both readings are fully visible without scrolling."
+      ]
+    },
+    {
       "version": "2.5.1",
       "date": "2026-10-23",
       "bg": [

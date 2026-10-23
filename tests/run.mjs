@@ -689,12 +689,14 @@ async function sanity() {
     // 30 m³ in 16 days → 58,1 m³ forecast: +19% on 49 m³, +263% on 16 m³.
     expect((await cmp(page)).join(" | ") === "↑ 19%спрямо октомври 2025› | ↑ 263%спрямо септември 2026›", "last year first, then last month: " + (await cmp(page)).join(" | "));
     expect(await page.$eval("#cmp-det-2025-10", (e) => e.hidden), "details folded");
-    // The chevron stays on the row's first line, at its end, even on a narrow phone.
+    // Wider screens: the chevron stays on the row's first line, at its end. Phones: two short chips that fit the card.
+    await page.setViewport({ width: 700, height: 900 }); await settle(100);
+    expect(await page.$$eval("#cmp .cmp-row", (rs) => rs.every((r) => { const c = r.querySelector(".cmp-chev").getBoundingClientRect(), p = r.querySelector(".cmp-pct").getBoundingClientRect(), b = r.getBoundingClientRect();
+      return Math.abs(c.top - p.top) < 6 && b.right - c.right < 4; })), "chevron on the first line at the end at 700px");
     for (const w of [390, 320]) {
       await page.setViewport({ width: w, height: 900 }); await settle(100);
-      const ok = await page.$$eval("#cmp .cmp-row", (rs) => rs.every((r) => { const c = r.querySelector(".cmp-chev").getBoundingClientRect(), p = r.querySelector(".cmp-pct").getBoundingClientRect(), b = r.getBoundingClientRect();
-        return Math.abs(c.top - p.top) < 6 && b.right - c.right < 4; }));
-      expect(ok, "chevron on the first line at the end at " + w + "px");
+      expect(await page.evaluate(() => { const card = document.querySelector("section.bill").getBoundingClientRect();
+        return [...document.querySelectorAll("#cmp .cmp-row")].every((r) => { const b = r.getBoundingClientRect(); return b.right <= card.right && b.height < 40; }); }), "chips fit at " + w + "px");
     }
     await page.setViewport({ width: 390, height: 900 });
     await page.click("#cmp .cmp-row[data-m='2025-10']");
@@ -751,6 +753,15 @@ async function sanity() {
     await page.click('.lang button[data-lang="en"]').catch(() => {});
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
+    // Small phone (330×650): both readings side by side and fully on the first screen, short dates, the day count on the timeline line.
+    const sp = await open({ width: 330, height: 650, storage: { ...readings(2445, 2489, "2026-10-01", "2026-10-22"), "gas-bill-months-v1": H } });
+    const q = await sp.evaluate(() => { const [a, b] = [...document.querySelectorAll(".reading")].map((e) => e.getBoundingClientRect());
+      const after = (id) => getComputedStyle(document.getElementById(id), "::after").content;
+      return { side: Math.abs(a.top - b.top) < 2 && b.left > a.right, fit: Math.max(a.bottom, b.bottom) <= innerHeight, date: after("cur-date-text"), day: document.getElementById("tl-day").textContent,
+        daysHidden: getComputedStyle(document.getElementById("out-days")).display === "none", today: getComputedStyle(document.getElementById("today-btn")).display === "none" }; });
+    expect(q.side && q.fit, "readings side by side and on screen: " + JSON.stringify(q));
+    expect(q.date === '"17.10.2026"' && q.day === " · ден 16 от 31" && q.daysHidden && q.today, "short date, day count on the timeline: " + JSON.stringify(q));
+    await sp.close2();
     // Narrow phones (320 px, e.g. with display zoom) keep the two sums side by side.
     const n = await open({ width: 320, height: 640, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
     expect(await n.evaluate(() => document.getElementById("out-now-eur").getBoundingClientRect().left > document.getElementById("out-fc-eur").getBoundingClientRect().right && document.documentElement.scrollWidth <= innerWidth), "side by side at 320 px");
