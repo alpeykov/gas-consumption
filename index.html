@@ -732,10 +732,13 @@
     #out-days.days { display: none; }
     /* The two readings side by side, ⇄ between them; dates short; the date field itself picks the day */
     .readings { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .swap-btn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; width: 28px; height: 28px; }
+    /* ⇄ sits level with the two meter fields, whatever is under them (e.g. "Last updated"). */
+    .swap-btn { position: absolute; left: 50%; top: calc(9px + 2.6 * 0.6rem * 1.3 + 5px + 15px); transform: translate(-50%, -50%); margin: 0; width: 28px; height: 28px; }
     .swap-btn svg { transform: rotate(90deg); width: 14px; height: 14px; }
-    .reading { padding: 8px 10px; gap: 5px; }
-    .reading > .label { font-size: 0.6rem; letter-spacing: 0.04em; line-height: 1.3; min-height: 2.6em; }
+    /* Both cards keep their content at the top, so the meter fields and dates line up. */
+    .reading { padding: 8px 10px; gap: 5px; align-content: start; }
+    .reading .updated-note { font-size: 0.7rem; }
+    .reading > .label { font-size: 0.6rem; letter-spacing: 0.04em; line-height: 1.3; height: 2.6em; overflow: hidden; }
     .dial { padding: 2px 6px; gap: 2px; }
     .dial input { font-size: 1.15rem; letter-spacing: 0.05em; }
     .dial .unit { font-size: 0.65rem; }

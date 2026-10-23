@@ -761,6 +761,16 @@ async function sanity() {
         daysHidden: getComputedStyle(document.getElementById("out-days")).display === "none", today: getComputedStyle(document.getElementById("today-btn")).display === "none" }; });
     expect(q.side && q.fit, "readings side by side and on screen: " + JSON.stringify(q));
     expect(q.date === '"17.10.2026"' && q.day === " · ден 16 от 31" && q.daysHidden && q.today, "short date, day count on the timeline: " + JSON.stringify(q));
+    // With "Last updated" under today's reading (an older reading), the fields still line up and ⇄ sits level with them.
+    const lu = await open({ width: 330, height: 650, now: "2026-10-23T09:00:00", storage: { ...readings(2445, 2489, "2026-10-01", "2026-10-22"), "gas-bill-months-v1": H } });
+    const al = await lu.evaluate(() => {
+      const [d1, d2] = [...document.querySelectorAll(".reading .dial")].map((e) => e.getBoundingClientRect());
+      const [f1, f2] = [...document.querySelectorAll(".reading .date-field")].map((e) => e.getBoundingClientRect());
+      const sw = document.getElementById("swap-btn").getBoundingClientRect(), cy = sw.top + sw.height / 2;
+      return { note: !document.getElementById("cur-updated").hidden, dials: Math.abs(d1.top - d2.top), dates: Math.abs(f1.top - f2.top), swap: cy > d1.top && cy < d1.bottom };
+    });
+    expect(al.note && al.dials < 1 && al.dates < 1 && al.swap, "readings line up with a 'Last updated' note: " + JSON.stringify(al));
+    await lu.close2();
     await sp.close2();
     // Narrow phones (320 px, e.g. with display zoom) keep the two sums side by side.
     const n = await open({ width: 320, height: 640, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
@@ -1149,7 +1159,7 @@ async function ui() {
       expect(!page.errors.length, page.errors.join(" | "));
       await page.close2();
     });
-    await test("ui", `U5 × inside each meter, ⇅ between the two cards without covering anything (${dev})`, async () => {
+    await test("ui", `U5 × inside each meter, ⇄ between the two cards without covering anything (${dev})`, async () => {
       const page = await open({ width: w, storage: readings(2445, 2480, "2026-10-01", "2026-10-17") });
       const r = await page.evaluate(() => {
         const box = (el) => { const b = el.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height }; };
@@ -1164,8 +1174,8 @@ async function ui() {
       });
       expect(r.clrInDial, "× is inside its meter field");
       expect(!r.hits.length, "⇅ covers: " + r.hits.join(", "));
-      if (dev === "desktop") expect(r.cx > r.c1.right - 30 && r.cx < r.c2.left + 30, "⇅ sits between the cards side by side");
-      else expect(Math.abs(r.cy - (r.c1.bottom + r.c2.top) / 2) < 3, "⇅ sits centred between the stacked cards");
+      // Side by side on computers and phones alike (phones since 2.6.0).
+      expect(r.cx > r.c1.right - 30 && r.cx < r.c2.left + 30, "⇅ sits between the cards side by side");
       await page.close2();
     });
     await test("ui", `U4 ☰ opens a panel from the left that fits the screen and closes (${dev})`, async () => {

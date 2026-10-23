@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.6.1",
+      "date": "2026-10-23",
+      "bg": [
+        "На телефона двете показания са подравнени и когато под едното има „Последно обновено“; ⇄ е на нивото на полетата."
+      ],
+      "en": [
+        "On phones the two readings line up even when one shows “Last updated”; ⇄ sits level with the fields."
+      ]
+    },
+    {
       "version": "2.6.0",
       "date": "2026-10-23",
       "bg": [
