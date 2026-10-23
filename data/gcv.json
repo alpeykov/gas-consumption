@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-17T10:46:37+00:00",
+  "updated": "2026-10-23T10:23:28+00:00",
   "months": {
     "2017-10": 10.583,
     "2017-11": 10.61,
@@ -108,10 +108,11 @@
     "2026-07": 10.87,
     "2026-08": 10.82,
     "2026-09": 10.76,
-    "2026-10": 10.8
+    "2026-10": 10.8,
+    "2026-11": 10.83
   },
   "sources": [
-    "https://bulgartransgaz.bg/files/useruploads/files/R_GCV_26_26October.xlsx",
+    "https://bulgartransgaz.bg/files/useruploads/files/R_GCV_26_26November.xlsx",
     "https://bulgartransgaz.bg/files/useruploads/files/2026/R_GCV_25_26August.xlsx",
     "https://bulgartransgaz.bg/files/useruploads/files/R_GCV_24_25September.xlsx",
     "https://bulgartransgaz.bg/files/useruploads/files/R_GCV_23_24September.xlsx",
