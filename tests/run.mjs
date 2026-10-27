@@ -844,6 +844,23 @@ async function sanity() {
     expect((await note(page)) === "", "hidden in the guide");
     await page.close2();
   });
+  await test("sanity", "N40 desktop: the two reading cards line up row by row and keep their height whether 'Last updated' shows or not", async () => {
+    const page = await open({ width: 1280, storage: readings(2445, 2475, "2026-10-01", "2026-10-15") });
+    const geo = () => page.evaluate(() => {
+      const [a, b] = document.querySelectorAll(".reading"), r = (el, s) => el.querySelector(s).getBoundingClientRect();
+      return { dial: [r(a, ".dial").top, r(b, ".dial").top], date: [r(a, ".date-field").top, r(b, ".date-field").top], dateH: [r(a, ".date-field").height, r(b, ".date-field").height],
+        card: [a.getBoundingClientRect().height, b.getBoundingClientRect().height] };
+    });
+    const same = (p) => Math.abs(p[0] - p[1]) < 1;
+    expect(!(await page.$eval("#cur-updated", (e) => e.hidden)), "the note shows for an older reading");
+    const on = await geo();
+    expect(same(on.dial) && same(on.date) && same(on.dateH) && same(on.card), "with the note: " + JSON.stringify(on));
+    await page.evaluate(() => { document.getElementById("cur-updated").hidden = true; });
+    const off = await geo();
+    expect(same(off.dial) && same(off.date) && same(off.dateH) && same(off.card), "without the note: " + JSON.stringify(off));
+    expect(Math.abs(on.card[0] - off.card[0]) < 1, "same card height either way: " + on.card[0] + " / " + off.card[0]);
+    await page.close2();
+  });
   await test("sanity", "N23 guide wording; 'новото показание' opens the bill picture above the guide", async () => {
     const page = await open({ width: 390 });
     expect((await text(page, "#g-text")) === "В полето „ПОКАЗАНИЕ ДНЕС“ въвеждате числото от газомера в m³. За демонстрацията сме попълнили 163.", "step 1: " + await text(page, "#g-text"));

@@ -205,7 +205,13 @@
   .readings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .reading {
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-    padding: 14px; display: grid; gap: 8px; min-width: 0;
+    padding: 14px; display: grid; gap: 8px; min-width: 0; align-content: start;
+  }
+  /* Cards side by side (desktop): both keep a line for "Last updated" under the date, so the two cards
+     line up row by row and don't change height when the note comes and goes. */
+  @media (min-width: 461px) {
+    .reading { grid-template-rows: auto auto auto minmax(calc(0.8rem * 1.4), auto); }
+    .reading .updated-note { line-height: 1.4; }
   }
   .dial {
     display: flex; align-items: center; gap: 6px;
