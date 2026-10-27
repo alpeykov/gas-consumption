@@ -623,7 +623,7 @@ async function sanity() {
     // Tooltip on September.
     const pt = await page.$eval("#mh-svg .mh-pt[data-m='2026-09']", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
     await page.mouse.move(pt[0], pt[1]); await settle(100);
-    expect((await text(page, "#mh-tip")) === "Септември 202616 m³ · 13,61 € / 26,62 лв.", "tooltip: " + await text(page, "#mh-tip"));
+    expect((await text(page, "#mh-tip")) === "Септември 202616 m³ · 13,61 € / 26,62 лв.● най-висока стойност за периода", "tooltip (September is the peak): " + await text(page, "#mh-tip"));
     // The readout sits under the chart and never covers it, in either chart.
     const clear = (tip, svg) => page.evaluate((a, b) => { const r = document.getElementById(a).getBoundingClientRect(), s = document.getElementById(b).getBoundingClientRect(); return r.top >= s.bottom - 1; }, tip, svg);
     expect(await clear("mh-tip", "mh-svg"), "history readout is under the chart");
@@ -655,6 +655,31 @@ async function sanity() {
     await page.click("#mh-list-toggle");
     const en = await page.$$eval("#mh-rows tr", (trs) => trs.map((tr) => tr.cells[0].textContent));
     expect(en[1] === "September 20262429 → 2445" && !/[А-я]/.test(await text(page, "#mh-panel")), "English: " + en.join(" | "));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
+  await test("sanity", "N39 both charts: a yellow dot on the highest value of the chosen period; this month's forecast doesn't count", async () => {
+    const H = { "2026-06": { start: 2300, end: 2320, date: null, bill: null }, "2026-08": { start: 2420, end: 2429, date: null, bill: null }, ...SEPT };
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "m3" } } });
+    await page.click("#history-btn"); await settle(300);
+    const peaks = () => page.$$eval("#mh-svg .mh-peak", (c) => c.map((x) => x.dataset.m + ":" + x.getAttribute("fill")).join());
+    expect((await peaks()) === "2026-06:var(--amber)", "m³: June (20 m³) is the peak: " + await peaks());
+    await page.select("#mh-from", "2026-08");
+    expect((await peaks()) === "2026-09:var(--amber)", "Aug–Oct: September, not October's ~58 m³ forecast: " + await peaks());
+    const pt = await page.$eval("#mh-svg .mh-peak", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+    await page.mouse.move(pt[0], pt[1]); await settle(100);
+    expect((await text(page, "#mh-tip")).endsWith("най-висока стойност за периода"), "readout names the peak: " + await text(page, "#mh-tip"));
+    await page.select("#mh-unit", "eur");
+    expect((await peaks()) === "2026-09:var(--amber)", "€: September: " + await peaks());
+    await page.click("#chart-btn"); await settle(1200);
+    // Price archive: the yellow dot sits at the highest price (the smallest y) of the chosen years, and moves with the period.
+    const top = () => page.evaluate(() => { const ys = [...document.querySelectorAll("#chart-svg .chart-pt")].map((c) => +c.getAttribute("cy"));
+      const pk = [...document.querySelectorAll("#chart-svg .chart-peak")]; return { n: pk.length, ok: pk.length > 0 && pk.every((c) => Math.abs(+c.getAttribute("cy") - Math.min(...ys)) < 0.2), m: pk.map((c) => c.dataset.m).join() }; });
+    const all = await top();
+    expect(all.ok, "peak at the highest price: " + JSON.stringify(all));
+    await page.select("#chart-from", "2019"); await page.select("#chart-to", "2020");
+    const few = await top();
+    expect(few.ok && few.m.split(",").every((m) => m.startsWith("2019") || m.startsWith("2020")) && few.m !== all.m, "peak for 2019–2020 only: " + JSON.stringify(few));
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });

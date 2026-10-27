@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.7.0",
+      "date": "2026-10-27",
+      "bg": [
+        "„Месечна история“ и „Архив цени“: жълта точка отбелязва най-високата стойност за избрания период (в m³, € или лв.), а отчетът под графиката я посочва."
+      ],
+      "en": [
+        "“Monthly history” and “Price archive”: a yellow dot marks the highest value in the chosen period (in m³, € or leva), and the readout under the chart says so."
+      ]
+    },
+    {
       "version": "2.6.3",
       "date": "2026-10-23",
       "bg": [
