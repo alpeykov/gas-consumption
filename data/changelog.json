@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.7.1",
+      "date": "2026-10-28",
+      "bg": [
+        "„Месечна история“ и „Архив цени“: зелена точка отбелязва и най-ниската стойност за избрания период."
+      ],
+      "en": [
+        "“Monthly history” and “Price archive”: a green dot now marks the lowest value in the chosen period too."
+      ]
+    },
+    {
       "version": "2.7.0",
       "date": "2026-10-27",
       "bg": [

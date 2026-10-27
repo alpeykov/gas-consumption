@@ -658,14 +658,19 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
-  await test("sanity", "N39 both charts: a yellow dot on the highest value of the chosen period; this month's forecast doesn't count", async () => {
+  await test("sanity", "N39 both charts: a yellow dot on the highest value of the chosen period, a green one on the lowest; this month's forecast doesn't count", async () => {
     const H = { "2026-06": { start: 2300, end: 2320, date: null, bill: null }, "2026-08": { start: 2420, end: 2429, date: null, bill: null }, ...SEPT };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "m3" } } });
     await page.click("#history-btn"); await settle(300);
     const peaks = () => page.$$eval("#mh-svg .mh-peak", (c) => c.map((x) => x.dataset.m + ":" + x.getAttribute("fill")).join());
     expect((await peaks()) === "2026-06:var(--amber)", "m³: June (20 m³) is the peak: " + await peaks());
+    const lows = () => page.$$eval("#mh-svg .mh-low", (c) => c.map((x) => x.dataset.m + ":" + x.getAttribute("fill")).join());
+    expect((await lows()) === "2026-08:var(--green)", "m³: August (9 m³) is the lowest: " + await lows());
+    const lp = await page.$eval("#mh-svg .mh-low", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+    await page.mouse.move(lp[0], lp[1]); await settle(100);
+    expect((await text(page, "#mh-tip")).endsWith("най-ниска стойност за периода"), "readout names the lowest: " + await text(page, "#mh-tip"));
     await page.select("#mh-from", "2026-08");
-    expect((await peaks()) === "2026-09:var(--amber)", "Aug–Oct: September, not October's ~58 m³ forecast: " + await peaks());
+    expect((await peaks()) === "2026-09:var(--amber)" && (await lows()) === "2026-08:var(--green)", "Aug–Oct: September, not October's ~58 m³ forecast; August lowest: " + await peaks() + " " + await lows());
     const pt = await page.$eval("#mh-svg .mh-peak", (c) => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
     await page.mouse.move(pt[0], pt[1]); await settle(100);
     expect((await text(page, "#mh-tip")).endsWith("най-висока стойност за периода"), "readout names the peak: " + await text(page, "#mh-tip"));
@@ -674,7 +679,9 @@ async function sanity() {
     await page.click("#chart-btn"); await settle(1200);
     // Price archive: the yellow dot sits at the highest price (the smallest y) of the chosen years, and moves with the period.
     const top = () => page.evaluate(() => { const ys = [...document.querySelectorAll("#chart-svg .chart-pt")].map((c) => +c.getAttribute("cy"));
-      const pk = [...document.querySelectorAll("#chart-svg .chart-peak")]; return { n: pk.length, ok: pk.length > 0 && pk.every((c) => Math.abs(+c.getAttribute("cy") - Math.min(...ys)) < 0.2), m: pk.map((c) => c.dataset.m).join() }; });
+      const pk = [...document.querySelectorAll("#chart-svg .chart-peak")], lo = [...document.querySelectorAll("#chart-svg .chart-low")];
+      return { n: pk.length, ok: pk.length > 0 && pk.every((c) => Math.abs(+c.getAttribute("cy") - Math.min(...ys)) < 0.2) && lo.length > 0 && lo.every((c) => Math.abs(+c.getAttribute("cy") - Math.max(...ys)) < 0.2 && c.getAttribute("fill") === "var(--green)"),
+        m: pk.map((c) => c.dataset.m).join(), low: lo.map((c) => c.dataset.m).join() }; });
     const all = await top();
     expect(all.ok, "peak at the highest price: " + JSON.stringify(all));
     await page.select("#chart-from", "2019"); await page.select("#chart-to", "2020");

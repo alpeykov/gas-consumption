@@ -45,7 +45,7 @@
   /* Themes: dark is the default (bare :root); the others are picked in the header and saved per browser. */
   :root {
     --bg: #0f141a; --panel: #18202a; --fg: #e8edf2; --muted: #93a1ae; --line: #2a3542;
-    --flame: #6d9dff; --flame-soft: #1c2b45; --on-flame: #0b1220; --amber: #f0a64a; --amber-soft: #3a2a14;
+    --flame: #6d9dff; --flame-soft: #1c2b45; --on-flame: #0b1220; --amber: #f0a64a; --amber-soft: #3a2a14; --green: #4cc38a;
     --tip-bg: #e8edf2; --tip-fg: #17202a;
     --dial-bg: #05080b; --dial-fg: #f4f6f8; --dial-red: #e5574c;
     --side: #182540; --side-line: #34507e; --rule: #3a4a5e;
@@ -55,7 +55,7 @@
   }
   :root[data-theme="light"] {
     --bg: #eef1f4; --panel: #ffffff; --fg: #17202a; --muted: #5b6875; --line: #d5dce3;
-    --flame: #1f5fd6; --flame-soft: #e3ecfb; --on-flame: #ffffff; --amber: #b5650a; --amber-soft: #fbefdf;
+    --flame: #1f5fd6; --flame-soft: #e3ecfb; --on-flame: #ffffff; --amber: #b5650a; --amber-soft: #fbefdf; --green: #1b7f45;
     --tip-bg: #17202a; --tip-fg: #f4f6f8;
     --dial-bg: #eef3fa; --dial-fg: #17202a; --dial-red: #c8352b; --dial-line: #bccce6;
     --side: #e4ecf8; --side-line: #bccce6; --rule: #c3ccd6;
@@ -63,7 +63,7 @@
   }
   :root[data-theme="blue"] {
     --bg: #0a1a33; --panel: #10264a; --fg: #e6f0ff; --muted: #9db3d6; --line: #1f3a66;
-    --flame: #4cc3ff; --flame-soft: #123a5c; --on-flame: #04213a; --amber: #ffb454; --amber-soft: #3d2c10;
+    --flame: #4cc3ff; --flame-soft: #123a5c; --on-flame: #04213a; --amber: #ffb454; --amber-soft: #3d2c10; --green: #5fd49a;
     --tip-bg: #e6f0ff; --tip-fg: #0a1a33;
     --dial-bg: #050d1c; --dial-fg: #f4f6f8; --dial-red: #ff6b5e;
     --side: #0d3156; --side-line: #2a5c8f; --rule: #24497a;
@@ -71,7 +71,7 @@
   }
   :root[data-theme="contrast"] {
     --bg: #000000; --panel: #0d0d0d; --fg: #ffffff; --muted: #d0d0d0; --line: #6b6b6b;
-    --flame: #ffd400; --flame-soft: #3a3200; --on-flame: #000000; --amber: #ff9f1a; --amber-soft: #3a2400;
+    --flame: #ffd400; --flame-soft: #3a3200; --on-flame: #000000; --amber: #ff9f1a; --amber-soft: #3a2400; --green: #3ddc84;
     --tip-bg: #ffffff; --tip-fg: #000000;
     --dial-bg: #000000; --dial-fg: #ffffff; --dial-red: #ff5c5c;
     --side: #161616; --side-line: #ffd400; --rule: #8a8a8a;
@@ -554,6 +554,7 @@
   .key-dash { border-top-style: dashed; }
   /* "From" after "To": a yellow note instead of the chart. */
   .peak-note { color: var(--amber); font-weight: 600; }
+  .low-note { color: var(--green); font-weight: 600; }
   .chart-bad { margin: 0; padding: 10px 12px; border: 1px solid var(--amber); border-radius: 8px; background: var(--amber-soft); color: var(--amber); font-weight: 600; font-size: 0.85rem; }
   .chart-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
   .key { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
@@ -1164,6 +1165,7 @@
       tipApprox: "приблизително, по блога на Овергаз",
       tipRunning: "текущ месец – още не е приключил",
       tipPeak: "● най-висока стойност за периода",
+      tipLow: "● най-ниска стойност за периода",
       tipOld: "без пренос и достъп",
       chartAria: "Цена на природния газ в {unit}, {from} – {to}: от {min} до {max}.",
       about: "Приложението изчислява цената на текущата консумация и прогнозира месечната сметка на база на текущата консумация. Въведете днешното показание на уреда и показанието от {bill}. Цената на Овергаз и kWh за 1 m³ се обновяват автоматично; изберете региона в „Тарифни настройки“. Ако смените датата на последната сметка с по-стар месец, приложението зарежда цената и kWh за 1 m³ за този месец. Иконата с графиката показва историческите цени.<br><br><span class=\"about-legal\">Независимо приложение – не е свързано с Овергаз или Булгартрансгаз. Сумите са прогноза; меродавна е сметката от доставчика. Данните ви остават само на това устройство · <a href=\"privacy.html\">Поверителност</a></span>",
@@ -1362,6 +1364,7 @@
       tipApprox: "approximate, from the Overgas blog",
       tipRunning: "this month – not over yet",
       tipPeak: "● highest in the period",
+      tipLow: "● lowest in the period",
       tipOld: "excl. transmission and access",
       chartAria: "Natural gas price in {unit}, {from} – {to}: from {min} to {max}.",
       about: "The app calculates your current gas consumption and forecasts the monthly bill. Enter today’s reading from the meter and the meter’s reading from your {bill}. The Overgas price and kWh per m³ update automatically; choose your region under “Tariff settings”. If you change the date of your last bill to an earlier month, the app loads that month’s price and kWh per m³. The chart icon shows historical prices.<br><br><span class=\"about-legal\">Independent app – not affiliated with Overgas or Bulgartransgaz. Amounts are a forecast; the supplier's bill is authoritative. Your data stays on this device only · <a href=\"privacy.html\">Privacy</a></span>",
@@ -2113,9 +2116,13 @@
     const pr = Math.max(1.5, Math.min(3.5, (months.length > 1 ? x(1) - x(0) : 8) / 3));
     pts.forEach((p, i) => { if (p) out += '<circle class="chart-pt" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + pr.toFixed(1) + '" fill="' +
       (dashedPt(p) ? "var(--panel)" : "var(--flame)") + '" stroke="var(--flame)" stroke-width="' + (dashedPt(p) ? 1.5 : 0) + '"/>'; });
-    // The highest price in the chosen period: a yellow dot on top (on each month that ties with it, as shown).
+    // The highest price in the chosen period: a yellow dot on top; the lowest a green one (on each month that ties, as shown).
     const isPeak = (p) => p && fmt(p.v) === fmt(Math.max(...vals));
-    pts.forEach((p, i) => { if (isPeak(p)) out += '<circle class="chart-peak" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + (pr + 1.5).toFixed(1) + '" fill="var(--amber)" stroke="var(--panel)" stroke-width="1.5"/>'; });
+    const isLow = (p) => p && fmt(p.v) === fmt(Math.min(...vals)) && !isPeak(p);
+    pts.forEach((p, i) => {
+      const cls = isPeak(p) ? "chart-peak" : isLow(p) ? "chart-low" : "";
+      if (cls) out += '<circle class="' + cls + '" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + (pr + 1.5).toFixed(1) + '" fill="var(--' + (cls === "chart-peak" ? "amber" : "green") + ')" stroke="var(--panel)" stroke-width="1.5"/>';
+    });
     out += '<line id="chart-cross" y1="' + M.t + '" y2="' + (H - M.b) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>';
     out += '<circle id="chart-dot" r="4.5" fill="var(--flame)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>';
     out += '<rect x="' + M.l + '" y="' + M.t + '" width="' + (W - M.l - M.r) + '" height="' + (H - M.t - M.b) + '" fill="transparent" id="chart-hit"/>';
@@ -2137,6 +2144,7 @@
       if (p.basis === "old") notes.push(t("tipOld"));
       if (p.m === runningYm) notes.push(t("tipRunning"));
       if (isPeak(p)) notes.push('<span class="peak-note">' + t("tipPeak") + "</span>");
+      if (isLow(p)) notes.push('<span class="low-note">' + t("tipLow") + "</span>");
       tip.innerHTML = monthLabel(p.m) + "<br><b>" + fmt(p.v) + " " + unitText + "</b><br>" +
         fmt(p.v / 1.2) + " " + cur + "/MWh " + t("vatExcl") +
         (notes.length ? "<br>" + notes.join(" · ") : "");
@@ -2533,11 +2541,16 @@
     out += '<path d="' + path(false) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-linejoin="round"/>';
     out += '<path d="' + path(true) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-dasharray="5 4"/>';
     pts.forEach((p, i) => { if (p) out += '<circle class="mh-pt" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="3.5" fill="' + (p.part ? "var(--panel)" : "var(--flame)") + '" stroke="var(--flame)" stroke-width="' + (p.part ? 2 : 0) + '"/>'; });
-    // The highest saved month in the period (in the chosen unit): a yellow dot on top; this month's forecast is an estimate and doesn't count.
+    // The highest saved month in the period (in the chosen unit): a yellow dot on top, the lowest a green one; this month's forecast is an estimate and doesn't count.
     const done = pts.filter((p) => p && !p.part).map((p) => p.v);
     const peak = done.length ? Math.max(...done) : null;
+    const low = done.length ? Math.min(...done) : null;
     const isPeak = (p) => p && !p.part && peak != null && Math.abs(p.v - peak) < 0.005;
-    pts.forEach((p, i) => { if (isPeak(p)) out += '<circle class="mh-peak" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="5" fill="var(--amber)" stroke="var(--panel)" stroke-width="1.5"/>'; });
+    const isLow = (p) => p && !p.part && low != null && Math.abs(p.v - low) < 0.005 && !isPeak(p);
+    pts.forEach((p, i) => {
+      const cls = isPeak(p) ? "mh-peak" : isLow(p) ? "mh-low" : "";
+      if (cls) out += '<circle class="' + cls + '" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="5" fill="var(--' + (cls === "mh-peak" ? "amber" : "green") + ')" stroke="var(--panel)" stroke-width="1.5"/>';
+    });
     out += '<line id="mh-cross" y1="' + M.t + '" y2="' + (H - M.b) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>';
     out += '<circle id="mh-dot" r="5" fill="var(--flame)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>';
     out += '<rect x="' + M.l + '" y="' + M.t + '" width="' + (W - M.l - M.r) + '" height="' + (H - M.t - M.b) + '" fill="transparent" id="mh-hit"/>';
@@ -2556,7 +2569,8 @@
       tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") + "<br><b>" + (p.part ? "≈ " : "") + num(p.m3, 0, p.part ? 0 : 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
         (p.part ? "<br>" + t("mhTipNow", { d: ddmm($("cur-date").value), v: num(so, 0, 2) + " m³ · " + (now ? both(now.gross) : "–") }) : "") +
         (p.r && p.r.bill != null ? "<br>" + t("mhTipBill", { b: both(billEur(p.r)) }) : "") +
-        (isPeak(p) ? '<br><span class="peak-note">' + t("tipPeak") + "</span>" : "");
+        (isPeak(p) ? '<br><span class="peak-note">' + t("tipPeak") + "</span>" : "") +
+        (isLow(p) ? '<br><span class="low-note">' + t("tipLow") + "</span>" : "");
     };
     const show = (evt) => {
       const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width);
