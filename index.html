@@ -525,9 +525,13 @@
   .chart-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding-right: 32px; }
   .chart-head h2 { margin: 0; font-size: 1.05rem; }
   .chart-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
-  .chart-controls { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
-  .chart-controls label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-  .cur-label { display: none; }
+  /* One row of three dropdowns, each with a small caption above it, at every width (the menu is narrow on desktop too) */
+  .chart-controls { width: 100%; max-width: 360px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 0.85rem; color: var(--muted); }
+  .chart-controls label { display: grid; gap: 3px; min-width: 0; white-space: nowrap; }
+  .chart-controls label > span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .chart-controls select { width: 100%; min-width: 0; }
+  /* The history's first dropdown holds the longer "Average €/day" */
+  .chart-controls.mh-controls { max-width: 440px; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
   .chart-controls select, .chart-controls > select {
     font: inherit; font-weight: 600; color: var(--fg); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
@@ -539,12 +543,7 @@
   @media (max-width: 460px) {
     .chart-head { padding-right: 0; }
     .chart-head > div:first-of-type { padding-right: 32px; }
-    /* Phones: one row of three dropdowns, each with a small caption above it */
-    .chart-controls { width: 100%; max-width: 360px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .chart-controls label { display: grid; gap: 3px; min-width: 0; }
-    .chart-controls label > span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
-    .chart-controls select { font-size: 0.9rem; padding: 4px 2px; width: 100%; min-width: 0; }
-    .cur-label { display: block; }
+    .chart-controls select { font-size: 0.9rem; padding: 4px 2px; }
   }
   .chart-box { position: relative; min-width: 0; }
   #chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
@@ -891,6 +890,29 @@
       </div>
     </div>
     <div class="menu-sec">
+      <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <section class="menu-panel chart-panel" id="chart-panel" role="region" data-i18n-aria="chartTitle" aria-label="Исторически цени на газа" hidden>
+        <div class="chart-head">
+          <div>
+            <p class="chart-sub" id="chart-sub"></p>
+          </div>
+          <div class="chart-controls">
+            <label><span class="cur-label" data-i18n="currencyLabel">Валута</span> <select id="chart-cur">
+              <option value="EUR">EUR</option>
+              <option value="BGN">BGN</option>
+            </select></label>
+            <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
+            <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
+          </div>
+        </div>
+        <p class="chart-bad" id="chart-bad" role="alert" data-i18n="chartBad" hidden></p>
+        <div class="chart-box" id="chart-box">
+          <svg id="chart-svg" role="img"></svg>
+          <div class="chart-tip" id="chart-tip" aria-live="polite"></div>
+        </div>
+        <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
+        <p class="chart-note" data-i18n="chartNote"></p>
+      </section>
       <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Месечна история</span><span class="mi-chev" aria-hidden="true">›</span></button>
       <section class="menu-panel mh-panel" id="mh-panel" role="region" data-i18n-aria="historyBtn" aria-label="Месечна история" hidden>
         <p class="mh-sub" data-i18n="mhSub"></p>
@@ -928,29 +950,6 @@
         </div>
         <div id="mh-form"></div>
         <button type="button" class="mh-add" id="mh-add" data-i18n="mhAdd">+ Добави месец от стара сметка</button>
-      </section>
-      <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span><span class="mi-chev" aria-hidden="true">›</span></button>
-      <section class="menu-panel chart-panel" id="chart-panel" role="region" data-i18n-aria="chartTitle" aria-label="Исторически цени на газа" hidden>
-        <div class="chart-head">
-          <div>
-            <p class="chart-sub" id="chart-sub"></p>
-          </div>
-          <div class="chart-controls">
-            <label><span class="cur-label" data-i18n="currencyLabel">Валута</span> <select id="chart-cur">
-              <option value="EUR">EUR</option>
-              <option value="BGN">BGN</option>
-            </select></label>
-            <label><span data-i18n="fromYear">От</span> <select id="chart-from"></select></label>
-            <label><span data-i18n="toYear">До</span> <select id="chart-to"></select></label>
-          </div>
-        </div>
-        <p class="chart-bad" id="chart-bad" role="alert" data-i18n="chartBad" hidden></p>
-        <div class="chart-box" id="chart-box">
-          <svg id="chart-svg" role="img"></svg>
-          <div class="chart-tip" id="chart-tip" aria-live="polite"></div>
-        </div>
-        <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
-        <p class="chart-note" data-i18n="chartNote"></p>
       </section>
       <button type="button" class="menu-item" id="share-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="shareBtn">Сподели</span></button>
       <button type="button" class="menu-item" id="backup-btn" aria-expanded="false" aria-controls="backup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 14V4M6 7l3-3 3 3M15 4v10M12 11l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="backupBtn">Резервно копие</span><span class="mi-chev" aria-hidden="true">›</span></button>

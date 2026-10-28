@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.9.1",
+      "date": "2026-10-28",
+      "bg": [
+        "В менюто „Архив цени“ вече е преди „Месечна история“.",
+        "Изборите над графиките („Покажи“, „От“, „До“) са на един ред с надпис отгоре и на компютър – „До“ вече не пада на нов ред, а „Средно €/ден“ се вижда цялото."
+      ],
+      "en": [
+        "In the menu, “Historical prices” now comes before “Monthly history”.",
+        "The chart dropdowns (“Show”, “From”, “To”) sit on one row with a caption above on desktop too – “To” no longer drops to a new line and “Average €/day” shows in full."
+      ]
+    },
+    {
       "version": "2.9.0",
       "date": "2026-10-28",
       "bg": [

@@ -745,6 +745,18 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N43 chart dropdowns: one row of three with captions above, on desktop and phone, in both languages; the price archive comes before the monthly history", async () => {
+    for (const [w, lang] of [[1280, "en"], [1280, "bg"], [360, "bg"]]) {
+      const page = await open({ width: w, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": SEPT, "gas-bill-lang": lang, "gas-bill-history-view": { chart: true, unit: "avgEur" } } });
+      await page.click("#chart-btn"); await page.click("#history-btn"); await settle(1200);
+      const r = await page.evaluate(() => [...document.querySelectorAll(".chart-controls")].map((c) => { const ls = [...c.querySelectorAll("label")];
+        return { row: new Set(ls.map((l) => Math.round(l.querySelector("select").getBoundingClientRect().top))).size === 1, above: ls.every((l) => l.firstElementChild.getBoundingClientRect().bottom <= l.querySelector("select").getBoundingClientRect().top + 1 && getComputedStyle(l.firstElementChild).display !== "none") }; }));
+      expect(r.length === 2 && r.every((x) => x.row && x.above), w + "px " + lang + ": " + JSON.stringify(r));
+      expect(await page.evaluate(() => document.getElementById("chart-btn").compareDocumentPosition(document.getElementById("history-btn")) & Node.DOCUMENT_POSITION_FOLLOWING), "archive first");
+      expect(!page.errors.length, page.errors.join(" | "));
+      await page.close2();
+    }
+  });
   await test("sanity", "N36 history: saved months are folded at first; ✎ sits in its own last column, lined up on every row; saved months aren't offered to add", async () => {
     const H = { "2024-10": { start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }, "2026-05": { start: 2390, end: 2410, date: null, bill: null }, ...SEPT };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });
@@ -1077,7 +1089,7 @@ async function regression() {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes, #menu section.tariff")].map((e) => e.id || e.className.split(" ")[0]).join(",")
       + (document.querySelector(".main section.tariff") ? " + tariff on the page" : ""));
-    expect(order === "tariff,lang,themes,history-btn,chart-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
+    expect(order === "tariff,lang,themes,chart-btn,history-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
     await page.close2();
   });
   // Layout matrix: every width × theme × language — nothing may scroll sideways or leave its card.
