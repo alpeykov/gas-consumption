@@ -834,7 +834,7 @@ async function sanity() {
     }
     await page.setViewport({ width: 390, height: 900 });
     await page.click("#cmp .cmp-row[data-m='2025-10']");
-    expect((await text(page, "#cmp-det-2025-10")) === "≈ 58,1 m³ срещу 49 m³ · 51,90 € срещу 43,10 € (по сметка)Месечна история ›", "details: " + await text(page, "#cmp-det-2025-10"));
+    expect((await text(page, "#cmp-det-2025-10")) === "≈ 58,1 m³ срещу 49 m³ · 51,90 € срещу 43,10 € (по сметка)Моето потребление ›", "details: " + await text(page, "#cmp-det-2025-10"));
     await page.click("#cmp-det-2025-10 .cmp-hist"); await settle(400);
     expect(!(await page.$eval("#menu", (e) => e.hidden)) && !(await page.$eval("#mh-panel", (e) => e.hidden)) && !(await page.$eval("#mh-cbox", (e) => e.hidden)), "the link opens the monthly history with its chart");
     await page.click("#menu-close"); await settle(400);
@@ -1127,6 +1127,16 @@ async function regression() {
     expect(order === "tariff,lang,themes,chart-btn,history-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
     await page.close2();
   });
+  await test("regression", "R10 the two history items carry their names, in both languages", async () => {
+    const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    const names = () => page.evaluate(() => ["chart-btn", "history-btn", "chart-panel", "mh-panel"].map((id) => { const e = document.getElementById(id); return id.endsWith("btn") ? e.querySelector("[data-i18n]").textContent : e.getAttribute("aria-label"); }).join("|") + "|" + document.querySelector("#mh-panel .mh-sub").textContent);
+    let n = await names();
+    expect(n === "Цени на Овергаз|Моето потребление|Цени на Овергаз|Моето потребление|По месеци · ✎ за редакция", "bg " + n);
+    await page.click('.lang button[data-lang="en"]'); await settle(200);
+    n = await names();
+    expect(n === "Overgas price history|My usage history|Overgas price history|My usage history|By month · ✎ to edit", "en " + n);
+    await page.close2();
+  });
   // Layout matrix: every width × theme × language — nothing may scroll sideways or leave its card.
   const widths = [1280, 412, 360, 320, 277];
   for (const w of widths) for (const lang of ["bg", "en"]) {
@@ -1268,7 +1278,7 @@ async function ui() {
       await page.click("#chart-btn"); await page.click("#help-btn"); await settle(1000);
       await page.click('.lang button[data-lang="en"]'); await settle(200);
       const en = await page.evaluate(() => [document.getElementById("chart-panel").getAttribute("aria-label"), document.getElementById("tariff-toggle").textContent, document.getElementById("check-update").textContent]);
-      expect(en.join("|") === "Historical gas prices|Hide|Check for updates", "open panels in English: " + en.join(" | "));
+      expect(en.join("|") === "Overgas price history|Hide|Check for updates", "open panels in English: " + en.join(" | "));
       await page.reload({ waitUntil: "networkidle0" });
       expect((await page.evaluate(() => document.documentElement.lang)) === "en", "English remembered");
       await page.click('.lang button[data-lang="bg"]');

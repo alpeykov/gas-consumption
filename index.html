@@ -896,8 +896,8 @@
       </div>
     </div>
     <div class="menu-sec">
-      <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Архив Цени</span><span class="mi-chev" aria-hidden="true">›</span></button>
-      <section class="menu-panel chart-panel" id="chart-panel" role="region" data-i18n-aria="chartTitle" aria-label="Исторически цени на газа" hidden>
+      <button type="button" class="menu-item" id="chart-btn" aria-expanded="false" aria-controls="chart-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M5 15l4-5 4 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="chartBtn">Цени на Овергаз</span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <section class="menu-panel chart-panel" id="chart-panel" role="region" data-i18n-aria="chartTitle" aria-label="Цени на Овергаз" hidden>
         <div class="chart-head">
           <div>
             <p class="chart-sub" id="chart-sub"></p>
@@ -919,8 +919,8 @@
         <p class="chart-note chart-keys"><span class="key"><span class="key-solid"></span><span data-i18n="chartKeySolid">месечни ценови листи</span></span><span class="key"><span class="key-dash"></span><span data-i18n="chartKeyDash">приблизително (блог на Овергаз)</span></span></p>
         <p class="chart-note" data-i18n="chartNote"></p>
       </section>
-      <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Месечна история</span><span class="mi-chev" aria-hidden="true">›</span></button>
-      <section class="menu-panel mh-panel" id="mh-panel" role="region" data-i18n-aria="historyBtn" aria-label="Месечна история" hidden>
+      <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Моето потребление</span><span class="mi-chev" aria-hidden="true">›</span></button>
+      <section class="menu-panel mh-panel" id="mh-panel" role="region" data-i18n-aria="historyBtn" aria-label="Моето потребление" hidden>
         <p class="mh-sub" data-i18n="mhSub"></p>
         <div class="mh-sample" id="mh-sample" hidden><p data-i18n="mhSampleText"></p><button type="button" id="mh-sample-load" data-i18n="mhSampleLoad">Зареди примерни данни</button></div>
         <div class="mh-sample-on" id="mh-sample-on" hidden><span data-i18n="mhSampleOn"></span><button type="button" id="mh-sample-wipe" data-i18n="mhSampleWipe">Изтрий</button></div>
@@ -1145,7 +1145,7 @@
       themeContrast: "Висок контраст",
       install: "Инсталирай",
       helpLabel: "За приложението",
-      chartBtn: "Архив Цени",
+      chartBtn: "Цени на Овергаз",
       today: "Днес",
       tariffEdit: "Промени",
       priceFrom: "от {d}",
@@ -1165,7 +1165,7 @@
       backupRestored: "Данните са възстановени от копието",
       shareText: "Изчислете сметката си за газ от Овергаз",
       shareCopied: "Линкът е копиран",
-      chartTitle: "Исторически цени на газа",
+      chartTitle: "Цени на Овергаз",
       chartSub: "Овергаз Мрежи, битови клиенти · цена в {unit}",
       vatExcl: "без ДДС",
       vatIncl: "с ДДС",
@@ -1209,8 +1209,8 @@
       readingLastAria: "Показание на уреда от последната сметка",
       readingLastDate: "Дата на показанието от сметката",
       readingToday: "Показание днес",
-      historyBtn: "Месечна история",
-      mhSub: "Потребление и прогноза по месеци · ✎ за редакция",
+      historyBtn: "Моето потребление",
+      mhSub: "По месеци · ✎ за редакция",
       mhChart: "Графика",
       mhShow: "Покажи",
       cmpVs: "спрямо {month}",
@@ -1219,7 +1219,7 @@
       chartBad: "„От“ е след „До“. Изберете период, в който „От“ е преди „До“ или същият.",
       cmpDet: "≈ {m3} срещу {m3b} · {e} срещу {eb}",
       cmpBillTag: " (по сметка)",
-      cmpOpen: "Месечна история ›",
+      cmpOpen: "Моето потребление ›",
       mhList: "Записани месеци ({n})",
       mhEditCol: "Редакция",
       mhAria: "Месечно потребление в {unit} от {from} до {to}",
@@ -1306,7 +1306,7 @@
       guide3T: "3 · Вашата сметка",
       guide3: "В секцията „{fc}“ виждате цената на текущото ви потребление ({cur} − {start} = {diff} m³) и прогнозната сметка.",
       guide4T: "4 · Меню",
-      guide4: "В менюто ☰ може да намерите настройки за тарифите, езика, темата, архива на цените, резервното копие и други. Примерните числа ще изчезнат – въведете своите.",
+      guide4: "В менюто ☰ може да намерите настройки за тарифите, езика, темата, цените на Овергаз, резервното копие и други. Примерните числа ще изчезнат – въведете своите.",
       feedbackSubject: "Gas Consumption – отзив",
       feedbackBody: "Здравейте,\n\n(Какво ви хареса, какво не работи или какво да добавим?)\n\n",
       feedbackSent: "Отваря се имейл до {email}",
@@ -1353,7 +1353,7 @@
       themeContrast: "High contrast",
       install: "Install",
       helpLabel: "About this app",
-      chartBtn: "Historical prices",
+      chartBtn: "Overgas price history",
       today: "Today",
       tariffEdit: "Change",
       priceFrom: "from {d}",
@@ -1373,7 +1373,7 @@
       backupRestored: "Data restored from the backup",
       shareText: "Work out your Overgas gas bill",
       shareCopied: "Link copied",
-      chartTitle: "Historical gas prices",
+      chartTitle: "Overgas price history",
       chartSub: "Overgas Mrezhi, households · price in {unit}",
       vatExcl: "excl. VAT",
       vatIncl: "incl. VAT",
@@ -1417,8 +1417,8 @@
       readingLastAria: "Meter reading on last bill",
       readingLastDate: "Date of last bill reading",
       readingToday: "Reading today",
-      historyBtn: "Monthly history",
-      mhSub: "Use and estimate by month · ✎ to edit",
+      historyBtn: "My usage history",
+      mhSub: "By month · ✎ to edit",
       mhChart: "Chart",
       mhShow: "Show",
       cmpVs: "vs {month}",
@@ -1427,7 +1427,7 @@
       chartBad: "“From” is after “To”. Pick a period where “From” comes first or is the same.",
       cmpDet: "≈ {m3} vs {m3b} · {e} vs {eb}",
       cmpBillTag: " (bill)",
-      cmpOpen: "Monthly history ›",
+      cmpOpen: "My usage history ›",
       mhList: "Saved months ({n})",
       mhEditCol: "Edit",
       mhAria: "Monthly use in {unit} from {from} to {to}",
@@ -1514,7 +1514,7 @@
       guide3T: "3 · Your bill",
       guide3: "In the “{fc}” section you see the cost of what you’ve used so far ({cur} − {start} = {diff} m³) and the estimated bill.",
       guide4T: "4 · Menu",
-      guide4: "In the ☰ menu you’ll find the tariff settings, language, theme, price archive, backup and more. The example numbers will disappear – enter your own.",
+      guide4: "In the ☰ menu you’ll find the tariff settings, language, theme, Overgas price history, backup and more. The example numbers will disappear – enter your own.",
       feedbackSubject: "Gas Consumption – feedback",
       feedbackBody: "Hi,\n\n(What did you like, what doesn't work, or what should be added?)\n\n",
       feedbackSent: "Opening an email to {email}",
