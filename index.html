@@ -903,6 +903,7 @@
               <option value="eur">EUR</option>
               <option value="bgn">BGN</option>
               <option value="m3">m³</option>
+              <option value="avg" data-i18n="mhAvgOpt">Средно €/m³</option>
             </select></label>
             <label><span data-i18n="fromYear">От</span> <select id="mh-from"></select></label>
             <label><span data-i18n="toYear">До</span> <select id="mh-to"></select></label>
@@ -1215,6 +1216,9 @@
       mhEditCol: "Редакция",
       mhAria: "Месечно потребление в {unit} от {from} до {to}",
       mhTipBill: "сметка {b}",
+      mhAvgOpt: "Средно €/m³",
+      mhTipAvg: "средно {v} за m³",
+      mhTotalAvg: "средно {v} за m³",
       mhMonth: "Месец",
       mhPrognosis: "Прогноза",
       mhBill: "Сметка",
@@ -1414,6 +1418,9 @@
       mhEditCol: "Edit",
       mhAria: "Monthly use in {unit} from {from} to {to}",
       mhTipBill: "bill {b}",
+      mhAvgOpt: "Average €/m³",
+      mhTipAvg: "average {v} per m³",
+      mhTotalAvg: "average {v} per m³",
       mhMonth: "Month",
       mhPrognosis: "Estimate",
       mhBill: "Bill",
@@ -2473,15 +2480,15 @@
     };
     fill($("mh-from"), mhView.from, ymAdd(curYm, -12));
     fill($("mh-to"), mhView.to, curYm);
-    $("mh-unit").value = ["eur", "bgn", "m3"].includes(mhView.unit) ? mhView.unit : "eur";
+    $("mh-unit").value = ["eur", "bgn", "m3", "avg"].includes(mhView.unit) ? mhView.unit : "eur";
     const from = $("mh-from").value, to = $("mh-to").value;
     $("mh-bad").hidden = from <= to;
     $("mh-box").hidden = from > to;
     if (from > to) { $("mh-total").hidden = true; return; }
     const span = all.filter((m) => m >= from && m <= to);
-    const unit = $("mh-unit").value, inM3 = unit === "m3", inBgn = unit === "bgn";
+    const unit = $("mh-unit").value, inM3 = unit === "m3", inBgn = unit === "bgn", inAvg = unit === "avg";
     const cur = inBgn ? (lang === "bg" ? "лв." : "lv.") : "€";
-    const unitText = inM3 ? "m³" : cur + " " + t("vatIncl");
+    const unitText = inM3 ? "m³" : inAvg ? "€/m³ " + t("vatIncl") : cur + " " + t("vatIncl");
     // Saved months, plus this month's forecast at today's daily rate (drawn dashed, hollow dot).
     const el = so == null ? 0 : Math.round((parseDate($("cur-date").value) - parseDate($("start-date").value)) / DAY);
     const fc = so == null ? null : el > 0 ? so / el * Math.round((parseDate(ymAdd(curYm, 1) + "-01") - parseDate($("start-date").value)) / DAY) : so;
@@ -2489,7 +2496,8 @@
       const r = months[m], m3 = r ? r.end - r.start : m === curYm ? fc : null;
       if (m3 == null) return null;
       const c = monthCost(m, m3);
-      const v = inM3 ? m3 : c ? c.gross * (inBgn ? BGN_PER_EUR : 1) : null;
+      // Average: what a cubic metre cost that month (the month's total over its m³).
+      const v = inM3 ? m3 : !c ? null : inAvg ? (m3 > 0 ? c.gross / m3 : null) : c.gross * (inBgn ? BGN_PER_EUR : 1);
       return v == null ? null : { m, m3, c, r, v, part: !r };
     });
     const vals = pts.filter(Boolean).map((p) => p.v);
@@ -2504,7 +2512,9 @@
     if (inSpan.length) {
       const m3 = inSpan.reduce((a, m) => a + months[m].end - months[m].start, 0);
       const costs = inSpan.map((m) => monthCost(m, months[m].end - months[m].start));
-      $("mh-total-val").innerHTML = "<b>" + num(m3, 0, 1) + " m³</b> · <b>" + (costs.every(Boolean) ? both(costs.reduce((a, c) => a + c.gross, 0)) : "–") + "</b>";
+      const sum = costs.every(Boolean) ? costs.reduce((a, c) => a + c.gross, 0) : null;
+      $("mh-total-val").innerHTML = "<b>" + num(m3, 0, 1) + " m³</b> · <b>" + (sum != null ? both(sum) : "–") + "</b>" +
+        (inAvg && sum != null && m3 > 0 ? " · <b>" + t("mhTotalAvg", { v: both(sum / m3) }) + "</b>" : "");
     }
     if (!vals.length) {
       svg.innerHTML = '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + t("chartEmpty") + "</text>";
@@ -2518,7 +2528,7 @@
     let out = "";
     for (let v = 0; v <= yMax + 1e-9; v += step) {
       out += '<line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"/>';
-      out += '<text x="' + (M.l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + num(v, step < 1 ? 1 : 0) + "</text>";
+      out += '<text x="' + (M.l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + num(v, step < 0.1 ? 2 : step < 1 ? 1 : 0) + "</text>";
     }
     out += '<text x="' + M.l + '" y="' + (M.t - 6) + '" text-anchor="start" font-weight="600">' + unitText + "</text>";
     // Month ticks while they fit, else the years at each January.
@@ -2551,8 +2561,9 @@
     const done = pts.filter((p) => p && !p.part).map((p) => p.v);
     const peak = done.length ? Math.max(...done) : null;
     const low = done.length ? Math.min(...done) : null;
-    const isPeak = (p) => p && !p.part && peak != null && Math.abs(p.v - peak) < 0.005;
-    const isLow = (p) => p && !p.part && low != null && Math.abs(p.v - low) < 0.005 && !isPeak(p);
+    const eps = inAvg ? 0.0005 : 0.005;
+    const isPeak = (p) => p && !p.part && peak != null && Math.abs(p.v - peak) < eps;
+    const isLow = (p) => p && !p.part && low != null && Math.abs(p.v - low) < eps && !isPeak(p);
     pts.forEach((p, i) => {
       const cls = isPeak(p) ? "mh-peak" : isLow(p) ? "mh-low" : "";
       if (cls) out += '<circle class="' + cls + '" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="5" fill="var(--' + (cls === "mh-peak" ? "amber" : "green") + ')" stroke="var(--panel)" stroke-width="1.5"/>';
@@ -2575,6 +2586,7 @@
       tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") + "<br><b>" + (p.part ? "≈ " : "") + num(p.m3, 0, p.part ? 0 : 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
         (p.part ? "<br>" + t("mhTipNow", { d: ddmm($("cur-date").value), v: num(so, 0, 2) + " m³ · " + (now ? both(now.gross) : "–") }) : "") +
         (p.r && p.r.bill != null ? "<br>" + t("mhTipBill", { b: both(billEur(p.r)) }) : "") +
+        (inAvg ? "<br><b>" + (p.part ? "≈ " : "") + t("mhTipAvg", { v: both(p.v) }) + "</b>" : "") +
         (isPeak(p) ? '<br><span class="peak-note">' + t("tipPeak") + "</span>" : "") +
         (isLow(p) ? '<br><span class="low-note">' + t("tipLow") + "</span>" : "");
     };
@@ -2760,22 +2772,22 @@
   syncScrollHint();
 
   // The forecast against the same month last year (first) and last month (second), each only when it is in the history.
-  // By m³, the real use; a row opens the m³ and € behind it and a link to the monthly history.
+  // By the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
   const cmpOpen = new Set();
   function renderCompare() {
     const box = $("cmp"), f = cmpInfo;
-    const refs = f ? [ymAdd(f.ym, -12), ymAdd(f.ym, -1)].filter((m) => months[m] && months[m].end - months[m].start > 0) : [];
+    const amount = (m) => { const r = months[m]; if (r.bill != null) return billEur(r); const c = monthCost(m, r.end - r.start); return c ? c.gross : null; };
+    const refs = f ? [ymAdd(f.ym, -12), ymAdd(f.ym, -1)].filter((m) => months[m] && amount(m) > 0) : [];
     box.hidden = !refs.length;
     if (!refs.length) { box.innerHTML = ""; return; }
     box.innerHTML = refs.map((m) => {
-      const r = months[m], m3b = r.end - r.start, pct = Math.round((f.m3 - m3b) / m3b * 100);
-      const c = monthCost(m, m3b), eb = r.bill != null ? billEur(r) : c ? c.gross : null, open = cmpOpen.has(m);
+      const r = months[m], m3b = r.end - r.start, eb = amount(m), pct = Math.round((f.gross - eb) / eb * 100), open = cmpOpen.has(m);
       const cls = pct > 0 ? "cmp-up" : pct < 0 ? "cmp-down" : "cmp-same";
       const p = (pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + num(Math.abs(pct), 0, 0).replace(/\s/g, "") + "%";
       return '<button type="button" class="cmp-row ' + cls + '" data-m="' + m + '" aria-expanded="' + open + '" aria-controls="cmp-det-' + m + '"><span class="cmp-pct">' + p +
         '</span><span class="cmp-what">' + t("cmpVs", { month: monthLabel(m) }) + '</span><span class="cmp-chev" aria-hidden="true">›</span></button>' +
         '<p class="cmp-det" id="cmp-det-' + m + '"' + (open ? "" : " hidden") + ">" +
-        t("cmpDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³", e: eur(f.gross), eb: eb == null ? "–" : eur(eb) + (r.bill != null ? t("cmpBillTag") : "") }) +
+        t("cmpDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³", e: eur(f.gross), eb: eur(eb) + (r.bill != null ? t("cmpBillTag") : "") }) +
         '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
     }).join("");
   }

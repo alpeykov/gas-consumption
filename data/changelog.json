@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.8.0",
+      "date": "2026-10-28",
+      "bg": [
+        "„Месечна история“: нов изглед „Средно €/m³“ – колко е струвал един кубик всеки месец, с жълта и зелена точка за най-скъпия и най-евтиния месец и средна цена за периода.",
+        "Процентите под прогнозата вече сравняват сумите в € – прогнозната сметка спрямо сметката за предходния месец и за същия месец миналата година."
+      ],
+      "en": [
+        "“Monthly history”: a new “Average €/m³” view – what a cubic metre cost each month, with yellow and green dots on the dearest and cheapest month and the period's average price.",
+        "The percentages under the forecast now compare amounts in € – the forecast bill against last month's bill and the same month last year."
+      ]
+    },
+    {
       "version": "2.7.2",
       "date": "2026-10-27",
       "bg": [

@@ -690,6 +690,38 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N41 history: average €/m³ per month – same chart, yellow/green dots, tooltip, period average, remembered; English", async () => {
+    const H = { "2026-06": { start: 2300, end: 2320, date: null, bill: null }, "2026-08": { start: 2420, end: 2429, date: null, bill: null }, ...SEPT };
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "eur" } } });
+    await page.click("#history-btn"); await settle(300);
+    expect((await page.$eval("#mh-unit option[value='avg']", (o) => o.textContent)) === "Средно €/m³", "option label");
+    await page.select("#mh-unit", "avg");
+    const svgText = await page.$eval("#mh-svg", (s) => s.textContent);
+    expect(svgText.includes("€/m³ с ДДС"), "axis unit: " + svgText);
+    // Every point is that month's € over its m³ (September: 13,61 € / 16 m³ ≈ 0,85 €/m³), so all sit around 1 €, not around 13.
+    const ys = await page.evaluate(() => { const pt = [...document.querySelectorAll("#mh-svg .mh-pt")].map((c) => ({ m: c.dataset.m, y: +c.getAttribute("cy"), part: c.getAttribute("fill") === "var(--panel)" }));
+      const done = pt.filter((p) => !p.part), top = Math.min(...done.map((p) => p.y)), bot = Math.max(...done.map((p) => p.y));
+      const pk = [...document.querySelectorAll("#mh-svg .mh-peak")].map((c) => c.dataset.m), lo = [...document.querySelectorAll("#mh-svg .mh-low")].map((c) => c.dataset.m);
+      return { pk, lo, want: done.filter((p) => Math.abs(p.y - top) < 0.2).map((p) => p.m), wantLo: done.filter((p) => Math.abs(p.y - bot) < 0.2).map((p) => p.m), n: pt.length }; });
+    expect(ys.n === 4 && ys.pk.length === 1 && ys.pk.join() === ys.want.join() && ys.lo.join() === ys.wantLo.join() && ys.pk[0] !== ys.lo[0], "yellow on the dearest m³, green on the cheapest, forecast excluded: " + JSON.stringify(ys));
+    expect((await page.$eval("#mh-svg .mh-peak", (c) => c.getAttribute("fill"))) === "var(--amber)" && (await page.$eval("#mh-svg .mh-low", (c) => c.getAttribute("fill"))) === "var(--green)", "dot colours");
+    const at = async (m) => { const b = await page.$eval("#mh-svg .mh-pt[data-m='" + m + "']", (c) => { const r = c.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }); await page.mouse.move(b[0], b[1]); await settle(100); return text(page, "#mh-tip"); };
+    const sep = await at("2026-09");
+    expect(sep.startsWith("Септември 202616 m³ · 13,61 € / 26,62 лв.средно 0,85 € / 1,66 лв. за m³"), "September tooltip: " + sep);
+    const pkTip = await at(ys.pk[0]);
+    expect(pkTip.endsWith("● най-висока стойност за периода"), "peak named: " + pkTip);
+    const fc = await at("2026-10");
+    expect(/≈ средно [\d,]+ € \/ [\d,]+ лв\. за m³$/.test(fc), "the forecast month's average is marked ≈: " + fc);
+    expect(/^45 m³ · [\d,]+ € \/ [\d,]+ лв\. · средно [\d,]+ € \/ [\d,]+ лв\. за m³$/.test(await text(page, "#mh-total-val")), "period total with its average: " + await text(page, "#mh-total-val"));
+    await page.reload({ waitUntil: "networkidle0" });
+    await page.click("#history-btn"); await settle(300);
+    expect((await page.$eval("#mh-unit", (e) => e.value)) === "avg", "remembered");
+    await page.click('.lang button[data-lang="en"]'); await settle(100);
+    expect((await page.$eval("#mh-unit option[value='avg']", (o) => o.textContent)) === "Average €/m³" && (await page.$eval("#mh-svg", (s) => s.textContent)).includes("€/m³ incl. VAT"), "English");
+    expect((await text(page, "#mh-total-val")).includes("average"), "English total: " + await text(page, "#mh-total-val"));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N36 history: saved months are folded at first; ✎ sits in its own last column, lined up on every row; saved months aren't offered to add", async () => {
     const H = { "2024-10": { start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }, "2026-05": { start: 2390, end: 2410, date: null, bill: null }, ...SEPT };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });
@@ -718,8 +750,8 @@ async function sanity() {
     await page.close2();
     const H = { "2025-10": { start: 1500, end: 1549, date: null, bill: 43.1 }, ...SEPT };
     page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });
-    // 30 m³ in 16 days → 58,1 m³ forecast: +19% on 49 m³, +263% on 16 m³.
-    expect((await cmp(page)).join(" | ") === "↑ 19%спрямо октомври 2025› | ↑ 263%спрямо септември 2026›", "last year first, then last month: " + (await cmp(page)).join(" | "));
+    // By €: the 51,90 € forecast is +20% on the 43,10 € bill, +281% on September's 13,61 €.
+    expect((await cmp(page)).join(" | ") === "↑ 20%спрямо октомври 2025› | ↑ 281%спрямо септември 2026›", "last year first, then last month: " + (await cmp(page)).join(" | "));
     expect(await page.$eval("#cmp-det-2025-10", (e) => e.hidden), "details folded");
     // Wider screens: the chevron stays on the row's first line, at its end. Phones: two short chips that fit the card.
     await page.setViewport({ width: 700, height: 900 }); await settle(100);
@@ -739,14 +771,14 @@ async function sanity() {
     // Only last month in the history.
     await page.evaluate(() => { const m = JSON.parse(localStorage.getItem("gas-bill-months-v1")); delete m["2025-10"]; localStorage.setItem("gas-bill-months-v1", JSON.stringify(m)); });
     await page.reload({ waitUntil: "networkidle0" });
-    expect((await cmp(page)).join(" | ") === "↑ 263%спрямо септември 2026›", "only last month: " + (await cmp(page)).join(" | "));
-    // Fewer m³ than last year.
+    expect((await cmp(page)).join(" | ") === "↑ 281%спрямо септември 2026›", "only last month: " + (await cmp(page)).join(" | "));
+    // A smaller amount than last year (29 m³ against 49, at this year's price).
     await page.evaluate(() => { const f = JSON.parse(localStorage.getItem("gas-bill-forecast-v1")); f["cur-reading"] = "2460"; delete f["cur-stamp"]; localStorage.setItem("gas-bill-forecast-v1", JSON.stringify(f));
       const m = JSON.parse(localStorage.getItem("gas-bill-months-v1")); m["2025-10"] = { start: 1500, end: 1549, date: null, bill: null }; localStorage.setItem("gas-bill-months-v1", JSON.stringify(m)); });
     await page.reload({ waitUntil: "networkidle0" });
-    expect((await cmp(page))[0].startsWith("↓ 41%спрямо октомври 2025"), "fewer m³: " + (await cmp(page)).join(" | "));
+    expect((await cmp(page))[0].startsWith("↓ 27%спрямо октомври 2025"), "smaller amount: " + (await cmp(page)).join(" | "));
     await page.click('.lang button[data-lang="en"]'); await settle(100);
-    expect((await cmp(page))[0] === "↓ 41%vs October 2025›", "English: " + (await cmp(page)).join(" | "));
+    expect((await cmp(page))[0] === "↓ 27%vs October 2025›", "English: " + (await cmp(page)).join(" | "));
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
     // No forecast (1st of the month, readings from different months): no comparison.
