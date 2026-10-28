@@ -487,6 +487,12 @@
   .mh-ed { font: inherit; font-size: 0.95rem; line-height: 1; color: var(--flame); background: none; border: 0; padding: 2px 4px; cursor: pointer; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .mh-empty { margin: 0; font-size: 0.85rem; color: var(--muted); }
+  /* Sample data: an offer while the history is empty, a strip while it shows */
+  .mh-sample { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
+  .mh-sample p { margin: 0; color: var(--muted); font-size: 0.85rem; }
+  .mh-sample button { font: inherit; font-weight: 700; color: var(--on-flame); background: var(--flame); border: 0; border-radius: 8px; padding: 10px; cursor: pointer; }
+  .mh-sample-on { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--amber); color: var(--amber); font-size: 0.85rem; font-weight: 600; }
+  .mh-sample-on button { font: inherit; font-weight: 700; color: var(--amber); background: transparent; border: 1px solid var(--amber); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
   .mh-add { font: inherit; font-weight: 700; color: var(--flame); background: transparent; border: 1px dashed var(--line); border-radius: 8px; padding: 9px; cursor: pointer; }
   .mh-total { display: flex; justify-content: space-between; gap: 10px; font-size: 0.85rem; color: var(--muted); }
   .mh-total b { color: var(--fg); }
@@ -916,6 +922,8 @@
       <button type="button" class="menu-item" id="history-btn" aria-expanded="false" aria-controls="mh-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="historyBtn">Месечна история</span><span class="mi-chev" aria-hidden="true">›</span></button>
       <section class="menu-panel mh-panel" id="mh-panel" role="region" data-i18n-aria="historyBtn" aria-label="Месечна история" hidden>
         <p class="mh-sub" data-i18n="mhSub"></p>
+        <div class="mh-sample" id="mh-sample" hidden><p data-i18n="mhSampleText"></p><button type="button" id="mh-sample-load" data-i18n="mhSampleLoad">Зареди примерни данни</button></div>
+        <div class="mh-sample-on" id="mh-sample-on" hidden><span data-i18n="mhSampleOn"></span><button type="button" id="mh-sample-wipe" data-i18n="mhSampleWipe">Изтрий</button></div>
         <div class="mh-tog" id="mh-tog">
           <button type="button" id="mh-chart-toggle" aria-expanded="false" aria-controls="mh-cbox"><span class="mh-chev" aria-hidden="true"></span><span data-i18n="mhChart">Графика</span></button>
         </div>
@@ -1255,6 +1263,11 @@
       mhClosed: "{month} е записан в историята ({m3} m³ · {sum}). „Показание от последната сметка“ е {end} от {d}.",
       mhSaved: "Записано в историята: {month} · {m3} m³ · {sum}",
       mhDeleted: "{month} е изтрит от историята.",
+      mhSampleText: "Искате да видите как изглеждат графиките? Заредете примерно потребление за последните 12 месеца. Показанията на главния екран не се пипат.",
+      mhSampleLoad: "Зареди примерни данни",
+      mhSampleOn: "● Показани са примерни данни",
+      mhSampleWipe: "Изтрий",
+      mhSampleWiped: "Примерните данни са изтрити.",
       mhEditAria: "Редактирай {month}",
       lastUpdated: "Последно обновено: {date}",
       readingTodayAria: "Текущо показание на уреда",
@@ -1458,6 +1471,11 @@
       mhClosed: "{month} is saved in the history ({m3} m³ · {sum}). “Reading on last bill” is now {end} from {d}.",
       mhSaved: "Saved in the history: {month} · {m3} m³ · {sum}",
       mhDeleted: "{month} deleted from the history.",
+      mhSampleText: "Want to see what the charts look like? Load sample use for the last 12 months. The readings on the main screen stay as they are.",
+      mhSampleLoad: "Load sample data",
+      mhSampleOn: "● Showing sample data",
+      mhSampleWipe: "Wipe",
+      mhSampleWiped: "Sample data wiped.",
       mhEditAria: "Edit {month}",
       lastUpdated: "Last updated: {date}",
       readingTodayAria: "Current meter reading",
@@ -2373,6 +2391,14 @@
   let months = {};
   try { months = JSON.parse(localStorage.getItem(MONTHS_KEY) || "{}") || {}; } catch (e) {}
   const saveMonths = () => { try { localStorage.setItem(MONTHS_KEY, JSON.stringify(months)); } catch (e) {} if (cmpHook) cmpHook(); };
+  // Sample data: a real household's m³ for each calendar month (Jan…Dec), laid over the last 12 finished months.
+  // Only the months it added are wiped; months saved since then stay.
+  const SAMPLE_KEY = "gas-bill-sample-v1";
+  const SAMPLE_M3 = [181, 225, 110, 94, 50, 14, 9, 7, 16, 41, 166, 206];
+  let sampleKeys = [];
+  try { sampleKeys = JSON.parse(localStorage.getItem(SAMPLE_KEY) || "[]") || []; } catch (e) {}
+  const sampleShown = () => sampleKeys.some((m) => months[m]);
+  const saveSample = () => { try { if (sampleKeys.length) localStorage.setItem(SAMPLE_KEY, JSON.stringify(sampleKeys)); else localStorage.removeItem(SAMPLE_KEY); } catch (e) {} };
   // An Overgas invoice is dated the last day of the month it is for, so its month is the month of use.
   // Versions 2.1.4–2.1.5 wrongly filed old bills one month earlier (with `invoice` = the month picked); move them back once.
   const MONTHS_FIX_KEY = "gas-bill-months-invoice-fix2";
@@ -2436,6 +2462,8 @@
     $("mh-list-toggle").setAttribute("aria-expanded", String(mhView.list));
     $("mh-lbox").hidden = !mhView.list;
     $("mh-list-h").textContent = t("mhList", { n: Object.keys(months).length });
+    $("mh-sample").hidden = Object.keys(months).length > 0;
+    $("mh-sample-on").hidden = !sampleShown();
 
     // Table: this month so far (from the main screen), then every saved month, newest first.
     const rows = [];
@@ -2523,6 +2551,7 @@
         (avgM3 ? " · <b>" + t("mhTipAvg", { v: num(m3 / days, 0, 2) + " m³" }) + "</b>" : "") +
         (avgEur && sum != null ? " · <b>" + t("mhTipAvg", { v: both(sum / days) }) + "</b>" : "");
     }
+    tip.hidden = !vals.length; // no empty readout box under an empty chart
     if (!vals.length) {
       svg.innerHTML = '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + t("chartEmpty") + "</text>";
       svg.setAttribute("aria-label", t("chartEmpty"));
@@ -2704,6 +2733,26 @@
   });
   $("mh-rows").addEventListener("click", (ev) => { const b = ev.target.closest(".mh-ed"); if (b) openMhForm(b.dataset.m); });
   $("mh-add").addEventListener("click", () => openMhForm("new"));
+  $("mh-sample-load").addEventListener("click", () => {
+    const curYm = ymOf(todayStr());
+    let reading = 1000;
+    sampleKeys = [];
+    for (let m = ymAdd(curYm, -12); m < curYm; m = ymAdd(m, 1)) {
+      if (months[m]) continue;
+      const m3 = SAMPLE_M3[Number(m.slice(5)) - 1];
+      months[m] = { start: reading, end: reading + m3, date: null, bill: null };
+      reading += m3; sampleKeys.push(m);
+    }
+    saveSample(); saveMonths();
+    if (!mhView.chart) { mhView.chart = true; saveMhView(); }
+    renderMonths();
+  });
+  $("mh-sample-wipe").addEventListener("click", () => {
+    const prev = {}, keys = sampleKeys;
+    keys.forEach((m) => { if (months[m]) { prev[m] = months[m]; delete months[m]; } });
+    sampleKeys = []; saveSample(); saveMonths(); closeMhForm();
+    toast(t("mhSampleWiped"), () => { Object.assign(months, prev); sampleKeys = keys; saveSample(); saveMonths(); renderMonths(); });
+  });
   $("mh-chart-toggle").addEventListener("click", () => { mhView.chart = !mhView.chart; saveMhView(); renderMonths(); });
   $("mh-list-toggle").addEventListener("click", () => { mhView.list = !mhView.list; saveMhView(); renderMonths(); });
   ["mh-unit", "mh-from", "mh-to"].forEach((id) => $(id).addEventListener("change", () => {

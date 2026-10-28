@@ -2,6 +2,18 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.0",
+      "date": "2026-10-28",
+      "bg": [
+        "„Месечна история“: когато още няма записани месеци, можете да заредите примерни данни за последните 12 месеца и да видите графиките. Докато се показват, лента горе напомня, че са примерни, и бутон „Изтрий“ ги маха (само тях).",
+        "Празна графика вече не показва празно поле под себе си."
+      ],
+      "en": [
+        "“Monthly history”: while no months are saved yet, you can load sample data for the last 12 months to see the charts. While it shows, a strip on top says it is sample data, and “Wipe” removes it (and only it).",
+        "An empty chart no longer shows an empty box under it."
+      ]
+    },
+    {
       "version": "2.9.1",
       "date": "2026-10-28",
       "bg": [

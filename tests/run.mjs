@@ -757,6 +757,41 @@ async function sanity() {
       await page.close2();
     }
   });
+  await test("sanity", "N44 sample data: offered while the history is empty, fills the last 12 months, a strip while it shows; Wipe removes only the sample months, with undo", async () => {
+    // No readings and no months: an empty chart without an empty readout box under it.
+    const bare = await open({ width: 390, storage: { "gas-bill-history-view": { chart: true } } });
+    await bare.click("#history-btn"); await settle(300);
+    expect((await bare.$$eval("#mh-svg .mh-pt", (c) => c.length)) === 0 && await bare.$eval("#mh-tip", (e) => e.hidden || e.getClientRects().length === 0), "no empty readout box");
+    await bare.close2();
+    const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await page.click("#history-btn"); await settle(300);
+    const shown = (id) => page.$eval("#" + id, (e) => !e.hidden && e.getClientRects().length > 0);
+    expect(await shown("mh-sample") && !(await shown("mh-sample-on")), "offered on an empty history");
+    expect((await text(page, "#mh-sample-load")) === "Зареди примерни данни", "button: " + await text(page, "#mh-sample-load"));
+    await page.click("#mh-sample-load"); await settle(400);
+    const m = await monthsOf(page);
+    const keys = Object.keys(m).sort();
+    expect(keys.length === 12 && keys[0] === "2025-10" && keys[11] === "2026-09", "last 12 finished months: " + keys.join());
+    expect(m["2026-01"].end - m["2026-01"].start === 181 && m["2025-10"].end - m["2025-10"].start === 41 && m["2026-07"].end - m["2026-07"].start === 9 && keys.every((k) => m[k].bill === null), "seasonal m³, no bills");
+    expect(keys.every((k, i) => i === 0 || m[k].start === m[keys[i - 1]].end), "readings run on from month to month");
+    expect(!(await shown("mh-sample")) && await shown("mh-sample-on") && (await text(page, "#mh-sample-on")).startsWith("● Показани са примерни данни"), "strip instead of the offer");
+    expect(!(await page.$eval("#mh-cbox", (e) => e.hidden)) && (await page.$$eval("#mh-svg .mh-pt", (c) => c.length)) === 13 && !(await page.$eval("#mh-tip", (e) => e.hidden)), "chart opened with 12 months + this month");
+    expect((await page.$eval("#mh-svg .mh-peak", (c) => c.dataset.m)) === "2026-02", "February is the peak (225 m³) in €");
+    // A real month saved since then stays when the sample is wiped.
+    await page.evaluate(() => { const x = JSON.parse(localStorage.getItem("gas-bill-months-v1")); x["2024-05"] = { start: 10, end: 30, date: null, bill: null }; localStorage.setItem("gas-bill-months-v1", JSON.stringify(x)); });
+    await page.reload({ waitUntil: "networkidle0" });
+    await page.click("#history-btn"); await settle(300);
+    expect(await shown("mh-sample-on"), "strip survives a reload");
+    await page.click("#mh-sample-wipe"); await settle(300);
+    expect(Object.keys(await monthsOf(page)).join() === "2024-05" && !(await shown("mh-sample-on")) && !(await shown("mh-sample")), "only the sample months wiped: " + Object.keys(await monthsOf(page)).join());
+    expect((await text(page, "#toast")).startsWith("Примерните данни са изтрити."), "toast: " + await text(page, "#toast"));
+    await page.click("#toast-undo"); await settle(300);
+    expect(Object.keys(await monthsOf(page)).length === 13 && !(await page.$eval("#mh-sample-on", (e) => e.hidden)), "undo brings them back: " + Object.keys(await monthsOf(page)).length + " " + await shown("mh-sample-on") + " " + await page.evaluate(() => localStorage.getItem("gas-bill-sample-v1")));
+    await page.click('.lang button[data-lang="en"]'); await settle(100);
+    expect((await text(page, "#mh-sample-on")).startsWith("● Showing sample data") && (await text(page, "#mh-sample-wipe")) === "Wipe", "English");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N36 history: saved months are folded at first; ✎ sits in its own last column, lined up on every row; saved months aren't offered to add", async () => {
     const H = { "2024-10": { start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }, "2026-05": { start: 2390, end: 2410, date: null, bill: null }, ...SEPT };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });
