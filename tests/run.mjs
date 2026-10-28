@@ -722,6 +722,24 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N42 history: one yellow and one green dot only – months that tie (or round the same) don't both get one", async () => {
+    // Oct and Nov 2024 cost the same per m³ to the cent (41 and 166 m³ at that winter's price); Dec and Jan use the same 50 m³.
+    const H = { "2024-10": { start: 1000, end: 1041, date: null, bill: null }, "2024-11": { start: 1041, end: 1207, date: null, bill: null },
+      "2024-12": { start: 1207, end: 1257, date: null, bill: null }, "2025-01": { start: 1257, end: 1307, date: null, bill: null }, "2025-02": { start: 1307, end: 1500, date: null, bill: null } };
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "avg", from: "2024-10", to: "2025-02" } } });
+    await page.click("#history-btn"); await settle(1500);
+    const dots = () => page.evaluate(() => ({ pk: [...document.querySelectorAll("#mh-svg .mh-peak")].map((c) => c.dataset.m), lo: [...document.querySelectorAll("#mh-svg .mh-low")].map((c) => c.dataset.m) }));
+    let d = await dots();
+    expect(d.pk.length === 1 && d.lo.length === 1, "avg: one dot each: " + JSON.stringify(d));
+    await page.select("#mh-unit", "m3");
+    d = await dots();
+    expect(d.pk.join() === "2025-02" && d.lo.join() === "2024-10", "m³: Feb highest, Oct lowest: " + JSON.stringify(d));
+    await page.select("#mh-from", "2024-12");
+    d = await dots();
+    expect(d.pk.join() === "2025-02" && d.lo.join() === "2025-01", "m³ tie (50 and 50): only the later month is green: " + JSON.stringify(d));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N36 history: saved months are folded at first; ✎ sits in its own last column, lined up on every row; saved months aren't offered to add", async () => {
     const H = { "2024-10": { start: 0, end: 41, date: null, bill: 53.71, billCur: "BGN" }, "2026-05": { start: 2390, end: 2410, date: null, bill: null }, ...SEPT };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });

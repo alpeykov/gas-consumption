@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.8.1",
+      "date": "2026-10-28",
+      "bg": [
+        "„Месечна история“: винаги по една жълта и една зелена точка – два месеца с почти еднаква стойност (напр. по 0,67 €/m³) вече не получават и двата точка."
+      ],
+      "en": [
+        "“Monthly history”: always exactly one yellow and one green dot – two months with nearly the same value (e.g. 0.67 €/m³ each) no longer both get one."
+      ]
+    },
+    {
       "version": "2.8.0",
       "date": "2026-10-28",
       "bg": [

@@ -2558,12 +2558,12 @@
     out += '<path d="' + path(true) + '" fill="none" stroke="var(--flame)" stroke-width="2" stroke-dasharray="5 4"/>';
     pts.forEach((p, i) => { if (p) out += '<circle class="mh-pt" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="3.5" fill="' + (p.part ? "var(--panel)" : "var(--flame)") + '" stroke="var(--flame)" stroke-width="' + (p.part ? 2 : 0) + '"/>'; });
     // The highest saved month in the period (in the chosen unit): a yellow dot on top, the lowest a green one; this month's forecast is an estimate and doesn't count.
-    const done = pts.filter((p) => p && !p.part).map((p) => p.v);
-    const peak = done.length ? Math.max(...done) : null;
-    const low = done.length ? Math.min(...done) : null;
-    const eps = inAvg ? 0.0005 : 0.005;
-    const isPeak = (p) => p && !p.part && peak != null && Math.abs(p.v - peak) < eps;
-    const isLow = (p) => p && !p.part && low != null && Math.abs(p.v - low) < eps && !isPeak(p);
+    // One month each: the exact highest and lowest value, the later month on a tie (two months both showing 0,67 €/m³ get one dot).
+    const done = pts.filter((p) => p && !p.part);
+    const pick = (better) => done.reduce((a, p) => (!a || better(p.v, a.v) || p.v === a.v ? p : a), null);
+    const peakP = pick((v, w) => v > w), lowP = pick((v, w) => v < w);
+    const isPeak = (p) => !!p && p === peakP;
+    const isLow = (p) => !!p && p === lowP && !isPeak(p);
     pts.forEach((p, i) => {
       const cls = isPeak(p) ? "mh-peak" : isLow(p) ? "mh-low" : "";
       if (cls) out += '<circle class="' + cls + '" data-m="' + p.m + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="5" fill="var(--' + (cls === "mh-peak" ? "amber" : "green") + ')" stroke="var(--panel)" stroke-width="1.5"/>';
