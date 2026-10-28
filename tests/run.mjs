@@ -690,47 +690,52 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
-  await test("sanity", "N41 history: average €/m³ per month – same chart, yellow/green dots, tooltip, period average, remembered; English", async () => {
+  await test("sanity", "N41 history: average €/day and m³/day per month – same chart, yellow/green dots, tooltip, period average, remembered; English", async () => {
     const H = { "2026-06": { start: 2300, end: 2320, date: null, bill: null }, "2026-08": { start: 2420, end: 2429, date: null, bill: null }, ...SEPT };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "eur" } } });
     await page.click("#history-btn"); await settle(300);
-    expect((await page.$eval("#mh-unit option[value='avg']", (o) => o.textContent)) === "Средно €/m³", "option label");
-    await page.select("#mh-unit", "avg");
-    const svgText = await page.$eval("#mh-svg", (s) => s.textContent);
-    expect(svgText.includes("€/m³ с ДДС"), "axis unit: " + svgText);
-    // Every point is that month's € over its m³ (September: 13,61 € / 16 m³ ≈ 0,85 €/m³), so all sit around 1 €, not around 13.
-    const ys = await page.evaluate(() => { const pt = [...document.querySelectorAll("#mh-svg .mh-pt")].map((c) => ({ m: c.dataset.m, y: +c.getAttribute("cy"), part: c.getAttribute("fill") === "var(--panel)" }));
-      const done = pt.filter((p) => !p.part), top = Math.min(...done.map((p) => p.y)), bot = Math.max(...done.map((p) => p.y));
-      const pk = [...document.querySelectorAll("#mh-svg .mh-peak")].map((c) => c.dataset.m), lo = [...document.querySelectorAll("#mh-svg .mh-low")].map((c) => c.dataset.m);
-      return { pk, lo, want: done.filter((p) => Math.abs(p.y - top) < 0.2).map((p) => p.m), wantLo: done.filter((p) => Math.abs(p.y - bot) < 0.2).map((p) => p.m), n: pt.length }; });
-    expect(ys.n === 4 && ys.pk.length === 1 && ys.pk.join() === ys.want.join() && ys.lo.join() === ys.wantLo.join() && ys.pk[0] !== ys.lo[0], "yellow on the dearest m³, green on the cheapest, forecast excluded: " + JSON.stringify(ys));
-    expect((await page.$eval("#mh-svg .mh-peak", (c) => c.getAttribute("fill"))) === "var(--amber)" && (await page.$eval("#mh-svg .mh-low", (c) => c.getAttribute("fill"))) === "var(--green)", "dot colours");
+    expect(/^[\d,]+ m³\/ден · [\d,]+ €\/ден$/.test(await text(page, "#out-rate")), "the main screen's daily rate is untouched: " + await text(page, "#out-rate"));
+    const opts = await page.$$eval("#mh-unit option", (o) => o.map((e) => e.value + ":" + e.textContent).join());
+    expect(opts === "eur:EUR,bgn:BGN,m3:m³,avgEur:Средно €/ден,avgM3:Средно m³/ден", "options: " + opts);
+    const dots = () => page.evaluate(() => ({ pk: [...document.querySelectorAll("#mh-svg .mh-peak")].map((c) => c.dataset.m + ":" + c.getAttribute("fill")), lo: [...document.querySelectorAll("#mh-svg .mh-low")].map((c) => c.dataset.m + ":" + c.getAttribute("fill")) }));
     const at = async (m) => { const b = await page.$eval("#mh-svg .mh-pt[data-m='" + m + "']", (c) => { const r = c.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }); await page.mouse.move(b[0], b[1]); await settle(100); return text(page, "#mh-tip"); };
-    const sep = await at("2026-09");
-    expect(sep.startsWith("Септември 202616 m³ · 13,61 € / 26,62 лв.средно 0,85 € / 1,66 лв. за m³"), "September tooltip: " + sep);
-    const pkTip = await at(ys.pk[0]);
-    expect(pkTip.endsWith("● най-висока стойност за периода"), "peak named: " + pkTip);
-    const fc = await at("2026-10");
-    expect(/≈ средно [\d,]+ € \/ [\d,]+ лв\. за m³$/.test(fc), "the forecast month's average is marked ≈: " + fc);
-    expect(/^45 m³ · [\d,]+ € \/ [\d,]+ лв\. · средно [\d,]+ € \/ [\d,]+ лв\. за m³$/.test(await text(page, "#mh-total-val")), "period total with its average: " + await text(page, "#mh-total-val"));
+    // m³ per day: June 20/30 = 0,67, August 9/31 = 0,29, September 16/30 = 0,53; October's forecast is today's rate, 30 m³ in 16 days = 1,88 – it doesn't count.
+    await page.select("#mh-unit", "avgM3");
+    expect((await page.$eval("#mh-svg", (s) => s.textContent)).includes("m³/ден"), "m³/day axis: " + await page.$eval("#mh-svg", (s) => s.textContent));
+    let d = await dots();
+    expect(d.pk.join() === "2026-06:var(--amber)" && d.lo.join() === "2026-08:var(--green)", "m³/day: June highest, August lowest: " + JSON.stringify(d));
+    let tip = await at("2026-09");
+    expect(tip.startsWith("Септември 202616 m³ · 13,61 € / 26,62 лв.средно 0,53 m³ на ден"), "September: " + tip);
+    tip = await at("2026-10");
+    expect(tip.endsWith("≈ средно 1,88 m³ на ден"), "forecast month at today's rate: " + tip);
+    expect((await text(page, "#mh-total-val")).endsWith("· средно 0,49 m³ на ден"), "period: 45 m³ over 91 days: " + await text(page, "#mh-total-val"));
+    // € per day: September 13,61 € / 30 = 0,45 €.
+    await page.select("#mh-unit", "avgEur");
+    expect((await page.$eval("#mh-svg", (s) => s.textContent)).includes("€/ден с ДДС"), "€/day axis");
+    d = await dots();
+    expect(d.pk.length === 1 && d.lo.length === 1 && d.pk[0].endsWith("var(--amber)") && d.lo[0].endsWith("var(--green)") && d.lo[0].startsWith("2026-08"), "€/day dots: " + JSON.stringify(d));
+    tip = await at("2026-09");
+    expect(tip.includes("средно 0,45 € / 0,89 лв. на ден"), "September €/day: " + tip);
+    expect(/· средно [\d,]+ € \/ [\d,]+ лв\. на ден$/.test(await text(page, "#mh-total-val")), "period €/day: " + await text(page, "#mh-total-val"));
     await page.reload({ waitUntil: "networkidle0" });
     await page.click("#history-btn"); await settle(300);
-    expect((await page.$eval("#mh-unit", (e) => e.value)) === "avg", "remembered");
+    expect((await page.$eval("#mh-unit", (e) => e.value)) === "avgEur", "remembered");
     await page.click('.lang button[data-lang="en"]'); await settle(100);
-    expect((await page.$eval("#mh-unit option[value='avg']", (o) => o.textContent)) === "Average €/m³" && (await page.$eval("#mh-svg", (s) => s.textContent)).includes("€/m³ incl. VAT"), "English");
-    expect((await text(page, "#mh-total-val")).includes("average"), "English total: " + await text(page, "#mh-total-val"));
+    expect((await page.$$eval("#mh-unit option", (o) => o.slice(3).map((e) => e.textContent).join())) === "Average €/day,Average m³/day" && (await page.$eval("#mh-svg", (s) => s.textContent)).includes("€/day incl. VAT"), "English");
+    expect((await text(page, "#mh-total-val")).endsWith("per day"), "English total: " + await text(page, "#mh-total-val"));
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
   await test("sanity", "N42 history: one yellow and one green dot only – months that tie (or round the same) don't both get one", async () => {
-    // Oct and Nov 2024 cost the same per m³ to the cent (41 and 166 m³ at that winter's price); Dec and Jan use the same 50 m³.
+    // Dec and Jan use the same 50 m³: a tie.
     const H = { "2024-10": { start: 1000, end: 1041, date: null, bill: null }, "2024-11": { start: 1041, end: 1207, date: null, bill: null },
       "2024-12": { start: 1207, end: 1257, date: null, bill: null }, "2025-01": { start: 1257, end: 1307, date: null, bill: null }, "2025-02": { start: 1307, end: 1500, date: null, bill: null } };
     const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "avg", from: "2024-10", to: "2025-02" } } });
     await page.click("#history-btn"); await settle(1500);
+    expect((await page.$eval("#mh-unit", (e) => e.value)) === "avgEur", "the old €/m³ view opens as €/day");
     const dots = () => page.evaluate(() => ({ pk: [...document.querySelectorAll("#mh-svg .mh-peak")].map((c) => c.dataset.m), lo: [...document.querySelectorAll("#mh-svg .mh-low")].map((c) => c.dataset.m) }));
     let d = await dots();
-    expect(d.pk.length === 1 && d.lo.length === 1, "avg: one dot each: " + JSON.stringify(d));
+    expect(d.pk.length === 1 && d.lo.length === 1, "€/day: one dot each: " + JSON.stringify(d));
     await page.select("#mh-unit", "m3");
     d = await dots();
     expect(d.pk.join() === "2025-02" && d.lo.join() === "2024-10", "m³: Feb highest, Oct lowest: " + JSON.stringify(d));

@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.9.0",
+      "date": "2026-10-28",
+      "bg": [
+        "„Месечна история“: „Средно“ е разделено на две графики – „Средно €/ден“ и „Средно m³/ден“ за всеки месец, с жълта и зелена точка и средно на ден за периода."
+      ],
+      "en": [
+        "“Monthly history”: “Average” is split into two charts – “Average €/day” and “Average m³/day” for each month, with yellow and green dots and the per-day average for the period."
+      ]
+    },
+    {
       "version": "2.8.1",
       "date": "2026-10-28",
       "bg": [

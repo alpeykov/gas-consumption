@@ -903,7 +903,8 @@
               <option value="eur">EUR</option>
               <option value="bgn">BGN</option>
               <option value="m3">m³</option>
-              <option value="avg" data-i18n="mhAvgOpt">Средно €/m³</option>
+              <option value="avgEur" data-i18n="mhAvgEurOpt">Средно €/ден</option>
+              <option value="avgM3" data-i18n="mhAvgM3Opt">Средно m³/ден</option>
             </select></label>
             <label><span data-i18n="fromYear">От</span> <select id="mh-from"></select></label>
             <label><span data-i18n="toYear">До</span> <select id="mh-to"></select></label>
@@ -1216,9 +1217,10 @@
       mhEditCol: "Редакция",
       mhAria: "Месечно потребление в {unit} от {from} до {to}",
       mhTipBill: "сметка {b}",
-      mhAvgOpt: "Средно €/m³",
-      mhTipAvg: "средно {v} за m³",
-      mhTotalAvg: "средно {v} за m³",
+      mhAvgEurOpt: "Средно €/ден",
+      mhAvgM3Opt: "Средно m³/ден",
+      mhDay: "ден",
+      mhTipAvg: "средно {v} на ден",
       mhMonth: "Месец",
       mhPrognosis: "Прогноза",
       mhBill: "Сметка",
@@ -1418,9 +1420,10 @@
       mhEditCol: "Edit",
       mhAria: "Monthly use in {unit} from {from} to {to}",
       mhTipBill: "bill {b}",
-      mhAvgOpt: "Average €/m³",
-      mhTipAvg: "average {v} per m³",
-      mhTotalAvg: "average {v} per m³",
+      mhAvgEurOpt: "Average €/day",
+      mhAvgM3Opt: "Average m³/day",
+      mhDay: "day",
+      mhTipAvg: "average {v} per day",
       mhMonth: "Month",
       mhPrognosis: "Estimate",
       mhBill: "Bill",
@@ -2480,25 +2483,28 @@
     };
     fill($("mh-from"), mhView.from, ymAdd(curYm, -12));
     fill($("mh-to"), mhView.to, curYm);
-    $("mh-unit").value = ["eur", "bgn", "m3", "avg"].includes(mhView.unit) ? mhView.unit : "eur";
+    if (mhView.unit === "avg") mhView.unit = "avgEur"; // 2.8.x had one "average" view, € per m³
+    $("mh-unit").value = ["eur", "bgn", "m3", "avgEur", "avgM3"].includes(mhView.unit) ? mhView.unit : "eur";
     const from = $("mh-from").value, to = $("mh-to").value;
     $("mh-bad").hidden = from <= to;
     $("mh-box").hidden = from > to;
     if (from > to) { $("mh-total").hidden = true; return; }
     const span = all.filter((m) => m >= from && m <= to);
-    const unit = $("mh-unit").value, inM3 = unit === "m3", inBgn = unit === "bgn", inAvg = unit === "avg";
+    const unit = $("mh-unit").value, inM3 = unit === "m3", inBgn = unit === "bgn", avgEur = unit === "avgEur", avgM3 = unit === "avgM3", inAvg = avgEur || avgM3;
     const cur = inBgn ? (lang === "bg" ? "лв." : "lv.") : "€";
-    const unitText = inM3 ? "m³" : inAvg ? "€/m³ " + t("vatIncl") : cur + " " + t("vatIncl");
+    const unitText = inM3 ? "m³" : avgM3 ? "m³/" + t("mhDay") : avgEur ? "€/" + t("mhDay") + " " + t("vatIncl") : cur + " " + t("vatIncl");
     // Saved months, plus this month's forecast at today's daily rate (drawn dashed, hollow dot).
     const el = so == null ? 0 : Math.round((parseDate($("cur-date").value) - parseDate($("start-date").value)) / DAY);
     const fc = so == null ? null : el > 0 ? so / el * Math.round((parseDate(ymAdd(curYm, 1) + "-01") - parseDate($("start-date").value)) / DAY) : so;
+    // Days a month covers: the calendar month; this month from the start reading to the 1st after it (as the forecast).
+    const daysOf = (m) => Math.round((parseDate(ymAdd(m, 1) + "-01") - parseDate(months[m] || m !== curYm ? m + "-01" : $("start-date").value)) / DAY);
     const pts = span.map((m) => {
       const r = months[m], m3 = r ? r.end - r.start : m === curYm ? fc : null;
       if (m3 == null) return null;
-      const c = monthCost(m, m3);
-      // Average: what a cubic metre cost that month (the month's total over its m³).
-      const v = inM3 ? m3 : !c ? null : inAvg ? (m3 > 0 ? c.gross / m3 : null) : c.gross * (inBgn ? BGN_PER_EUR : 1);
-      return v == null ? null : { m, m3, c, r, v, part: !r };
+      const c = monthCost(m, m3), days = daysOf(m);
+      // Averages are per day of the month: m³ or € (incl. VAT) over its days.
+      const v = inM3 ? m3 : avgM3 ? m3 / days : !c ? null : avgEur ? c.gross / days : c.gross * (inBgn ? BGN_PER_EUR : 1);
+      return v == null ? null : { m, m3, c, r, v, days, part: !r };
     });
     const vals = pts.filter(Boolean).map((p) => p.v);
     const svg = $("mh-svg"), tip = $("mh-tip");
@@ -2513,8 +2519,10 @@
       const m3 = inSpan.reduce((a, m) => a + months[m].end - months[m].start, 0);
       const costs = inSpan.map((m) => monthCost(m, months[m].end - months[m].start));
       const sum = costs.every(Boolean) ? costs.reduce((a, c) => a + c.gross, 0) : null;
+      const days = inSpan.reduce((a, m) => a + daysOf(m), 0);
       $("mh-total-val").innerHTML = "<b>" + num(m3, 0, 1) + " m³</b> · <b>" + (sum != null ? both(sum) : "–") + "</b>" +
-        (inAvg && sum != null && m3 > 0 ? " · <b>" + t("mhTotalAvg", { v: both(sum / m3) }) + "</b>" : "");
+        (avgM3 ? " · <b>" + t("mhTipAvg", { v: num(m3 / days, 0, 2) + " m³" }) + "</b>" : "") +
+        (avgEur && sum != null ? " · <b>" + t("mhTipAvg", { v: both(sum / days) }) + "</b>" : "");
     }
     if (!vals.length) {
       svg.innerHTML = '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + t("chartEmpty") + "</text>";
@@ -2586,7 +2594,7 @@
       tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") + "<br><b>" + (p.part ? "≈ " : "") + num(p.m3, 0, p.part ? 0 : 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
         (p.part ? "<br>" + t("mhTipNow", { d: ddmm($("cur-date").value), v: num(so, 0, 2) + " m³ · " + (now ? both(now.gross) : "–") }) : "") +
         (p.r && p.r.bill != null ? "<br>" + t("mhTipBill", { b: both(billEur(p.r)) }) : "") +
-        (inAvg ? "<br><b>" + (p.part ? "≈ " : "") + t("mhTipAvg", { v: both(p.v) }) + "</b>" : "") +
+        (inAvg ? "<br><b>" + (p.part ? "≈ " : "") + t("mhTipAvg", { v: avgM3 ? num(p.v, 0, 2) + " m³" : both(p.v) }) + "</b>" : "") +
         (isPeak(p) ? '<br><span class="peak-note">' + t("tipPeak") + "</span>" : "") +
         (isLow(p) ? '<br><span class="low-note">' + t("tipLow") + "</span>" : "");
     };
