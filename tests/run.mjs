@@ -389,7 +389,7 @@ async function sanity() {
     expect(JSON.stringify((await monthsOf(page))["2026-10"]) === JSON.stringify({ start: 2445, end: 2502, date: "2026-10-28", bill: null }), "October saved: " + JSON.stringify(await monthsOf(page)));
     expect((await page.$eval("#start-reading", (e) => e.value)) === "2502" && (await page.$eval("#start-date", (e) => e.value)) === "2026-11-01", "last bill reading moves to 2502 on 1 November");
     expect(/^Октомври 2026 е записан в историята \(57 m³ · .+ € \/ .+ лв\.\)\. „Показание от последната сметка“ е 2502 от 1-ви ноември\./.test(await text(page, "#toast")), "toast: " + await text(page, "#toast"));
-    expect((await text(page, "#out-now-eur")) === "0,00 €" && (await text(page, "#out-fc-eur")) === "–" && (await text(page, "#out-days")) === "Първи ден от периода на сметката – прогнозата се появява от утре.", "1st day: no warning, forecast from tomorrow");
+    expect((await text(page, "#out-now-eur")) === "0,00 €" && (await text(page, "#out-fc-eur")) === "–" && (await text(page, "#out-days")) === "Първи ден от периода на сметката – прогнозата се появява щом показанието се промени.", "1st day, nothing used: no warning, no forecast yet");
     await page.click("#toast-undo");
     expect(!(await monthsOf(page))["2026-10"] && (await page.$eval("#start-reading", (e) => e.value)) === "2445" && (await page.$eval("#start-date", (e) => e.value)) === "2026-10-01", "Undo puts everything back");
     expect(!page.errors.length, page.errors.join(" | "));
@@ -756,6 +756,16 @@ async function sanity() {
       expect(!page.errors.length, page.errors.join(" | "));
       await page.close2();
     }
+  });
+  await test("sanity", "N45 first day with gas already used: forecast from that one day (both readings on the 1st)", async () => {
+    const page = await open({ width: 412, now: "2026-11-01T12:07:00", storage: readings(2519, 2527, "2026-11-01", "2026-11-01") });
+    const got = await page.evaluate(() => ["out-fc-eur", "out-fc-bgn", "out-days", "out-rate", "t-m3-fc"].map((id) => document.getElementById(id).textContent));
+    expect(got[0] === "214,90 €", "forecast = 30 × the first day's 7,16 €: " + got[0]);
+    expect(got[1].endsWith("240 m³"), "8 m³ × 30 days: " + got[1]);
+    expect(got[2] === "Ден 1 от 30 от периода на сметката", "day 1 of 30: " + got[2]);
+    expect(got[3].startsWith("8 m³/ден"), "rate: " + got[3]);
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
   });
   await test("sanity", "N44 sample data: offered while the history is empty, fills the last 12 months, a strip while it shows; Wipe removes only the sample months, with undo", async () => {
     // No readings and no months: an empty chart without an empty readout box under it.

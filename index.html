@@ -1333,7 +1333,7 @@
       msgFill: "Попълнете двете дати и тарифните настройки.",
       msgLower: "Днешното показание е по-малко от показанието в сметката.",
       msgDate: "Днешната дата трябва да е след датата на сметката.",
-      msgFirstDay: "Първи ден от периода на сметката – прогнозата се появява от утре.",
+      msgFirstDay: "Първи ден от периода на сметката – прогнозата се появява щом показанието се промени.",
       msgSpans: "Двете показания са от различни месеци. Показана е само цената на текущата консумация, по цената за {month}. Прогнозата за сметката за текущия месец няма да бъде точна, затова не се показва.",
       dayOf: "Ден {e} от {p} от периода на сметката",
       dayShort: "ден {e} от {p}",
@@ -1541,7 +1541,7 @@
       msgFill: "Fill in both dates and the tariff settings.",
       msgLower: "Today’s reading is lower than the bill reading.",
       msgDate: "Today’s date must be after the bill date.",
-      msgFirstDay: "First day of the billing period – the forecast appears from tomorrow.",
+      msgFirstDay: "First day of the billing period – the forecast appears once the reading changes.",
       msgSpans: "The two readings are from different months. Only the cost of the use so far is shown, at the {month} price. A forecast of this month's bill would not be accurate, so it isn't shown.",
       dayOf: "Day {e} of {p} of the billing period",
       dayShort: "day {e} of {p}",
@@ -1682,15 +1682,17 @@
     const used = v.curReading - v.startReading;
     const pricePerKwh = v.price / 1000;
     const grossPerKwh = pricePerKwh * (1 + v.vat / 100);
-    const perDay = elapsed > 0 ? used / elapsed : 0;
-    const fcM3 = elapsed > 0 ? perDay * periodDays : used;
+    // Both readings on the same day but gas already used: count it as day 1, so there is a rate to forecast from.
+    const days = elapsed > 0 ? elapsed : used > 0 ? 1 : 0;
+    const perDay = days > 0 ? used / days : 0;
+    const fcM3 = days > 0 ? perDay * periodDays : used;
     // Until November 2024 Overgas also charged a fixed supply fee once per monthly bill.
     const part = (m3) => {
       const kwh = m3 * v.factor, gas = kwh * pricePerKwh, net = gas + v.fee;
       const vat = net * v.vat / 100, gross = net + vat;
       return { m3, kwh, gas, net, vat, gross, bgn: gross * v.rate };
     };
-    return { start, end, periodDays, elapsed, perDay, perM3: v.factor * grossPerKwh, grossPerKwh, now: part(used), fc: part(fcM3) };
+    return { start, end, periodDays, elapsed, days, perDay, perM3: v.factor * grossPerKwh, grossPerKwh, now: part(used), fc: part(fcM3) };
   }
 
   const selectedRegion = () => prices.regions.find((r) => r.name === $("region").value) || prices.regions[0];
@@ -1884,9 +1886,9 @@
     $("tl-today-label").style.transform = pct < 18 || pct > 82 ? "none" : "translateX(-50%)";
     $("tl-start").textContent = fcDate(r.start);
     $("tl-end").textContent = fcDate(r.end);
-    $("out-days").textContent = t("dayOf", { e: r.elapsed, p: r.periodDays });
+    $("out-days").textContent = t("dayOf", { e: r.days, p: r.periodDays });
     $("out-days").classList.add("days");
-    $("tl-day").textContent = " · " + t("dayShort", { e: r.elapsed, p: r.periodDays });
+    $("tl-day").textContent = " · " + t("dayShort", { e: r.days, p: r.periodDays });
     $("out-rate").textContent = t("perDay", { m3: n1(r.perDay, "m³"), money: eur(r.perDay * r.perM3) });
 
     $("t-m3-now").textContent = n1(r.now.m3, "m³"); $("t-m3-fc").textContent = n1(r.fc.m3, "m³");
@@ -1907,8 +1909,8 @@
       $("out-days").innerHTML = '<span class="warn">' + t("msgSpans", { month: monthLabel(v.curDate.slice(0, 7)) }) + "</span>";
       return;
     }
-    // First day of the period (a new month starts on the 1st with both dates the same): no daily rate yet to forecast from.
-    if (r.elapsed === 0) {
+    // First day of the period with nothing used yet (both dates and readings the same): no daily rate to forecast from.
+    if (r.days === 0) {
       ["out-fc-eur", "out-fc-bgn", "out-rate", "t-m3-fc", "t-kwh-fc", "t-net-fc", "t-fee-fc", "t-vat-fc", "t-tot-fc", "t-bgn-fc"].forEach((id) => { $(id).textContent = "–"; });
       $("out-days").textContent = t("msgFirstDay");
       $("out-days").classList.remove("days"); $("tl-day").textContent = "";

@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.2",
+      "date": "2026-11-01",
+      "bg": [
+        "Прогноза още от първия ден: ако двете показания са от един и същи ден, но вече е изразходван газ, прогнозата се смята по този ден."
+      ],
+      "en": [
+        "A forecast from the very first day: when both readings are from the same day but gas has already been used, the forecast is based on that day."
+      ]
+    },
+    {
       "version": "2.10.1",
       "date": "2026-10-28",
       "bg": [
