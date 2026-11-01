@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.3",
+      "date": "2026-11-01",
+      "bg": [
+        "Докато Овергаз не е качил цената за текущия месец, под прогнозата пише „Прогнозата е базирана на цената от предходния месец“."
+      ],
+      "en": [
+        "Until Overgas uploads this month's price, the forecast says “The forecast is based on the previous month's price”."
+      ]
+    },
+    {
       "version": "2.10.2",
       "date": "2026-11-01",
       "bg": [

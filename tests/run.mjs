@@ -767,6 +767,19 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N46 price not uploaded yet for this month: the forecast says it uses the previous month's price (bg, en); not when the price is current or typed", async () => {
+    const page = await open({ width: 412, now: "2026-11-05T12:00:00", storage: readings(2519, 2560, "2026-11-01", "2026-11-05") });
+    expect((await text(page, "#fc-stale")) === "Прогнозата е базирана на цената от предходния месец" && await page.$eval("#fc-stale", (e) => !e.hidden && e.offsetHeight > 0), "bg note: " + await text(page, "#fc-stale"));
+    await page.click('.lang button[data-lang="en"]'); await settle(200);
+    expect((await text(page, "#fc-stale")) === "The forecast is based on the previous month's price", "en note: " + await text(page, "#fc-stale"));
+    await page.$eval("#override", (e) => { e.value = "70"; e.dispatchEvent(new Event("input", { bubbles: true })); }); await settle(200);
+    expect(await page.$eval("#fc-stale", (e) => e.hidden), "a typed price hides it");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    const cur = await open({ width: 412, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    expect(await cur.$eval("#fc-stale", (e) => e.hidden), "October price is current on 17 October: no note");
+    await cur.close2();
+  });
   await test("sanity", "N44 sample data: offered while the history is empty, fills the last 12 months, a strip while it shows; Wipe removes only the sample months, with undo", async () => {
     // No readings and no months: an empty chart without an empty readout box under it.
     const bare = await open({ width: 390, storage: { "gas-bill-history-view": { chart: true } } });

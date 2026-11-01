@@ -171,6 +171,7 @@
   .fc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .fc-big { font-size: 2.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--flame); }
   .fc-sub { color: var(--muted); font-size: 0.95rem; }
+  .fc-stale { color: var(--amber); font-weight: 600; font-size: 0.85rem; margin-top: 4px; }
   /* Forecast compared with the same month last year, then with last month */
   .cmp { display: grid; gap: 2px; padding-top: 8px; border-top: 1px solid var(--line); }
   .cmp-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; align-items: baseline; gap: 10px; width: 100%; min-height: 36px; font: inherit; color: var(--fg); background: none; border: 0; padding: 4px 0; text-align: left; cursor: pointer; }
@@ -1021,6 +1022,7 @@
     </div>
     <div class="fc-big eur num" id="out-fc-eur">–</div>
     <div class="fc-sub bgn num" id="out-fc-bgn">–</div>
+    <div class="fc-stale" id="fc-stale" hidden></div>
     <div class="cmp" id="cmp" hidden></div>
     <div class="sofar">
       <span class="sofar-main"><span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
@@ -1151,6 +1153,7 @@
       priceFrom: "от {d}",
       tariffHide: "Скрий",
       staleShort: "цената е от {prev}",
+      fcStale: "Прогнозата е базирана на цената от предходния месец",
       staleShortNoHistory: "текуща цена",
       billLink: "последната сметка",
       billAlt: "Сметката на Овергаз: таблицата с показанията е оградена, а колоната „Ново“ е показана отблизо",
@@ -1359,6 +1362,7 @@
       priceFrom: "from {d}",
       tariffHide: "Hide",
       staleShort: "price from {prev}",
+      fcStale: "The forecast is based on the previous month's price",
       staleShortNoHistory: "current price",
       billLink: "last bill",
       billAlt: "An Overgas bill: the meter table is outlined and the “Ново” (new) column is shown close up",
@@ -1798,6 +1802,7 @@
   let cmpInfo = null, cmpHook = null;
   function render() {
     cmpInfo = null;
+    $("fc-stale").hidden = true;
     if (cmpHook) cmpHook();
     if (!$("mh-panel").hidden) renderMonths();
     document.querySelectorAll(".clr").forEach((b) => { b.hidden = !$(b.dataset.clear).value; });
@@ -1916,6 +1921,8 @@
       $("out-days").classList.remove("days"); $("tl-day").textContent = "";
       return;
     }
+    // Overgas hasn't uploaded this month's price yet: say which month's price the forecast uses.
+    if (tariffSummary.stale && tariffSummary.prev) { $("fc-stale").textContent = t("fcStale"); $("fc-stale").hidden = false; }
     cmpInfo = { ym: v.startDate.slice(0, 7), m3: r.fc.m3, gross: r.fc.gross };
     if (cmpHook) cmpHook();
   }
