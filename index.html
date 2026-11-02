@@ -1227,6 +1227,7 @@
       mhEditCol: "Редакция",
       mhAria: "Месечно потребление в {unit} от {from} до {to}",
       mhTipBill: "сметка {b}",
+      mhTipCalc: "{m3} · по показания {v}",
       mhAvgEurOpt: "Средно €/ден",
       mhAvgM3Opt: "Средно m³/ден",
       mhDay: "ден",
@@ -1436,6 +1437,7 @@
       mhEditCol: "Edit",
       mhAria: "Monthly use in {unit} from {from} to {to}",
       mhTipBill: "bill {b}",
+      mhTipCalc: "{m3} · from readings {v}",
       mhAvgEurOpt: "Average €/day",
       mhAvgM3Opt: "Average m³/day",
       mhDay: "day",
@@ -2628,9 +2630,13 @@
       $("mh-cross").setAttribute("visibility", mark ? "visible" : "hidden");
       $("mh-dot").setAttribute("cx", x(best)); $("mh-dot").setAttribute("cy", y(p.v)); $("mh-dot").setAttribute("visibility", mark ? "visible" : "hidden");
       const now = p.part ? monthCost(p.m, so) : null;
-      tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") + "<br><b>" + (p.part ? "≈ " : "") + num(p.m3, 0, p.part ? 0 : 2) + " m³ · " + (p.c ? both(p.c.gross) : "–") + "</b>" +
+      // A month with a bill leads with the bill; the amount worked out from the readings follows, labelled as such.
+      const m3c = num(p.m3, 0, p.part ? 0 : 2) + " m³", calcAmt = p.c ? both(p.c.gross) : "–";
+      const hasBill = p.r && p.r.bill != null;
+      tip.innerHTML = mLabel(p.m) + (p.part ? " · " + t("mhTipFc") : "") +
+        (hasBill ? "<br><b>" + t("mhTipBill", { b: both(billEur(p.r)) }) + "</b><br>" + t("mhTipCalc", { m3: m3c, v: calcAmt })
+          : "<br><b>" + (p.part ? "≈ " : "") + m3c + " · " + calcAmt + "</b>") +
         (p.part ? "<br>" + t("mhTipNow", { d: ddmm($("cur-date").value), v: num(so, 0, 2) + " m³ · " + (now ? both(now.gross) : "–") }) : "") +
-        (p.r && p.r.bill != null ? "<br>" + t("mhTipBill", { b: both(billEur(p.r)) }) : "") +
         (inAvg ? "<br><b>" + (p.part ? "≈ " : "") + t("mhTipAvg", { v: avgM3 ? num(p.v, 0, 2) + " m³" : both(p.v) }) + "</b>" : "") +
         (isPeak(p) ? '<br><span class="peak-note">' + t("tipPeak") + "</span>" : "") +
         (isLow(p) ? '<br><span class="low-note">' + t("tipLow") + "</span>" : "");

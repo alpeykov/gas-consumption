@@ -780,6 +780,22 @@ async function sanity() {
     expect(await cur.$eval("#fc-stale", (e) => e.hidden), "October price is current on 17 October: no note");
     await cur.close2();
   });
+  await test("sanity", "N47 history tooltip: a month with a bill shows the bill first, in bold; the amount from the readings follows, labelled (bg, en)", async () => {
+    const H = { "2026-09": { start: 2429, end: 2445, date: "2026-09-30", bill: 15 }, "2026-08": { start: 2420, end: 2429, date: null, bill: null } };
+    const page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "eur" } } });
+    await page.click("#history-btn"); await settle(300);
+    const at = async (m) => { const b = await page.$eval("#mh-svg .mh-pt[data-m='" + m + "']", (c) => { const r = c.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }); await page.mouse.move(b[0], b[1]); await settle(100); return text(page, "#mh-tip"); };
+    let tip = await at("2026-09");
+    expect(tip.startsWith("Септември 2026сметка 15,00 € / 29,34 лв.16 m³ · по показания 13,61 € / 26,62 лв."), "bill first: " + tip);
+    expect((await page.$eval("#mh-tip b", (b) => b.textContent)) === "сметка 15,00 € / 29,34 лв.", "the bill is the bold line");
+    tip = await at("2026-08");
+    expect(tip.startsWith("Август 20269 m³ · ") && !tip.includes("по показания") && !tip.includes("сметка"), "no bill: unchanged: " + tip);
+    await page.click('.lang button[data-lang="en"]'); await settle(300);
+    tip = await at("2026-09");
+    expect(tip.startsWith("September 2026bill €15.00 / 29.34 lv.16 m³ · from readings €13.61 / 26.62 lv."), "en: " + tip);
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N44 sample data: offered while the history is empty, fills the last 12 months, a strip while it shows; Wipe removes only the sample months, with undo", async () => {
     // No readings and no months: an empty chart without an empty readout box under it.
     const bare = await open({ width: 390, storage: { "gas-bill-history-view": { chart: true } } });
