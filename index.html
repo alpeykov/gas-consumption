@@ -2072,7 +2072,9 @@
   const CHART_KEY = "gas-bill-chart-v1";
   const chartPrefs = () => { try { return JSON.parse(localStorage.getItem(CHART_KEY)) || {}; } catch (e) { return {}; } };
   const saveChartPrefs = () => {
-    try { localStorage.setItem(CHART_KEY, JSON.stringify({ from: +$("chart-from").value, to: +$("chart-to").value, cur: $("chart-cur").value })); } catch (e) {}
+    // "To" on the latest year is kept as "latest", so it moves on by itself when a new year's prices arrive.
+    const opts = $("chart-to").options, latest = opts.length && $("chart-to").value === opts[opts.length - 1].value;
+    try { localStorage.setItem(CHART_KEY, JSON.stringify({ from: +$("chart-from").value, to: latest ? "latest" : +$("chart-to").value, cur: $("chart-cur").value })); } catch (e) {}
   };
   { const c = chartPrefs().cur; if (c === "EUR" || c === "BGN") $("chart-cur").value = c; }
   function fillYearSelects() {
@@ -2084,7 +2086,8 @@
     };
     const last = years[years.length - 1];
     fill($("chart-from"), saved.from, years.includes(2020) ? 2020 : years[0]);
-    fill($("chart-to"), saved.to, last);
+    fill($("chart-to"), saved.to === "latest" ? last : saved.to, last);
+    if (saved.to === last) saveChartPrefs(); // saved before 2.10.5 as a plain year: it now follows the latest year
   }
   const niceStep = (range) => {
     const raw = range / 5, pow = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -2520,7 +2523,8 @@
       sel.value = all.includes(val) ? val : fallback;
     };
     fill($("mh-from"), mhView.from, ymAdd(curYm, -12));
-    fill($("mh-to"), mhView.to, curYm);
+    if (mhView.to === curYm) { mhView.to = "current"; saveMhView(); } // saved before 2.10.5 as a plain month
+    fill($("mh-to"), mhView.to === "current" ? curYm : mhView.to, curYm);
     if (mhView.unit === "avg") mhView.unit = "avgEur"; // 2.8.x had one "average" view, € per m³
     $("mh-unit").value = ["eur", "bgn", "m3", "avgEur", "avgM3"].includes(mhView.unit) ? mhView.unit : "eur";
     const from = $("mh-from").value, to = $("mh-to").value;
@@ -2771,7 +2775,9 @@
   $("mh-chart-toggle").addEventListener("click", () => { mhView.chart = !mhView.chart; saveMhView(); renderMonths(); });
   $("mh-list-toggle").addEventListener("click", () => { mhView.list = !mhView.list; saveMhView(); renderMonths(); });
   ["mh-unit", "mh-from", "mh-to"].forEach((id) => $(id).addEventListener("change", () => {
-    mhView.unit = $("mh-unit").value; mhView.from = $("mh-from").value; mhView.to = $("mh-to").value; saveMhView(); drawMonths();
+    mhView.unit = $("mh-unit").value; mhView.from = $("mh-from").value;
+    // "To" on this month is kept as "current", so it moves on to the new month by itself when this one ends.
+    mhView.to = $("mh-to").value === ymOf(todayStr()) ? "current" : $("mh-to").value; saveMhView(); drawMonths();
   }));
   addEventListener("resize", () => { if (!$("mh-panel").hidden && mhView.chart) drawMonths(); });
   const openMonths = (open) => {

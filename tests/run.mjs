@@ -1066,6 +1066,40 @@ async function sanity() {
     expect((await text(page, "#chart-sub")).includes("лв./MWh"), "chart drawn in the saved currency");
     await page.close2();
   });
+  await test("sanity", "N48 charts: 'to' on the current month / latest year follows the calendar; an older 'to' stays put", async () => {
+    const H = { "2026-08": { start: 2420, end: 2429, date: null, bill: null }, ...SEPT };
+    const view = () => JSON.parse(localStorage.getItem("gas-bill-history-view"));
+    let page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "eur" } } });
+    await page.click("#history-btn"); await settle(300);
+    await page.select("#mh-to", "2026-09"); await page.select("#mh-to", "2026-10");
+    expect((await page.evaluate(view)).to === "current", "this month is saved as 'current': " + JSON.stringify(await page.evaluate(view)));
+    const saved = await page.evaluate(view);
+    await page.close2();
+    page = await open({ width: 390, now: "2026-11-03T09:00:00", storage: { ...readings(2475, 2480, "2026-11-01", "2026-11-03"), "gas-bill-months-v1": H, "gas-bill-history-view": saved } });
+    await page.click("#history-btn"); await settle(300);
+    expect((await page.$eval("#mh-to", (e) => e.value)) === "2026-11", "a month later 'to' is November: " + await page.$eval("#mh-to", (e) => e.value));
+    await page.close2();
+    page = await open({ width: 390, now: "2026-11-03T09:00:00", storage: { ...readings(2475, 2480, "2026-11-01", "2026-11-03"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "eur", from: "2026-01", to: "2026-09" } } });
+    await page.click("#history-btn"); await settle(300);
+    expect((await page.$eval("#mh-to", (e) => e.value)) === "2026-09", "an older 'to' stays: " + await page.$eval("#mh-to", (e) => e.value));
+    await page.close2();
+    // Saved before 2.10.5 as this month: it becomes "current" too.
+    page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-history-view": { chart: true, unit: "eur", from: "2026-01", to: "2026-10" } } });
+    await page.click("#history-btn"); await settle(300);
+    expect((await page.evaluate(view)).to === "current", "an old plain this-month 'to' becomes 'current'");
+    await page.close2();
+    // Price chart: the latest year is saved as "latest" and opens on whatever the latest year is.
+    page = await open({ storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-chart-v1": { from: 2020, to: "latest", cur: "EUR" } } });
+    await page.click("#chart-btn"); await settle(1200);
+    const last = await page.$eval("#chart-to", (s) => s.options[s.options.length - 1].value);
+    expect((await page.$eval("#chart-to", (e) => e.value)) === last, "'latest' opens on " + last);
+    await page.select("#chart-to", "2023"); await page.select("#chart-to", last);
+    expect((await page.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-chart-v1")).to)) === "latest", "choosing the latest year saves 'latest'");
+    await page.select("#chart-to", "2023");
+    expect((await page.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-chart-v1")).to)) === 2023, "an older year is saved as itself");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N8 update bar: What's new and close", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.evaluate(() => { document.getElementById("update-bar").hidden = false; });

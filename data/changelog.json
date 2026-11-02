@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.5",
+      "date": "2026-11-02",
+      "bg": [
+        "Графиките запомнят периода „от – до“. Ако „до“ е текущият месец (или последната година в „Цени на Овергаз“), с новия месец (година) той се премества сам."
+      ],
+      "en": [
+        "The charts remember their “from – to” period. When “to” is the current month (or the latest year in “Overgas price history”), it moves on by itself with the new month (year)."
+      ]
+    },
+    {
       "version": "2.10.4",
       "date": "2026-11-02",
       "bg": [
