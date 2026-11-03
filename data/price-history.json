@@ -325,6 +325,10 @@
     "2026-10": {
       "priceEur": 68.9,
       "pdf": "https://www.overgas.bg/wp-content/uploads/2026/10/TSENA-SAJT_red.pdf"
+    },
+    "2026-11": {
+      "priceEur": 83.53,
+      "pdf": "https://www.overgas.bg/wp-content/uploads/2026/11/TSENA-SAJT_red.pdf"
     }
   }
 }
