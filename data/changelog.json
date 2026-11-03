@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.6",
+      "date": "2026-11-03",
+      "bg": [
+        "„Моето потребление“: ако при редакция на месец крайното показание е по-малко от началното, полето „m³ за месеца“ остава празно вместо отрицателно."
+      ],
+      "en": [
+        "“My usage history”: when editing a month, an end reading below the start reading leaves “m³ for the month” empty instead of negative."
+      ]
+    },
+    {
       "version": "2.10.5",
       "date": "2026-11-02",
       "bg": [

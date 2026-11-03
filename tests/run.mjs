@@ -446,6 +446,9 @@ async function sanity() {
     expect(r[1][1] === "19" && r[1][3].startsWith("16,50 €32,27 лв.") && /[+−]\d/.test(r[1][3]), "row updated: " + r[1].join(" | "));
     await page.click(".mh-ed[data-m='2026-09']");
     await setVal(page, "#mh-end", "2420");
+    expect((await page.$eval("#mh-m3", (e) => e.value)) === "", "end below start leaves m³ empty, not negative: " + await page.$eval("#mh-m3", (e) => e.value));
+    await setVal(page, "#mh-m3", "-5");
+    expect((await page.$eval("#mh-end", (e) => e.value)) === "2420", "negative m³ does not move the end reading");
     await page.click("#mh-save");
     expect(!(await page.$eval("#mh-msg", (e) => e.hidden)) && (await monthsOf(page))["2026-09"].end === 2449, "end below start is refused");
     await page.click("#mh-del");

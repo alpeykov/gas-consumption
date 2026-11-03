@@ -2713,8 +2713,9 @@
     const id = ev.target.id, s = mhNum($("mh-start").value), e = mhNum($("mh-end").value);
     if ($("mh-m3")) {
       // m³ moves the end reading; a reading recalculates m³.
-      if (id === "mh-m3") { const m3 = mhNum($("mh-m3").value); if (isFinite(s) && isFinite(m3)) $("mh-end").value = String(Math.round((s + m3) * 1000) / 1000); }
-      else if ((id === "mh-start" || id === "mh-end") && isFinite(s) && isFinite(e)) $("mh-m3").value = String(Math.round((e - s) * 1000) / 1000);
+      // An end below the start (or a missing reading) leaves m³ empty instead of negative.
+      if (id === "mh-m3") { const m3 = mhNum($("mh-m3").value); if (isFinite(s) && isFinite(m3) && m3 >= 0) $("mh-end").value = String(Math.round((s + m3) * 1000) / 1000); }
+      else if (id === "mh-start" || id === "mh-end") $("mh-m3").value = isFinite(s) && isFinite(e) && e >= s ? String(Math.round((e - s) * 1000) / 1000) : "";
     }
     // A bill typed in one currency fills the other converted; both stay editable and the last typed one counts.
     if (id === "mh-bill" || id === "mh-bill-bgn") {
