@@ -1715,8 +1715,9 @@
     const used = v.curReading - v.startReading;
     const pricePerKwh = v.price / 1000;
     const grossPerKwh = pricePerKwh * (1 + v.vat / 100);
-    // Both readings on the same day but gas already used: count it as day 1, so there is a rate to forecast from.
-    const days = elapsed > 0 ? elapsed : used > 0 ? 1 : 0;
+    // The day of the current reading counts as begun: a reading on the 4th divides by 4 days, whatever the hour.
+    // A reading on the first day of the next period covers the whole period. Same day, nothing used yet: no rate.
+    const days = elapsed > 0 ? Math.min(elapsed + 1, periodDays) : used > 0 ? 1 : 0;
     const perDay = days > 0 ? used / days : 0;
     const fcM3 = days > 0 ? perDay * periodDays : used;
     // Until November 2024 Overgas also charged a fixed supply fee once per monthly bill.
@@ -1913,7 +1914,7 @@
     $("out-fc-bgn").textContent = bgn(r.fc.bgn) + " · " + n1(r.fc.m3, "m³");
     $("out-forecast-label").textContent = t("forecastTo", { date: fcDate(r.end) });
     // Timeline of the billing period: its start and end dates, the date of today's reading at the marker.
-    const pct = Math.min(100, (r.elapsed / r.periodDays) * 100);
+    const pct = Math.min(100, (r.days / r.periodDays) * 100);
     $("out-bar").style.width = pct + "%";
     $("tl-today").hidden = false;
     $("tl-today").style.left = "calc(" + pct + "% - 1px)";

@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.15",
+      "date": "2026-11-04",
+      "bg": [
+        "Денят на текущото показание се брои като започнат: показание на 4-ти от месеца дели потреблението на 4 дни, независимо от часа. Средното на ден и прогнозата вече не излизат завишени."
+      ],
+      "en": [
+        "The day of the current reading counts as begun: a reading on the 4th divides usage by 4 days, whatever the hour. The daily average and the forecast are no longer overstated."
+      ]
+    },
+    {
       "version": "2.10.14",
       "date": "2026-11-04",
       "bg": [
