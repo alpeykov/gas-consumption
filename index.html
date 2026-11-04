@@ -697,8 +697,17 @@
   .update-notes ul { margin: 0 0 10px; padding-left: 18px; }
   .update-bar button:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
   .app-version { color: var(--muted); font-size: 0.8rem; text-align: center; grid-column: 1 / -1; }
-  /* Phones: smaller type so the forecast, the cost so far and both readings fit on the first screen;
-     the forecast and the cost so far sit side by side. */
+  /* The cost so far (left) and the forecast (right) side by side at the top of the card (all widths); the comparisons come under them. */
+  .bill { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 24px; grid-template-rows: auto auto 1fr; }
+  .bill > * { grid-column: 1 / -1; }
+  .bill > .fc-head, .bill > #out-fc-eur, .bill > #out-fc-bgn { grid-column: 2; }
+  /* A taller cost-so-far column leaves its extra height under the forecast, not between its lines. */
+  .bill > #out-fc-bgn { align-self: start; }
+  .bill > .sofar { grid-column: 1; grid-row: 1 / span 3; border-top: 0; border-right: 1px solid var(--line); padding: 0 24px 0 0; margin: 0;
+    flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: stretch; gap: 4px; }
+  .bill .sofar-main { gap: 6px; }
+  .bill .sofar-val b { display: block; font-size: 2.3rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px; }
+  /* Phones: smaller type so the forecast, the cost so far and both readings fit on the first screen. */
   @media (max-width: 460px) {
     body { font-size: 13.5px; }
     .wrap { padding-block: 12px 40px; gap: 12px; grid-template-columns: minmax(0, 1fr); }
@@ -711,15 +720,10 @@
     .head-sep { display: none; }
     .head-line .head-link { justify-self: start; padding: 3px 0; }
     .menu-btn { width: 36px; height: 36px; }
-    .bill { padding: 14px 16px; gap: 6px; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 14px; }
-    .bill > * { grid-column: 1 / -1; }
-    .bill > .fc-head, .bill > #out-fc-eur, .bill > #out-fc-bgn { grid-column: 1; }
-    /* A taller cost-so-far column leaves its extra height under the forecast, not between its lines. */
-    .bill { grid-template-rows: auto auto 1fr; }
-    .bill > #out-fc-bgn { align-self: start; }
-    .bill > .sofar { grid-column: 2; grid-row: 1 / span 3; border-top: 0; border-left: 1px solid var(--line); padding: 0 0 0 14px; margin: 0;
-      flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: stretch; gap: 2px; }
-    .bill .sofar-val b { display: block; font-size: 1.2rem; }
+    .bill { padding: 14px 16px; gap: 6px; column-gap: 14px; }
+    .bill > .sofar { padding-right: 14px; gap: 2px; }
+    .bill .sofar-main { gap: 2px; }
+    .bill .sofar-val b { font-size: 1.45rem; margin-bottom: 0; }
     .bill .fc-head .label, .bill .sofar .label { font-size: 0.62rem; }
     .bill .fc-big { font-size: 1.9rem; }
     .bill .fc-sub { font-size: 0.78rem; }
@@ -779,7 +783,8 @@
   @media (max-width: 300px) {
     /* Too narrow for two sums side by side: the cost so far goes back under the forecast. */
     .bill { grid-template-columns: minmax(0, 1fr); }
-    .bill > .sofar { grid-column: 1; grid-row: auto; border-left: 0; border-top: 1px solid var(--line); padding: 8px 0 0; }
+    .bill > .fc-head, .bill > #out-fc-eur, .bill > #out-fc-bgn { grid-column: 1; }
+    .bill > .sofar { grid-column: 1; grid-row: auto; border-right: 0; border-top: 1px solid var(--line); padding: 8px 0 0; }
   }
   /* "More below": a fade at the bottom edge with a small chip while there is more page under the screen. */
   .scroll-hint {
@@ -1028,13 +1033,13 @@
     <div class="fc-big eur num" id="out-fc-eur">–</div>
     <div class="fc-sub bgn num" id="out-fc-bgn">–</div>
     <div class="fc-stale" id="fc-stale" hidden></div>
-    <div class="cmp" id="cmp" hidden></div>
     <div class="sofar">
       <span class="sofar-main"><span class="label" data-i18n="usedSoFar">Цена за текуща консумация</span>
         <span class="sofar-val"><b class="eur num" id="out-now-eur">–</b> <span class="bgn num" id="out-now-bgn">–</span></span>
         <span class="updated-note" id="now-updated" hidden></span></span>
       <span class="num muted-sm" id="out-rate">–</span>
     </div>
+    <div class="cmp" id="cmp" hidden></div>
     <div class="tl" aria-hidden="true">
       <div class="tl-track"><span class="tl-fill" id="out-bar" style="width:0%"></span></div>
       <span class="tl-today" id="tl-today" hidden><span class="tl-today-label" id="tl-today-label"></span></span>

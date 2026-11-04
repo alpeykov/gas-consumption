@@ -908,11 +908,11 @@ async function sanity() {
     const page = await open({ width: 412, height: 790, storage: { ...readings(2445, 2489, "2026-10-01", "2026-10-22"), "gas-bill-months-v1": H, "gas-bill-breakdown-open": "1" } });
     const r = await page.evaluate(() => {
       const b = (s) => document.querySelector(s).getBoundingClientRect();
-      return { readings: b(".readings").bottom, h: innerHeight, fc: b("#out-fc-eur").top, now: b("#out-now-eur").top, fcR: b("#out-fc-eur").right, nowL: b("#out-now-eur").left,
+      return { readings: b(".readings").bottom, h: innerHeight, fc: b("#out-fc-eur").top, now: b("#out-now-eur").top, fcL: b("#out-fc-eur").left, nowR: b("#out-now-eur").right,
         wide: document.documentElement.scrollWidth > innerWidth, link: !!b("#head-tariff").height };
     });
     expect(r.readings <= r.h, "both readings above the fold: " + r.readings + " / " + r.h);
-    expect(r.nowL > r.fcR && Math.abs(r.now - r.fc) < 30, "forecast and cost so far side by side: " + JSON.stringify(r));
+    expect(r.nowR < r.fcL && Math.abs(r.now - r.fc) < 30, "cost so far (left) and forecast (right) side by side: " + JSON.stringify(r));
     expect(!r.wide && r.link, "no sideways scroll; the tariff link stays");
     expect(!(await page.$eval("#scroll-hint", (e) => e.hidden)) && (await text(page, "#scroll-more")) === "" && (await page.$eval("#scroll-more", (e) => e.getAttribute("aria-label"))) === "Още отдолу", "hint (an arrow only) shown at the top");
     expect(await page.$eval("#scroll-hint-up", (e) => e.hidden), "no up arrow at the top");
@@ -953,7 +953,7 @@ async function sanity() {
     await sp.close2();
     // Narrow phones (320 px, e.g. with display zoom) keep the two sums side by side.
     const n = await open({ width: 320, height: 640, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
-    expect(await n.evaluate(() => document.getElementById("out-now-eur").getBoundingClientRect().left > document.getElementById("out-fc-eur").getBoundingClientRect().right && document.documentElement.scrollWidth <= innerWidth), "side by side at 320 px");
+    expect(await n.evaluate(() => document.getElementById("out-now-eur").getBoundingClientRect().right < document.getElementById("out-fc-eur").getBoundingClientRect().left && document.documentElement.scrollWidth <= innerWidth), "side by side at 320 px");
     await n.close2();
     // Desktop with everything on screen: no hint.
     const d = await open({ width: 1280, height: 2000, storage: readings(2445, 2489, "2026-10-01", "2026-10-22") });
@@ -1148,6 +1148,21 @@ async function sanity() {
     await page.click("#cmp .cmp-tab[data-tab='bill']");
     expect((await page.$$("#cmp .cmp-row[data-m='2026-09']")).length === 1 && !(await rows(page)).length, "Bill tab: the history rows: " + await text(page, "#cmp"));
     await page.close2();
+  });
+  await test("sanity", "N50 forecast card: the cost so far (left) and the forecast (right) at the same level, desktop and phone; larger cost so far on desktop; the comparisons under both", async () => {
+    for (const width of [1280, 390]) {
+      const page = await open({ width, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+      await settle(800);
+      const g = await page.evaluate(() => {
+        const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+        const fl = r("#out-forecast-label"), fe = r("#out-fc-eur"), sf = r(".bill .sofar"), cmp = r("#cmp");
+        return { sameTop: Math.abs(fl.top - sf.top) < 6, leftOf: sf.right <= fe.left, below: cmp.top >= Math.max(fe.bottom, sf.bottom), size: parseFloat(getComputedStyle(document.getElementById("out-now-eur")).fontSize) };
+      });
+      expect(g.sameTop && g.leftOf && g.below, width + "px: " + JSON.stringify(g));
+      expect(width < 460 || g.size >= 32, "desktop: the cost so far is large: " + g.size + "px");
+      expect(!page.errors.length, page.errors.join(" | "));
+      await page.close2();
+    }
   });
   await test("sanity", "N8 update bar: What's new and close", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
