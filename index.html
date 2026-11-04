@@ -185,6 +185,11 @@
   .cmp-row[aria-expanded="true"] .cmp-chev { transform: rotate(90deg); }
   .cmp-det { margin: 0 0 4px calc(4.6em + 10px); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .cmp-det button { font: inherit; font-weight: 700; color: var(--flame); background: none; border: 0; padding: 4px 0 0; cursor: pointer; display: block; }
+  /* Underlined tabs, so they don't read as one more comparison chip. */
+  .cmp-tabs { display: flex; gap: 18px; flex-basis: 100%; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+  .cmp-tab { font: inherit; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 4px 2px 6px; min-height: 30px; cursor: pointer; }
+  .cmp-tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--flame); }
+  .cmp .cmp-empty { margin-left: 0; flex-basis: 100%; }
   .sofar { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); margin-top: 4px; }
   .sofar-main { display: grid; gap: 2px; }
   .sofar-val b { font-size: 1.45rem; font-weight: 700; color: var(--fg); }
@@ -1223,7 +1228,9 @@
       cmpDet: "≈ {m3} срещу {m3b} · {e} срещу {eb}",
       cmpBillTag: " (по сметка)",
       cmpOpen: "Моето потребление ›",
-      cmpPriceVs: "цена спрямо {month}",
+      cmpTabBill: "Сметка",
+      cmpTabPrice: "Цена",
+      cmpNoBill: "Добавете месеци в „Моето потребление“, за да сравните сметката със същия месец миналата година и с предходния.",
       cmpPriceDet: "{p} срещу {pb} с ДДС",
       cmpPriceOpen: "Цени на Овергаз ›",
       mhList: "Записани месеци ({n})",
@@ -1436,7 +1443,9 @@
       cmpDet: "≈ {m3} vs {m3b} · {e} vs {eb}",
       cmpBillTag: " (bill)",
       cmpOpen: "My usage history ›",
-      cmpPriceVs: "price vs {month}",
+      cmpTabBill: "Bill",
+      cmpTabPrice: "Price",
+      cmpNoBill: "Add months in “My usage history” to compare the bill with the same month last year and with last month.",
       cmpPriceDet: "{p} vs {pb} incl. VAT",
       cmpPriceOpen: "Overgas price history ›",
       mhList: "Saved months ({n})",
@@ -2855,9 +2864,11 @@
   });
   syncScrollHint();
 
-  // The forecast against the same month last year (first) and last month (second), each only when it is in the history,
-  // then the Overgas price against the same two months. By the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
-  const cmpOpen = new Set();
+  // Two tabs. "Bill": the forecast against the same month last year (first) and last month (second), each only when it is in the history.
+  // "Price": the Overgas price against the same two months. The chosen tab is remembered. Bill rows go by the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
+  const cmpOpen = new Set(), CMP_TAB_KEY = "gas-bill-cmp-tab";
+  let cmpTab = null;
+  try { cmpTab = localStorage.getItem(CMP_TAB_KEY); } catch (e) {}
   function renderCompare() {
     const box = $("cmp"), f = cmpInfo;
     const amount = (m) => { const r = months[m]; if (r.bill != null) return billEur(r); const c = monthCost(m, r.end - r.start); return c ? c.gross : null; };
@@ -2869,6 +2880,10 @@
       .map((m) => ({ m, c: monthCost(m, 0) })).filter((x) => x.c && x.c.mwhVat > 0) : [];
     box.hidden = !refs.length && !prices.length;
     if (box.hidden) { box.innerHTML = ""; return; }
+    // Without price rows there is nothing to switch to: the bill rows alone, as before.
+    const tab = !prices.length ? "bill" : cmpTab === "bill" || cmpTab === "price" ? cmpTab : refs.length ? "bill" : "price";
+    const tabs = prices.length ? '<div class="cmp-tabs" role="tablist">' + [["bill", "cmpTabBill"], ["price", "cmpTabPrice"]].map(([k, l]) =>
+      '<button type="button" role="tab" class="cmp-tab" data-tab="' + k + '" aria-selected="' + (k === tab) + '">' + t(l) + "</button>").join("") + "</div>" : "";
     const pctOf = (a, b) => Math.round((a - b) / b * 100);
     const head = (key, pct, what) => {
       const cls = pct > 0 ? "cmp-up" : pct < 0 ? "cmp-down" : "cmp-same", open = cmpOpen.has(key);
@@ -2877,15 +2892,17 @@
         '</span><span class="cmp-what">' + what + '</span><span class="cmp-chev" aria-hidden="true">›</span></button>' +
         '<p class="cmp-det" id="cmp-det-' + key + '"' + (open ? "" : " hidden") + ">";
     };
-    box.innerHTML = refs.map((m) => {
+    const billRows = refs.length ? refs.map((m) => {
       const r = months[m], m3b = r.end - r.start, eb = amount(m);
       return head(m, pctOf(f.gross, eb), t("cmpVs", { month: monthLabel(m) })) +
         t("cmpDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³", e: eur(f.gross), eb: eur(eb) + (r.bill != null ? t("cmpBillTag") : "") }) +
         '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
-    }).join("") + prices.map(({ m, c }) =>
-      head("p" + m, pctOf(cur.mwhVat, c.mwhVat), t("cmpPriceVs", { month: monthLabel(m) })) +
+    }).join("") : '<p class="cmp-det cmp-empty">' + t("cmpNoBill") + '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
+    const priceRows = () => prices.map(({ m, c }) =>
+      head("p" + m, pctOf(cur.mwhVat, c.mwhVat), t("cmpVs", { month: monthLabel(m) })) +
       t("cmpPriceDet", { p: eur(cur.mwhVat) + "/MWh", pb: eur(c.mwhVat) + "/MWh" }) +
       '<button type="button" class="cmp-prices">' + t("cmpPriceOpen") + "</button></p>").join("");
+    box.innerHTML = tabs + (tab === "price" ? priceRows() : billRows);
   }
   $("cmp").addEventListener("click", (ev) => {
     if (ev.target.closest(".cmp-hist")) {
@@ -2893,6 +2910,13 @@
       if (!mhView.chart) { mhView.chart = true; saveMhView(); }
       if ($("mh-panel").hidden) openMonths(true); else renderMonths();
       setTimeout(() => $("mh-panel").scrollIntoView({ block: "start" }));
+      return;
+    }
+    const tb = ev.target.closest(".cmp-tab");
+    if (tb) {
+      cmpTab = tb.dataset.tab;
+      try { localStorage.setItem(CMP_TAB_KEY, cmpTab); } catch (e) {}
+      renderCompare();
       return;
     }
     if (ev.target.closest(".cmp-prices")) {

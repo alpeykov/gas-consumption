@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.8",
+      "date": "2026-11-04",
+      "bg": [
+        "Сравненията под прогнозата са в два таба: „Сметка“ (прогнозната сума спрямо същия месец миналата година и предходния месец) и „Цена“ (цената на Овергаз за същите месеци). Избраният таб се запомня."
+      ],
+      "en": [
+        "The comparisons under the forecast are in two tabs: “Bill” (the forecast amount against the same month last year and last month) and “Price” (the Overgas price for the same months). The chosen tab is remembered."
+      ]
+    },
+    {
       "version": "2.10.7",
       "date": "2026-11-04",
       "bg": [
