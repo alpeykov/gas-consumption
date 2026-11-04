@@ -1164,6 +1164,30 @@ async function sanity() {
       await page.close2();
     }
   });
+  await test("sanity", "N51 ☰ menu: a down arrow while the menu goes on below, an up arrow once scrolled; a tap scrolls the menu; gone when closed or when it all fits", async () => {
+    // A short screen (or enlarged text) where the menu doesn't fit.
+    let page = await open({ width: 412, height: 560, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    const vis = (id) => page.$eval("#" + id, (e) => !e.hidden && e.getBoundingClientRect().height > 0);
+    expect(!(await vis("menu-hint")) && !(await vis("menu-hint-up")), "no menu arrows while the menu is closed");
+    await page.click("#menu-btn"); await settle(500);
+    expect((await vis("menu-hint")) && !(await vis("menu-hint-up")), "open: down arrow only");
+    const w = await page.evaluate(() => [document.getElementById("menu-hint").getBoundingClientRect().width, document.getElementById("menu").getBoundingClientRect().width]);
+    expect(Math.abs(w[0] - w[1]) < 2, "the arrow strip is as wide as the menu: " + w.join(" / "));
+    await page.evaluate(() => document.getElementById("menu-more").click()); await settle(700);
+    expect((await page.$eval("#menu", (m) => m.scrollTop)) > 100 && (await vis("menu-hint-up")), "a tap scrolls the menu; up arrow shows");
+    await page.evaluate(() => { const m = document.getElementById("menu"); m.scrollTop = m.scrollHeight; }); await settle(300);
+    expect(!(await vis("menu-hint")), "at the bottom: no down arrow");
+    await page.evaluate(() => document.getElementById("menu-up").click()); await settle(700);
+    expect((await vis("menu-hint")), "scrolled back up: down arrow again");
+    await page.evaluate(() => document.getElementById("menu-close").click()); await settle(500);
+    expect(!(await vis("menu-hint")) && !(await vis("menu-hint-up")), "closed: no arrows");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    page = await open({ width: 1280, height: 1600, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await page.click("#menu-btn"); await settle(500);
+    expect(!(await page.$eval("#menu-hint", (e) => !e.hidden)), "a menu that fits shows no arrow");
+    await page.close2();
+  });
   await test("sanity", "N8 update bar: What's new and close", async () => {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     await page.evaluate(() => { document.getElementById("update-bar").hidden = false; });

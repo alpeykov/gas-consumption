@@ -802,6 +802,9 @@
     top: 0; bottom: auto; align-items: flex-start; padding-bottom: 0; padding-top: calc(8px + env(safe-area-inset-top, 0px));
     height: calc(64px + env(safe-area-inset-top, 0px)); background: linear-gradient(to top, transparent, var(--bg) 85%);
   }
+  /* The same arrows over the ☰ menu while it scrolls: as wide as the menu, fading into its panel colour. */
+  .scroll-hint.in-menu { right: auto; width: min(320px, 86vw); z-index: 37; background: linear-gradient(to bottom, transparent, var(--panel) 85%); }
+  .scroll-hint.in-menu.up { background: linear-gradient(to top, transparent, var(--panel) 85%); }
 </style>
 </head>
 <body>
@@ -1000,6 +1003,8 @@
       <button type="button" class="menu-item" id="menu-guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10l4 4v12H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="guideMenu">Упътване за първо ползване</span></button>
     </div>
   </nav>
+  <div class="scroll-hint up in-menu" id="menu-hint-up" hidden><button type="button" id="menu-up" data-i18n-aria="scrollUp" data-i18n-title="scrollUp" aria-label="Още отгоре" title="Още отгоре"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+  <div class="scroll-hint in-menu" id="menu-hint" hidden><button type="button" id="menu-more" data-i18n-aria="scrollMore" data-i18n-title="scrollMore" aria-label="Още отдолу" title="Още отдолу"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 
   <div class="toast" id="toast" role="status" hidden></div>
   <div class="scroll-hint up" id="scroll-hint-up" hidden><button type="button" id="scroll-up" data-i18n-aria="scrollUp" data-i18n-title="scrollUp" aria-label="Още отгоре" title="Още отгоре"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
@@ -2859,6 +2864,22 @@
   addEventListener("resize", syncScrollHint);
   try { new ResizeObserver(syncScrollHint).observe(document.body); } catch (e) {}
   new MutationObserver(syncScrollHint).observe($("menu-btn"), { attributes: true, attributeFilter: ["aria-expanded"] });
+  // The menu scrolls on its own: the same arrows over it while there is more of it above or below.
+  const syncMenuHint = () => {
+    const m = $("menu"), open = menuOpen();
+    $("menu-hint").hidden = !open || m.scrollHeight - (m.scrollTop + m.clientHeight) <= 40;
+    $("menu-hint-up").hidden = !open || m.scrollTop <= 40;
+  };
+  let menuHintFrame = 0;
+  const queueMenuHint = () => { if (!menuHintFrame) menuHintFrame = requestAnimationFrame(() => { menuHintFrame = 0; syncMenuHint(); }); };
+  $("menu").addEventListener("scroll", syncMenuHint, { passive: true });
+  addEventListener("resize", queueMenuHint);
+  // Panels opening and closing inside the menu change its height.
+  new MutationObserver(queueMenuHint).observe($("menu"), { subtree: true, childList: true, attributes: true, attributeFilter: ["hidden", "class", "aria-expanded"] });
+  new MutationObserver(queueMenuHint).observe($("menu-btn"), { attributes: true, attributeFilter: ["aria-expanded"] });
+  const scrollMenu = (dir) => $("menu").scrollBy({ top: dir * Math.round($("menu").clientHeight * 0.7), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  $("menu-more").addEventListener("click", () => scrollMenu(1));
+  $("menu-up").addEventListener("click", () => scrollMenu(-1));
   $("scroll-more").addEventListener("click", () => {
     const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
     scrollBy({ top: Math.round(innerHeight * 0.7), behavior: smooth ? "smooth" : "auto" });

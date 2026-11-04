@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.12",
+      "date": "2026-11-04",
+      "bg": [
+        "Менюто ☰ също показва стрелка надолу, когато има още отдолу, и стрелка нагоре, когато е превъртяно. Докосване на стрелката превърта менюто."
+      ],
+      "en": [
+        "The ☰ menu also shows a down arrow when there is more below and an up arrow once scrolled. Tapping an arrow scrolls the menu."
+      ]
+    },
+    {
       "version": "2.10.11",
       "date": "2026-11-04",
       "bg": [
