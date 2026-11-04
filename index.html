@@ -2864,8 +2864,9 @@
   });
   syncScrollHint();
 
-  // Two tabs. "Bill": the forecast against the same month last year (first) and last month (second), each only when it is in the history.
-  // "Price": the Overgas price against the same two months. The chosen tab is remembered. Bill rows go by the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
+  // Two tabs. "Price" (first, the default): the Overgas price against the same month last year and last month.
+  // "Bill": the forecast against the same month last year (first) and last month (second), each only when it is in the history.
+  // The chosen tab is remembered. Bill rows go by the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
   const cmpOpen = new Set(), CMP_TAB_KEY = "gas-bill-cmp-tab";
   let cmpTab = null;
   try { cmpTab = localStorage.getItem(CMP_TAB_KEY); } catch (e) {}
@@ -2881,8 +2882,9 @@
     box.hidden = !refs.length && !prices.length;
     if (box.hidden) { box.innerHTML = ""; return; }
     // Without price rows there is nothing to switch to: the bill rows alone, as before.
-    const tab = !prices.length ? "bill" : cmpTab === "bill" || cmpTab === "price" ? cmpTab : refs.length ? "bill" : "price";
-    const tabs = prices.length ? '<div class="cmp-tabs" role="tablist">' + [["bill", "cmpTabBill"], ["price", "cmpTabPrice"]].map(([k, l]) =>
+    // Price comes first and is the default; a tab the user chose is remembered.
+    const tab = !prices.length ? "bill" : cmpTab === "bill" ? "bill" : "price";
+    const tabs = prices.length ? '<div class="cmp-tabs" role="tablist">' + [["price", "cmpTabPrice"], ["bill", "cmpTabBill"]].map(([k, l]) =>
       '<button type="button" role="tab" class="cmp-tab" data-tab="' + k + '" aria-selected="' + (k === tab) + '">' + t(l) + "</button>").join("") + "</div>" : "";
     const pctOf = (a, b) => Math.round((a - b) / b * 100);
     const head = (key, pct, what) => {
