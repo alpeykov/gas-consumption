@@ -1246,9 +1246,11 @@ async function regression() {
     const page = await open({ storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-tariff-open": "1" } });
     await page.click("#menu-btn");
     await page.type("#override", "100"); await settle(100);
-    expect((await text(page, "#final-price")) === "100,00", "typed price used");
+    expect((await text(page, "#final-price")) === "120,00", "typed price used, shown with VAT");
+    expect((await text(page, "#final-net")) === "100,00 €/MWh без ДДС", "price without VAT underneath");
     await page.click("#reset"); await settle(100);
-    expect((await text(page, "#final-price")) === "68,90", "Overgas price back");
+    expect((await text(page, "#final-price")) === "82,68", "Overgas price back (68,90 + 20% VAT)");
+    expect((await text(page, "#final-net")) === "68,90 €/MWh без ДДС", "Overgas price without VAT back");
     await page.close2();
   });
   await test("regression", "R6 chart: September 2026 = 79,07 € / 154,64 лв. per MWh incl. VAT", async () => {

@@ -126,6 +126,7 @@
   .final { display: grid; gap: 2px; }
   .final-price { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 1.6rem; letter-spacing: -0.01em; }
   .final-price small { font-weight: 500; font-size: 0.85rem; color: var(--muted); }
+  .final-net { font-size: 0.8rem; color: var(--muted); }
   .source { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 0.85rem; color: var(--muted); }
   .chip {
     display: inline-flex; align-items: center; gap: 6px;
@@ -852,7 +853,7 @@
           <select id="region"></select>
         </label>
         <div class="final">
-          <span class="label" data-i18n="finalPrice">Крайна цена без ДДС</span>
+          <span class="label" data-i18n="finalPrice">Крайна цена с ДДС</span>
           <span class="final-price num">
             <span id="final-price">–</span><small>€/MWh</small>
             <span class="info" id="stale-info" hidden>
@@ -860,6 +861,7 @@
               <span class="tip" role="tooltip" id="stale-tip"></span>
             </span>
           </span>
+          <span class="final-net num" id="final-net"></span>
         </div>
         <div class="source">
           <span class="chip" id="source-chip"></span>
@@ -1206,7 +1208,7 @@
       close: "Затвори",
       tariffH: "Тарифни настройки",
       region: "Регион",
-      finalPrice: "Крайна цена без ДДС",
+      finalPrice: "Крайна цена с ДДС",
       aboutPrice: "За тази цена",
       refresh: "Провери за нови цени",
       override: "Въведи цена, €/MWh",
@@ -1421,7 +1423,7 @@
       close: "Close",
       tariffH: "Tariff settings",
       region: "Region",
-      finalPrice: "Final price excl. VAT",
+      finalPrice: "Final price incl. VAT",
       aboutPrice: "About this price",
       refresh: "Check for new prices",
       override: "Enter price, €/MWh",
@@ -1792,7 +1794,10 @@
     if (past && !useOverride && !hist && !historyRequested) loadHistory();
     const price = useOverride ? override : hist ? hist.priceEur : region.price;
     const fee = hist && hist.feeEur ? hist.feeEur : 0;
-    $("final-price").textContent = num(price, 2);
+    // Shown with VAT, like the price chart; the Overgas price without VAT goes underneath in small type.
+    const vatPct = parseFloat($("vat").value);
+    $("final-price").textContent = num(price * (1 + (isFinite(vatPct) ? vatPct : 20) / 100), 2);
+    $("final-net").textContent = num(price, 2) + " €/MWh " + t("vatExcl");
 
     const now = new Date();
     const um = Number(region.uploaded.split("-")[1]);
