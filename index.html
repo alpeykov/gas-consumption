@@ -1861,7 +1861,7 @@
       : t("subtitle");
     $("t-energy-label").textContent = t("energy", { f: isFinite(v.factor) ? num(v.factor, 0, 4) : "–" });
     const ts = tariffSummary;
-    $("tariff-summary").innerHTML = "<span>" + regionLabel(ts.region) + "</span><span><b>" + num(ts.price, 2) + "</b> €/MWh " + t("vatExcl") +
+    $("tariff-summary").innerHTML = "<span>" + regionLabel(ts.region) + "</span><span><b>" + num(ts.price * (1 + (isFinite(v.vat) ? v.vat : 20) / 100), 2) + "</b> €/MWh " + t("vatIncl") +
       (ts.since ? " · " + t("priceFrom", { d: bgDate(ts.since) }) : "") + "</span><span><b>" + num(v.factor, 2, 3) + "</b> kWh/m³</span><span>" + t("vatRow", { v: num(v.vat, 0, 2) }) + "</span>" +
       (ts.stale ? '<span class="stale-note">' + (ts.prev ? t("staleShort", { prev: ts.prev }) : t("staleShortNoHistory")) + "</span>" : "");
     // Dates as text in the app's language.

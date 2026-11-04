@@ -196,7 +196,7 @@ async function sanity() {
     const page = await open({ storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     const collapsed = () => page.$eval(".tariff", (el) => el.classList.contains("collapsed"));
     expect(await collapsed(), "closed by default");
-    expect(/68,90.*от 01\.10\.2026/.test(await text(page, "#tariff-summary")), "summary shows price and its date");
+    expect(/82,68 €\/MWh с ДДС.*от 01\.10\.2026/.test(await text(page, "#tariff-summary")), "summary shows price incl. VAT and its date");
     await page.click("#tariff-toggle");
     expect(!(await collapsed()), "opens");
     await page.reload({ waitUntil: "networkidle0" });
