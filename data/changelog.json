@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.16",
+      "date": "2026-11-04",
+      "bg": [
+        "Нова страница changelog.html: всички версии на приложението на английски, с броя на промените от началото на тестовете в Google Play."
+      ],
+      "en": [
+        "New changelog.html page: every release of the app in English, with the number of releases since Google Play testing began."
+      ]
+    },
+    {
       "version": "2.10.15",
       "date": "2026-11-04",
       "bg": [

@@ -307,6 +307,22 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N52 changelog.html lists every release in English, counts the releases since testing began (1.9.7) and fits at 320 px", async () => {
+    const log = JSON.parse(fs.readFileSync(path.join(ROOT, "data/changelog.json"), "utf8")).versions;
+    const since = log.findIndex((v) => v.version === "1.9.7");
+    const page = await open({ width: 320 });
+    await page.goto(URL + "changelog.html", { waitUntil: "networkidle0" });
+    const r = await page.evaluate(() => ({ sum: document.getElementById("summary").textContent, n: document.querySelectorAll("#list > li").length,
+      first: document.querySelector("#list > li h2").textContent, start: document.querySelector("#list > li.start h2")?.textContent || "",
+      firstLine: document.querySelector("#list > li li").textContent, wide: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 }));
+    expect(r.n === log.length, "every release listed: " + r.n);
+    expect(r.sum.startsWith(since + " releases since closed testing began") && r.sum.includes("to version " + log[0].version), "summary: " + r.sum);
+    expect(r.first.startsWith("Version " + log[0].version) && r.firstLine === log[0].en[0], "newest first, in English: " + r.first);
+    expect(r.start.includes("1.9.7") && r.start.includes("closed testing started"), "start of testing marked: " + r.start);
+    expect(!r.wide, "changelog page scrolls sideways at 320 px");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N17 help has a Send feedback email with subject, version and language (bg, en)", async () => {
     for (const lang of ["bg", "en"]) {
       const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-lang": lang } });
