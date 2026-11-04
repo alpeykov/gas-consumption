@@ -22,7 +22,9 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", "
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new globalThis.URL(req.url, URL).pathname);
   if (p.endsWith("/")) p += "index.html";
-  const file = path.join(ROOT, p);
+  // The price files are refreshed daily on GitHub; the tests run on a fixed snapshot (October 2026 prices, November not out yet).
+  const fixture = p.startsWith("/data/") && path.join(ROOT, "tests/fixtures", p);
+  const file = fixture && fs.existsSync(fixture) ? fixture : path.join(ROOT, p);
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream" });
   fs.createReadStream(file).pipe(res);
@@ -855,10 +857,11 @@ async function sanity() {
     await page.close2();
   });
   await test("sanity", "N37 forecast compared with the same month last year first, then last month – only when they are in the history", async () => {
-    const cmp = (p) => p.$$eval("#cmp .cmp-row", (r) => r.map((e) => e.textContent));
-    // No history: nothing.
+    // The usage rows only; the price rows (data-m "p…") have a test of their own (N49).
+    const cmp = (p) => p.$$eval("#cmp .cmp-row:not([data-m^='p'])", (r) => r.map((e) => e.textContent));
+    // No history: no usage rows.
     let page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
-    expect(await page.$eval("#cmp", (e) => e.hidden), "hidden without history");
+    expect(!(await cmp(page)).length, "no usage rows without history");
     await page.close2();
     const H = { "2025-10": { start: 1500, end: 1549, date: null, bill: 43.1 }, ...SEPT };
     page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H } });
@@ -1101,6 +1104,34 @@ async function sanity() {
     await page.select("#chart-to", "2023");
     expect((await page.evaluate(() => JSON.parse(localStorage.getItem("gas-bill-chart-v1")).to)) === 2023, "an older year is saved as itself");
     expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
+  await test("sanity", "N49 forecast card: the Overgas price against the same month last year and last month, without history; last month left out while the price is stale", async () => {
+    const rows = (p) => p.$$eval("#cmp .cmp-row[data-m^='p']", (r) => r.map((e) => e.textContent));
+    let page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
+    await settle(800);
+    let r = await rows(page);
+    expect(r.length === 2 && /^[↑↓=] \d+%цена спрямо октомври 2025›$/.test(r[0]) && /^[↑↓=] \d+%цена спрямо септември 2026›$/.test(r[1]), "last year, then last month: " + r.join(" | "));
+    await page.click("#cmp .cmp-row[data-m='p2025-10']");
+    const det = await text(page, "#cmp-det-p2025-10");
+    const m = det.match(/^([\d ,]+) €\/MWh срещу ([\d ,]+) €\/MWh с ДДСЦени на Овергаз ›$/);
+    expect(!!m, "details: " + det);
+    const a = parseFloat(m[1].replace(/\s/g, "").replace(",", ".")), b = parseFloat(m[2].replace(/\s/g, "").replace(",", "."));
+    const pct = Math.round((a - b) / b * 100);
+    expect(r[0].startsWith((pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + Math.abs(pct) + "%"), "percent from the two prices: " + r[0] + " / " + det);
+    await page.click("#cmp-det-p2025-10 .cmp-prices"); await settle(600);
+    expect(!(await page.$eval("#menu", (e) => e.hidden)) && !(await page.$eval("#chart-panel", (e) => e.hidden)), "the link opens the Overgas price history");
+    await page.click("#menu-close"); await settle(400);
+    await page.click('.lang button[data-lang="en"]'); await settle(100);
+    r = await rows(page);
+    expect(/price vs October 2025›$/.test(r[0]) && /price vs September 2026›$/.test(r[1]), "English: " + r.join(" | "));
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+    // November before Overgas uploads its price: the forecast runs on October's, so only last year is compared.
+    page = await open({ width: 390, now: "2026-11-03T09:00:00", storage: readings(2519, 2530, "2026-11-01", "2026-11-03") });
+    await settle(800);
+    r = await rows(page);
+    expect(r.length === 1 && /цена спрямо ноември 2025›$/.test(r[0]), "stale price: only last year: " + r.join(" | "));
     await page.close2();
   });
   await test("sanity", "N8 update bar: What's new and close", async () => {

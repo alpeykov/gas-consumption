@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.7",
+      "date": "2026-11-04",
+      "bg": [
+        "Под прогнозата: цената на Овергаз (€/MWh с ДДС) спрямо същия месец миналата година и спрямо предходния месец – и без въведена история. Докоснете реда за двете цени и връзка към „Цени на Овергаз“."
+      ],
+      "en": [
+        "Under the forecast: the Overgas price (€/MWh incl. VAT) against the same month last year and against last month – no history needed. Tap a row for both prices and a link to “Overgas price history”."
+      ]
+    },
+    {
       "version": "2.10.6",
       "date": "2026-11-03",
       "bg": [

@@ -1,0 +1,367 @@
+{
+  "region": "Овергаз Мрежи",
+  "unit": "EUR/MWh incl. VAT",
+  "note": "blog = approximate quarterly values; old = without Bulgartransgaz transmission and access; full = today's format",
+  "months": {
+    "2014-01": {
+      "eurMwhVat": 63.91,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-na-prirodniya-gaz/"
+    },
+    "2016-01": {
+      "eurMwhVat": 50.62,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tsena-na-prirodniya-gaz-ot-1-april/"
+    },
+    "2016-02": {
+      "eurMwhVat": 50.62,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tsena-na-prirodniya-gaz-ot-1-april/"
+    },
+    "2016-03": {
+      "eurMwhVat": 50.62,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tsena-na-prirodniya-gaz-ot-1-april/"
+    },
+    "2016-04": {
+      "eurMwhVat": 43.97,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/po-niska-tsena-na-prirodniya-gaz/"
+    },
+    "2016-05": {
+      "eurMwhVat": 43.97,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/po-niska-tsena-na-prirodniya-gaz/"
+    },
+    "2016-06": {
+      "eurMwhVat": 43.97,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/po-niska-tsena-na-prirodniya-gaz/"
+    },
+    "2016-07": {
+      "eurMwhVat": 41.41,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/prognozni-tseni-na-prirodniya-gaz-i-el-en/"
+    },
+    "2016-08": {
+      "eurMwhVat": 41.41,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/prognozni-tseni-na-prirodniya-gaz-i-el-en/"
+    },
+    "2016-09": {
+      "eurMwhVat": 41.41,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/prognozni-tseni-na-prirodniya-gaz-i-el-en/"
+    },
+    "2017-04": {
+      "eurMwhVat": 44.48,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-na-energoiztochnitsite-april-2017-g/"
+    },
+    "2017-05": {
+      "eurMwhVat": 44.48,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-na-energoiztochnitsite-april-2017-g/"
+    },
+    "2017-06": {
+      "eurMwhVat": 44.48,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-na-energoiztochnitsite-april-2017-g/"
+    },
+    "2018-01": {
+      "eurMwhVat": 40.39,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-yanuari-2018-g/"
+    },
+    "2018-02": {
+      "eurMwhVat": 40.39,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-yanuari-2018-g/"
+    },
+    "2018-03": {
+      "eurMwhVat": 40.39,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-yanuari-2018-g/"
+    },
+    "2018-04": {
+      "eurMwhVat": 39.88,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-april-2018/"
+    },
+    "2018-05": {
+      "eurMwhVat": 39.88,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-april-2018/"
+    },
+    "2018-06": {
+      "eurMwhVat": 39.88,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-april-2018/"
+    },
+    "2018-07": {
+      "eurMwhVat": 42.44,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-yuli-2018-g/"
+    },
+    "2018-08": {
+      "eurMwhVat": 42.44,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-yuli-2018-g/"
+    },
+    "2018-09": {
+      "eurMwhVat": 42.44,
+      "basis": "blog",
+      "src": "https://blog.overgas.bg/tseni-energoiztochnitsite-yuli-2018-g/"
+    },
+    "2019-07": {
+      "eurMwhVat": 45.39,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2019/07/Adv_Mreji_7_19_Bit.pdf"
+    },
+    "2019-08": {
+      "eurMwhVat": 37.78,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_8_19_Bit.pdf"
+    },
+    "2019-09": {
+      "eurMwhVat": 36.72,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_9_19_Bit.pdf"
+    },
+    "2019-10": {
+      "eurMwhVat": 41.58,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_10_19_Bit.pdf"
+    },
+    "2019-11": {
+      "eurMwhVat": 42.34,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_11_19_Bit.pdf"
+    },
+    "2019-12": {
+      "eurMwhVat": 42.26,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_12_19_Bit.pdf"
+    },
+    "2020-01": {
+      "eurMwhVat": 42.47,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_1_20_Bit.pdf"
+    },
+    "2020-02": {
+      "eurMwhVat": 42.75,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_2_20_Bit.pdf"
+    },
+    "2020-03": {
+      "eurMwhVat": 42.77,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_3_20_Bit.pdf"
+    },
+    "2020-04": {
+      "eurMwhVat": 31.32,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/04/Adv_Mreji_4_20_Bit.pdf"
+    },
+    "2020-05": {
+      "eurMwhVat": 29.57,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/05/Adv_Mreji_5_20_Bit.pdf"
+    },
+    "2020-06": {
+      "eurMwhVat": 28.33,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/06/Adv_Mreji_6_20_Bit.pdf"
+    },
+    "2020-07": {
+      "eurMwhVat": 27.57,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/07/Adv_Mreji_7_20_Bit.pdf"
+    },
+    "2020-08": {
+      "eurMwhVat": 27.31,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/08/Adv_Mreji_8_20_Bit.pdf"
+    },
+    "2020-09": {
+      "eurMwhVat": 29.63,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/09/Adv_Mreji_9_20_Bit.pdf"
+    },
+    "2020-10": {
+      "eurMwhVat": 31.02,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/10/Adv_Mreji_10_20_Bit.pdf"
+    },
+    "2020-11": {
+      "eurMwhVat": 33.16,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/11/Adv_Mreji_11_20_Bit.pdf"
+    },
+    "2020-12": {
+      "eurMwhVat": 32.85,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2020/12/Adv_Mreji_12_20_Bit.pdf"
+    },
+    "2021-01": {
+      "eurMwhVat": 32.38,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/01/Adv_Mreji_1_21_Bit.pdf"
+    },
+    "2021-02": {
+      "eurMwhVat": 34.5,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/02/Adv_Mreji_2_21_Bit.pdf"
+    },
+    "2021-03": {
+      "eurMwhVat": 33.43,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/03/Adv_Mreji_3_21_Bit.pdf"
+    },
+    "2021-04": {
+      "eurMwhVat": 36.22,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/04/Adv_Mreji_4_21_Bit.pdf"
+    },
+    "2021-05": {
+      "eurMwhVat": 38.99,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/05/Adv_Mreji_5_21_Bit.pdf"
+    },
+    "2021-06": {
+      "eurMwhVat": 43.63,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/06/Adv_Mreji_6_21_Bit.pdf"
+    },
+    "2021-07": {
+      "eurMwhVat": 46.5,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/07/Adv_Mreji_7_21_Bit.pdf"
+    },
+    "2021-08": {
+      "eurMwhVat": 51.2,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/08/Adv_Mreji_8_21_Bit.pdf"
+    },
+    "2021-09": {
+      "eurMwhVat": 58.44,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/09/Adv_Mreji_9_21_Bit.pdf"
+    },
+    "2021-10": {
+      "eurMwhVat": 73.86,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/10/Adv_Mreji_10_21_Bit.pdf"
+    },
+    "2021-11": {
+      "eurMwhVat": 73.03,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/11/Adv_Mreji_11_21_Bit.pdf"
+    },
+    "2021-12": {
+      "eurMwhVat": 78.64,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2021/12/Adv_Mreji_12_21_Bit.pdf"
+    },
+    "2022-01": {
+      "eurMwhVat": 97.71,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/01/Adv_Mreji_1_22_Bit.pdf"
+    },
+    "2022-02": {
+      "eurMwhVat": 83.27,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/02/Adv_Mreji_2_22_Bit-1.pdf"
+    },
+    "2022-03": {
+      "eurMwhVat": 85.63,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/03/Adv_Mreji_3_22_Bit.pdf"
+    },
+    "2022-04": {
+      "eurMwhVat": 103.34,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/04/Adv_Mreji_4_22_Bit.pdf"
+    },
+    "2022-05": {
+      "eurMwhVat": 117.46,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/05/TSENA-SAJT_red.pdf"
+    },
+    "2022-06": {
+      "eurMwhVat": 102.59,
+      "basis": "old",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/06/Adv_Mreji_6_22-1_Bit.pdf"
+    },
+    "2022-07": {
+      "eurMwhVat": 132.06,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/07/TSENA-SAJT_red.pdf"
+    },
+    "2022-08": {
+      "eurMwhVat": 200.61,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/08/TSENA-SAJT_red.pdf"
+    },
+    "2022-09": {
+      "eurMwhVat": 234.55,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/09/TSENA-SAJT_red.pdf"
+    },
+    "2022-10": {
+      "eurMwhVat": 161.71,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/10/TSENA-SAJT_red.pdf"
+    },
+    "2022-11": {
+      "eurMwhVat": 94.0,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/11/TSENA-SAJT_red.pdf"
+    },
+    "2022-12": {
+      "eurMwhVat": 108.16,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2022/12/TSENA-SAJT_red.pdf"
+    },
+    "2023-01": {
+      "eurMwhVat": 128.71,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/01/TSENA-SAJT_red.pdf"
+    },
+    "2023-02": {
+      "eurMwhVat": 94.97,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/02/TSENA-SAJT_red.pdf"
+    },
+    "2023-03": {
+      "eurMwhVat": 84.17,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/03/TSENA-SAJT_red.pdf"
+    },
+    "2023-04": {
+      "eurMwhVat": 78.32,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/04/TSENA-SAJT_red.pdf"
+    },
+    "2023-05": {
+      "eurMwhVat": 65.67,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/05/TSENA-SAJT_red.pdf"
+    },
+    "2023-06": {
+      "eurMwhVat": 58.48,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/06/TSENA-SAJT_red.pdf"
+    },
+    "2023-07": {
+      "eurMwhVat": 55.14,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/07/TSENA-SAJT_red.pdf"
+    },
+    "2023-08": {
+      "eurMwhVat": 54.58,
+      "basis": "full",
+      "src": "https://www.overgas.bg/wp-content/uploads/2023/08/TSENA-SAJT_red.pdf"
+    }
+  }
+}
