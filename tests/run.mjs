@@ -340,7 +340,7 @@ async function sanity() {
   });
   await test("sanity", "N18 backup saves readings and settings to a file; restore loads them back, with Undo", async () => {
     const page = await open({ storage: { ...readings(2445, 2480, "2026-10-01", "2026-10-17"), "gas-bill-theme": "blue", "gas-bill-prices-v1": "{}" } });
-    expect(await page.$eval("#backup-btn", (b) => b.previousElementSibling.id === "share-btn"), "backup sits after share in the menu");
+    expect(await page.$eval("#share-btn", (b) => b.previousElementSibling.id === "menu-guide" && !b.nextElementSibling), "share is the last item in the menu, after the guide");
     await page.click("#backup-btn");
     expect(!(await page.$eval("#backup", (e) => e.hidden)), "backup panel opens");
     // Catch the download instead of saving it.
@@ -1310,7 +1310,7 @@ async function regression() {
     const page = await open({ width: 390, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });
     const order = await page.evaluate(() => [...document.querySelectorAll("#menu .menu-item, #menu .lang, #menu .themes, #menu section.tariff")].map((e) => e.id || e.className.split(" ")[0]).join(",")
       + (document.querySelector(".main section.tariff") ? " + tariff on the page" : ""));
-    expect(order === "tariff,lang,themes,chart-btn,history-btn,share-btn,backup-btn,help-btn,menu-guide", "order " + order);
+    expect(order === "tariff,lang,themes,chart-btn,history-btn,backup-btn,help-btn,menu-guide,share-btn", "order " + order);
     await page.close2();
   });
   await test("regression", "R10 the two history items carry their names, in both languages", async () => {
