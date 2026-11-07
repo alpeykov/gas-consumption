@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.18",
+      "date": "2026-11-07",
+      "bg": [
+        "Прогноза: нов таб „Количество“ – прогнозните m³ спрямо същия месец миналата година и предходния месец"
+      ],
+      "en": [
+        "Forecast: new \"Quantity\" tab – the forecast m³ against the same month last year and last month"
+      ]
+    },
+    {
       "version": "2.10.17",
       "date": "2026-11-06",
       "bg": [
