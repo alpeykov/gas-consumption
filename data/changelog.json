@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.19",
+      "date": "2026-11-07",
+      "bg": [
+        "Прогноза: табовете са в ред „Сметка“, „Количество“, „Цена на Овергаз“; отваря се първият с данни"
+      ],
+      "en": [
+        "Forecast: tabs now go \"Bill\", \"Quantity\", \"Overgas price\"; the first one with data opens"
+      ]
+    },
+    {
       "version": "2.10.18",
       "date": "2026-11-07",
       "bg": [

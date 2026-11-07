@@ -2903,9 +2903,9 @@
   });
   syncScrollHint();
 
-  // Three tabs. "Price" (first, the default): the Overgas price against the same month last year and last month.
-  // "Bill": the forecast against the same month last year (first) and last month (second), each only when it is in the history.
+  // Three tabs, in this order. "Bill": the forecast against the same month last year (first) and last month (second), each only when it is in the history.
   // "Quantity": the forecast m³ against those same months' m³, also only from the history.
+  // "Price" (last): the Overgas price against the same month last year and last month – from the price list, no history needed.
   // The chosen tab is remembered. Bill rows go by the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
   const cmpOpen = new Set(), CMP_TAB_KEY = "gas-bill-cmp-tab";
   let cmpTab = null;
@@ -2922,9 +2922,10 @@
       .map((m) => ({ m, c: monthCost(m, 0) })).filter((x) => x.c && x.c.mwhVat > 0) : [];
     box.hidden = !refs.length && !qRefs.length && !prices.length;
     if (box.hidden) { box.innerHTML = ""; return; }
-    // Without price rows the Price tab is left out. Price comes first and is the default; a tab the user chose is remembered.
-    const avail = (prices.length ? [["price", "cmpTabPrice"]] : []).concat([["bill", "cmpTabBill"], ["qty", "cmpTabQty"]]);
-    const tab = avail.some(([k]) => k === cmpTab) ? cmpTab : avail[0][0];
+    // Without price rows the Price tab is left out. A tab the user chose is remembered; otherwise the first one with rows.
+    const avail = [["bill", "cmpTabBill"], ["qty", "cmpTabQty"]].concat(prices.length ? [["price", "cmpTabPrice"]] : []);
+    const has = { bill: refs.length, qty: qRefs.length, price: prices.length };
+    const tab = avail.some(([k]) => k === cmpTab) ? cmpTab : (avail.find(([k]) => has[k]) || avail[0])[0];
     const tabs = '<div class="cmp-tabs" role="tablist">' + avail.map(([k, l]) =>
       '<button type="button" role="tab" class="cmp-tab" data-tab="' + k + '" aria-selected="' + (k === tab) + '">' + t(l) + "</button>").join("") + "</div>";
     const pctOf = (a, b) => Math.round((a - b) / b * 100);
