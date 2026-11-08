@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.21",
+      "date": "2026-11-08",
+      "bg": [
+        "Прогноза: сравненията показват само месеца – с главна буква и годината в получер (без „спрямо“)"
+      ],
+      "en": [
+        "Forecast: comparisons show just the month, capitalised, with the year in bold (no \"vs\")"
+      ]
+    },
+    {
       "version": "2.10.20",
       "date": "2026-11-08",
       "bg": [

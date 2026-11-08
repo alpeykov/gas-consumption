@@ -1234,7 +1234,6 @@
       mhSub: "По месеци · ✎ за редакция",
       mhChart: "Графика",
       mhShow: "Покажи",
-      cmpVs: "спрямо {month}",
       scrollMore: "Още отдолу",
       scrollUp: "Още отгоре",
       chartBad: "„От“ е след „До“. Изберете период, в който „От“ е преди „До“ или същият.",
@@ -1452,7 +1451,6 @@
       mhSub: "By month · ✎ to edit",
       mhChart: "Chart",
       mhShow: "Show",
-      cmpVs: "vs {month}",
       scrollMore: "More below",
       scrollUp: "More above",
       chartBad: "“From” is after “To”. Pick a period where “From” comes first or is the same.",
@@ -2929,6 +2927,8 @@
     const tabs = '<div class="cmp-tabs" role="tablist">' + avail.map(([k, l]) =>
       '<button type="button" role="tab" class="cmp-tab" data-tab="' + k + '" aria-selected="' + (k === tab) + '">' + t(l) + "</button>").join("") + "</div>";
     const pctOf = (a, b) => Math.round((a - b) / b * 100);
+    // The month with a capital letter and its year in bold: "Октомври <b>2025</b>".
+    const cmpMonth = (ym) => { const [y, mo] = ym.split("-").map(Number), n = monthName(mo - 1); return n.charAt(0).toUpperCase() + n.slice(1) + " <b>" + y + "</b>"; };
     const head = (key, pct, what) => {
       const cls = pct > 0 ? "cmp-up" : pct < 0 ? "cmp-down" : "cmp-same", open = cmpOpen.has(key);
       const p = (pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + num(Math.abs(pct), 0, 0).replace(/\s/g, "") + "%";
@@ -2938,17 +2938,17 @@
     };
     const billRows = refs.length ? refs.map((m) => {
       const r = months[m], m3b = r.end - r.start, eb = amount(m);
-      return head(m, pctOf(f.gross, eb), t("cmpVs", { month: monthLabel(m) })) +
+      return head(m, pctOf(f.gross, eb), cmpMonth(m)) +
         t("cmpDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³", e: eur(f.gross), eb: eur(eb) + (r.bill != null ? t("cmpBillTag") : "") }) +
         '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
     }).join("") : '<p class="cmp-det cmp-empty">' + t("cmpNoBill") + '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
     const priceRows = () => prices.map(({ m, c }) =>
-      head("p" + m, pctOf(cur.mwhVat, c.mwhVat), t("cmpVs", { month: monthLabel(m) })) +
+      head("p" + m, pctOf(cur.mwhVat, c.mwhVat), cmpMonth(m)) +
       t("cmpPriceDet", { p: eur(cur.mwhVat) + "/MWh", pb: eur(c.mwhVat) + "/MWh" }) +
       '<button type="button" class="cmp-prices">' + t("cmpPriceOpen") + "</button></p>").join("");
     const qtyRows = () => qRefs.length ? qRefs.map((m) => {
       const m3b = months[m].end - months[m].start;
-      return head("q" + m, pctOf(f.m3, m3b), t("cmpVs", { month: monthLabel(m) })) +
+      return head("q" + m, pctOf(f.m3, m3b), cmpMonth(m)) +
         t("cmpQtyDet", { m3: n1(f.m3, "m³"), m3b: rd(m3b) + " m³" }) +
         '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
     }).join("") : '<p class="cmp-det cmp-empty">' + t("cmpNoQty") + '<button type="button" class="cmp-hist">' + t("cmpOpen") + "</button></p>";
