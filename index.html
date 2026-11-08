@@ -740,13 +740,18 @@
     .dial { padding: 3px 8px; }
     .dial input { font-size: 1.25rem; }
     .date-field { padding: 4px 8px; font-size: 0.85rem; }
-    /* Comparison as two short chips */
-    .cmp { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; }
-    .cmp-row { display: inline-flex; width: auto; min-height: 30px; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; }
+    /* Comparison as two short chips side by side on one line; an opened chip's details go on a line of their own under both */
+    .cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row dense; gap: 6px; padding-top: 6px; }
+    .cmp-tabs, .cmp .cmp-det, .cmp .cmp-empty { grid-column: 1 / -1; }
+    .cmp-row { display: inline-flex; width: 100%; min-width: 0; min-height: 30px; align-items: center; gap: 5px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
     .cmp-chev { display: none; }
     .cmp-pct { font-size: 0.85rem; }
-    .cmp-what { font-size: 0.75rem; color: var(--muted); }
-    .cmp-det { flex-basis: 100%; margin: 0 0 2px 4px; }
+    .cmp-what { font-size: 0.75rem; color: var(--muted); min-width: 0; display: inline-flex; gap: 0.3em; }
+    /* Too narrow for both: the month name gives way ("Окт…"), never the year. */
+    .cmp-mon { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .cmp-what b { flex-shrink: 0; }
+    .cmp-det { margin: 0 0 2px 4px; }
+    @media (max-width: 380px) { .cmp-row { padding: 3px 6px; gap: 4px; } .cmp-pct { font-size: 0.8rem; } .cmp-what { font-size: 0.7rem; } }
     /* Timeline on one line with the day count */
     .tl { margin-top: 8px; }
     .tl-today-label { display: none; }
@@ -2901,9 +2906,9 @@
   });
   syncScrollHint();
 
-  // Three tabs, in this order. "Bill": the forecast against last month (first) and the same month last year (second), each only when it is in the history.
+  // Three tabs, in this order. "Bill": the forecast against the same month last year (first) and last month (second), each only when it is in the history.
   // "Quantity": the forecast m³ against those same months' m³, also only from the history.
-  // "Price" (last): the Overgas price against last month and the same month last year – from the price list, no history needed.
+  // "Price" (last): the Overgas price against the same month last year and last month – from the price list, no history needed.
   // The chosen tab is remembered. Bill rows go by the amount in €: the forecast bill against that month's bill (or its estimate when no bill is saved); a row opens the m³ and € behind it and a link to the monthly history.
   const cmpOpen = new Set(), CMP_TAB_KEY = "gas-bill-cmp-tab";
   let cmpTab = null;
@@ -2911,12 +2916,12 @@
   function renderCompare() {
     const box = $("cmp"), f = cmpInfo;
     const amount = (m) => { const r = months[m]; if (r.bill != null) return billEur(r); const c = monthCost(m, r.end - r.start); return c ? c.gross : null; };
-    const refs = f ? [ymAdd(f.ym, -1), ymAdd(f.ym, -12)].filter((m) => months[m] && amount(m) > 0) : [];
-    const qRefs = f ? [ymAdd(f.ym, -1), ymAdd(f.ym, -12)].filter((m) => months[m] && months[m].end - months[m].start > 0) : [];
+    const refs = f ? [ymAdd(f.ym, -12), ymAdd(f.ym, -1)].filter((m) => months[m] && amount(m) > 0) : [];
+    const qRefs = f ? [ymAdd(f.ym, -12), ymAdd(f.ym, -1)].filter((m) => months[m] && months[m].end - months[m].start > 0) : [];
     // The Overgas price (€/MWh incl. VAT) against the same month last year and last month – from the price list, no history needed.
     // While this month's price isn't out yet the forecast uses last month's, so that row would only say "= 0%".
     const cur = f && monthCost(f.ym, 0);
-    const prices = cur ? [ymAdd(f.ym, -1), ymAdd(f.ym, -12)].filter((m) => !(m === ymAdd(f.ym, -1) && tariffSummary && tariffSummary.stale))
+    const prices = cur ? [ymAdd(f.ym, -12), ymAdd(f.ym, -1)].filter((m) => !(m === ymAdd(f.ym, -1) && tariffSummary && tariffSummary.stale))
       .map((m) => ({ m, c: monthCost(m, 0) })).filter((x) => x.c && x.c.mwhVat > 0) : [];
     box.hidden = !refs.length && !qRefs.length && !prices.length;
     if (box.hidden) { box.innerHTML = ""; return; }
@@ -2928,7 +2933,7 @@
       '<button type="button" role="tab" class="cmp-tab" data-tab="' + k + '" aria-selected="' + (k === tab) + '">' + t(l) + "</button>").join("") + "</div>";
     const pctOf = (a, b) => Math.round((a - b) / b * 100);
     // The month with a capital letter and its year in bold: "Октомври <b>2025</b>".
-    const cmpMonth = (ym) => { const [y, mo] = ym.split("-").map(Number), n = monthName(mo - 1); return n.charAt(0).toUpperCase() + n.slice(1) + " <b>" + y + "</b>"; };
+    const cmpMonth = (ym) => { const [y, mo] = ym.split("-").map(Number), n = monthName(mo - 1); return '<span class="cmp-mon">' + n.charAt(0).toUpperCase() + n.slice(1) + "</span> <b>" + y + "</b>"; };
     const head = (key, pct, what) => {
       const cls = pct > 0 ? "cmp-up" : pct < 0 ? "cmp-down" : "cmp-same", open = cmpOpen.has(key);
       const p = (pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + num(Math.abs(pct), 0, 0).replace(/\s/g, "") + "%";
