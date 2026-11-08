@@ -872,7 +872,7 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
-  await test("sanity", "N37 forecast compared with the same month last year first, then last month – only when they are in the history", async () => {
+  await test("sanity", "N37 forecast compared with last month first, then the same month last year – only when they are in the history", async () => {
     // The usage rows only; the price rows (data-m "p…") have a test of their own (N49).
     const cmp = (p) => p.$$eval("#cmp .cmp-row:not([data-m^='p'])", (r) => r.map((e) => e.textContent));
     // No history: no usage rows.
@@ -882,7 +882,7 @@ async function sanity() {
     const H = { "2025-10": { start: 1500, end: 1549, date: null, bill: 43.1 }, ...SEPT };
     page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-cmp-tab": "bill" } });
     // By €: the 48,85 € forecast is +13% on the 43,10 € bill, +259% on September's 13,61 €.
-    expect((await cmp(page)).join(" | ") === "↑ 13%спрямо октомври 2025› | ↑ 259%спрямо септември 2026›", "last year first, then last month: " + (await cmp(page)).join(" | "));
+    expect((await cmp(page)).join(" | ") === "↑ 259%спрямо септември 2026› | ↑ 13%спрямо октомври 2025›", "last month first, then last year: " + (await cmp(page)).join(" | "));
     expect(await page.$eval("#cmp-det-2025-10", (e) => e.hidden), "details folded");
     // Wider screens: the chevron stays on the row's first line, at its end. Phones: two short chips that fit the card.
     await page.setViewport({ width: 700, height: 900 }); await settle(100);
@@ -907,9 +907,9 @@ async function sanity() {
     await page.evaluate(() => { const f = JSON.parse(localStorage.getItem("gas-bill-forecast-v1")); f["cur-reading"] = "2460"; delete f["cur-stamp"]; localStorage.setItem("gas-bill-forecast-v1", JSON.stringify(f));
       const m = JSON.parse(localStorage.getItem("gas-bill-months-v1")); m["2025-10"] = { start: 1500, end: 1549, date: null, bill: null }; localStorage.setItem("gas-bill-months-v1", JSON.stringify(m)); });
     await page.reload({ waitUntil: "networkidle0" });
-    expect((await cmp(page))[0].startsWith("↓ 31%спрямо октомври 2025"), "smaller amount: " + (await cmp(page)).join(" | "));
+    expect((await cmp(page))[1].startsWith("↓ 31%спрямо октомври 2025"), "smaller amount: " + (await cmp(page)).join(" | "));
     await page.click('.lang button[data-lang="en"]'); await settle(100);
-    expect((await cmp(page))[0] === "↓ 31%vs October 2025›", "English: " + (await cmp(page)).join(" | "));
+    expect((await cmp(page))[1] === "↓ 31%vs October 2025›", "English: " + (await cmp(page)).join(" | "));
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
     // No forecast (1st of the month, readings from different months): no comparison.
@@ -1129,7 +1129,7 @@ async function sanity() {
     await settle(800);
     expect((await tabs(page)) === "Сметка | Количество | Цена на Овергаз*", "no history: Price (last) chosen, the only tab with rows: " + await tabs(page));
     let r = await rows(page);
-    expect(r.length === 2 && /^[↑↓=] \d+%спрямо октомври 2025›$/.test(r[0]) && /^[↑↓=] \d+%спрямо септември 2026›$/.test(r[1]), "last year, then last month: " + r.join(" | "));
+    expect(r.length === 2 && /^[↑↓=] \d+%спрямо септември 2026›$/.test(r[0]) && /^[↑↓=] \d+%спрямо октомври 2025›$/.test(r[1]), "last month, then last year: " + r.join(" | "));
     // The Bill tab without history says how to fill it; the choice is remembered.
     await page.click("#cmp .cmp-tab[data-tab='bill']");
     expect((await tabs(page)) === "Сметка* | Количество | Цена на Овергаз" && !(await rows(page)).length && /^Добавете месеци в „Моето потребление“/.test(await text(page, "#cmp .cmp-empty")), "Bill tab, empty: " + await text(page, "#cmp"));
@@ -1142,13 +1142,13 @@ async function sanity() {
     expect(!!m, "details: " + det);
     const a = parseFloat(m[1].replace(/\s/g, "").replace(",", ".")), b = parseFloat(m[2].replace(/\s/g, "").replace(",", "."));
     const pct = Math.round((a - b) / b * 100);
-    expect(r[0].startsWith((pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + Math.abs(pct) + "%"), "percent from the two prices: " + r[0] + " / " + det);
+    expect(r[1].startsWith((pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + Math.abs(pct) + "%"), "percent from the two prices: " + r[0] + " / " + det);
     await page.click("#cmp-det-p2025-10 .cmp-prices"); await settle(600);
     expect(!(await page.$eval("#menu", (e) => e.hidden)) && !(await page.$eval("#chart-panel", (e) => e.hidden)), "the link opens the Overgas price history");
     await page.click("#menu-close"); await settle(400);
     await page.click('.lang button[data-lang="en"]'); await settle(100);
     r = await rows(page);
-    expect((await tabs(page)) === "Bill | Quantity | Overgas price*" && /vs October 2025›$/.test(r[0]) && /vs September 2026›$/.test(r[1]), "English: " + await tabs(page) + " / " + r.join(" | "));
+    expect((await tabs(page)) === "Bill | Quantity | Overgas price*" && /vs September 2026›$/.test(r[0]) && /vs October 2025›$/.test(r[1]), "English: " + await tabs(page) + " / " + r.join(" | "));
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
     // November before Overgas uploads its price: the forecast runs on October's, so only last year is compared.
@@ -1179,15 +1179,15 @@ async function sanity() {
     page = await open({ width: 390, storage: { ...readings(2445, 2475, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-cmp-tab": "qty" } });
     await settle(800);
     expect((await tabs(page)) === "Сметка | Количество* | Цена на Овергаз", "the saved tab is chosen: " + await tabs(page));
-    expect((await rows(page)).join(" | ") === "↑ 12%спрямо октомври 2025› | ↑ 242%спрямо септември 2026›", "last year, then last month: " + (await rows(page)).join(" | "));
+    expect((await rows(page)).join(" | ") === "↑ 242%спрямо септември 2026› | ↑ 12%спрямо октомври 2025›", "last month, then last year: " + (await rows(page)).join(" | "));
     await page.click("#cmp .cmp-row[data-m='q2025-10']");
     expect((await text(page, "#cmp-det-q2025-10")) === "≈ 54,7 m³ срещу 49 m³Моето потребление ›", "details: " + await text(page, "#cmp-det-q2025-10"));
     // Less gas than last year shows as a drop.
     await page.evaluate(() => { const f = JSON.parse(localStorage.getItem("gas-bill-forecast-v1")); f["cur-reading"] = "2460"; delete f["cur-stamp"]; localStorage.setItem("gas-bill-forecast-v1", JSON.stringify(f)); });
     await page.reload({ waitUntil: "networkidle0" }); await settle(800);
-    expect((await rows(page))[0].startsWith("↓ 44%спрямо октомври 2025"), "smaller quantity: " + (await rows(page)).join(" | "));
+    expect((await rows(page))[1].startsWith("↓ 44%спрямо октомври 2025"), "smaller quantity: " + (await rows(page)).join(" | "));
     await page.click('.lang button[data-lang="en"]'); await settle(100);
-    expect((await tabs(page)) === "Bill | Quantity* | Overgas price" && (await rows(page))[0] === "↓ 44%vs October 2025›", "English: " + await tabs(page) + " / " + (await rows(page)).join(" | "));
+    expect((await tabs(page)) === "Bill | Quantity* | Overgas price" && (await rows(page))[1] === "↓ 44%vs October 2025›", "English: " + await tabs(page) + " / " + (await rows(page)).join(" | "));
     // The three tabs fit the card on a small phone.
     await page.setViewport({ width: 320, height: 800 }); await settle(100);
     expect(await page.evaluate(() => { const c = document.querySelector("#cmp").getBoundingClientRect(); return [...document.querySelectorAll("#cmp .cmp-tab")].every((b) => b.getBoundingClientRect().right <= c.right + 1); }), "tabs fit at 320px");
