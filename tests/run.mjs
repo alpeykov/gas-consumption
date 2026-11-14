@@ -1197,7 +1197,7 @@ async function sanity() {
     await page.close2();
   });
   await test("sanity", "N54 forecast by the weather: off by default; needs history; from the history's m³ and temperatures plus the weather forecast; remembered; English; fits a phone", async () => {
-    // tests/fixtures/data/weather.json: made-up temperatures to 16 Oct 2026, a 5 °C forecast to 26 Oct, then the season's averages.
+    // tests/fixtures/data/weather/tarnovo.json: made-up temperatures to 16 Oct 2026, a 5 °C forecast to 26 Oct, then the season's averages.
     // The history below follows m³ = 0,3 × days + 0,45 × degree days under 18 °C exactly, and so does October so far (44,3 m³ in 17 days).
     const H = { "2025-11": { start: 1000, end: 1164.16 }, "2025-12": { start: 1164.16, end: 1389.06 }, "2026-01": { start: 1389.06, end: 1633.71 },
       "2026-02": { start: 1633.71, end: 1836.51 }, "2026-03": { start: 1836.51, end: 2007.23 }, "2026-04": { start: 2007.23, end: 2099.12 },
@@ -1210,13 +1210,20 @@ async function sanity() {
     await settle(800);
     expect(!(await page.$eval("#wx", (e) => e.hidden)) && !(await page.$eval("#wx-on", (e) => e.checked)) && (await text(page, ".wx-toggle")) === "Прогноза според времето", "the tick shows, unticked");
     near(await fcM3(page), 80.8, 0.05, "off: by the daily rate");
-    // On, without history: says what it needs; the forecast stays as it was.
+    // On, no town chosen yet (Овергаз Мрежи has many): asks for one; the forecast stays as it was.
     await page.click("#wx-on"); await settle(800);
+    expect((await text(page, "#wx-note")) === "Изберете града си в „Тарифни настройки“, за да се вземе прогнозата за времето там.", "no town: " + await text(page, "#wx-note"));
+    near(await fcM3(page), 80.8, 0.05, "no town: still by the daily rate");
+    // Овергаз Мрежи lists its 29 towns after "Изберете град"; choosing one is saved.
+    expect((await page.$$eval("#city option", (o) => o.map((e) => e.textContent))).join("|").startsWith("Изберете град|Асеновград|Банкя|Божурище|Бургас|Бутово|Велико Търново") && (await page.$$eval("#city option", (o) => o.length)) === 30, "towns of Овергаз Мрежи");
+    await page.select("#city", "tarnovo"); await settle(800);
+    expect(JSON.parse(await page.evaluate(() => localStorage.getItem("gas-bill-forecast-v1"))).city === "tarnovo", "the town is saved");
+    // Without history: says what it needs.
     expect(/^За прогноза според времето са нужни поне 3 месеца в „Моето потребление“, от които 2 отоплителни \(сега: 0\)/.test(await text(page, "#wx-note")), "no history: " + await text(page, "#wx-note"));
     near(await fcM3(page), 80.8, 0.05, "no history: still by the daily rate");
     await page.close2();
     // On, with the history: 44,3 m³ so far + 14 days by the model (9 days at 5 °C, 5 at the season's average) ≈ 120,5 m³.
-    page = await open({ width: 390, storage: { ...readings(2445, 2489.3, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-weather": "1" } });
+    page = await open({ width: 390, storage: { ...readings(2445, 2489.3, "2026-10-01", "2026-10-17", { city: "tarnovo" }), "gas-bill-months-v1": H, "gas-bill-weather": "1" } });
     await settle(1000);
     expect(await page.$eval("#wx-on", (e) => e.checked), "remembered: ticked");
     near(await fcM3(page), 120.5, 0.15, "by the weather");
@@ -1232,6 +1239,11 @@ async function sanity() {
     expect((await text(page, ".wx-toggle")) === "Forecast by the weather" && (await text(page, "#wx-note")).startsWith("Veliko Tarnovo expects an average of 6.6 °C until 1st Nov (9 days from the weather forecast, 5 from the season's averages)."), "English: " + await text(page, "#wx-note"));
     await page.setViewport({ width: 320, height: 800 }); await settle(200);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.getElementById("wx-note").getBoundingClientRect().right <= innerWidth), "fits at 320px");
+    // A region with its own price list has its own towns, and one town is chosen by itself.
+    await page.select("#region", "Община Карнобат"); await settle(300);
+    expect((await page.$$eval("#city option", (o) => o.map((e) => e.value))).join() === "karnobat" && (await page.$eval("#city", (e) => e.value)) === "karnobat", "Karnobat region: its town");
+    await page.select("#region", "Овергаз Мрежи"); await settle(300);
+    expect((await page.$eval("#city", (e) => e.value)) === "tarnovo", "back to Овергаз Мрежи: the town chosen before");
     // Unticked: back to the daily rate, and remembered.
     await page.click("#wx-on"); await settle(300);
     near(numEn((await text(page, "#out-fc-bgn")).split("·")[1]), 80.8, 0.05, "unticked: by the daily rate");

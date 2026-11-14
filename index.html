@@ -865,6 +865,10 @@
           <span class="label" data-i18n="region">Регион</span>
           <select id="region"></select>
         </label>
+        <label class="field">
+          <span class="label" data-i18n="city">Град (за прогнозата според времето)</span>
+          <select id="city"></select>
+        </label>
         <div class="final">
           <span class="label" data-i18n="finalPrice">Крайна цена с ДДС</span>
           <span class="final-price num">
@@ -1126,7 +1130,7 @@
   const PRICES_URL = "data/prices.json";
   const GCV_URL = "data/gcv.json";
   const HISTORY_URL = "data/price-history.json";
-  const WEATHER_URL = "data/weather.json";
+  const WEATHER_URL = "data/weather/";
   const CHART_URL = "data/price-chart.json";
 
   // Bulgartransgaz representative calorific value (kWh per m³) by month, used until data/gcv.json loads.
@@ -1155,7 +1159,7 @@
   document.getElementById("cur-date").value = todayIso;
 
   const DEFAULTS = {
-    region: "Овергаз Мрежи",
+    region: "Овергаз Мрежи", city: "",
     "start-reading": "", "start-date": monthStartIso,
     "cur-reading": "", "cur-date": todayIso,
     override: "", vat: "20", factor: "", rate: "1.95583",
@@ -1227,6 +1231,9 @@
       close: "Затвори",
       tariffH: "Тарифни настройки",
       region: "Регион",
+      city: "Град (за прогнозата според времето)",
+      cityPick: "Изберете град",
+      wxNoCity: "Изберете града си в „Тарифни настройки“, за да се вземе прогнозата за времето там.",
       finalPrice: "Крайна цена с ДДС",
       aboutPrice: "За тази цена",
       refresh: "Провери за нови цени",
@@ -1265,8 +1272,8 @@
       wxLoading: "Зареждане на данните за времето…",
       wxFailed: "Данните за времето не можаха да се заредят – прогнозата е по средния разход досега.",
       wxNoModel: "За прогноза според времето са нужни поне 3 месеца в „Моето потребление“, от които 2 отоплителни (сега: {n}). Дотогава прогнозата е по средния разход досега.",
-      wxDays: "Във {place} до {date} се очакват средно {t} ({fc} дни по прогнозата за времето).",
-      wxDaysClim: "Във {place} до {date} се очакват средно {t} ({fc} дни по прогнозата за времето, {clim} – по средните за сезона).",
+      wxDays: "{inPlace} до {date} се очакват средно {t} ({fc} дни по прогнозата за времето).",
+      wxDaysClim: "{inPlace} до {date} се очакват средно {t} ({fc} дни по прогнозата за времето, {clim} – по средните за сезона).",
       wxNoDays: "Периодът е към края си.",
       wxPlain: "По средния разход досега: {e} · {m3}.",
       wxModel: "Модел по {n} месеца от „Моето потребление“ и температурите в тях (R² {r2})",
@@ -1453,6 +1460,9 @@
       close: "Close",
       tariffH: "Tariff settings",
       region: "Region",
+      city: "Town (for the forecast by the weather)",
+      cityPick: "Choose a town",
+      wxNoCity: "Choose your town under “Tariff settings” to use the weather there.",
       finalPrice: "Final price incl. VAT",
       aboutPrice: "About this price",
       refresh: "Check for new prices",
@@ -1697,6 +1707,31 @@
       sel.appendChild(o);
     });
     sel.value = prices.regions.some((r) => r.name === current) ? current : prices.regions[0].name;
+    fillCities();
+  }
+  // The towns on Overgas's network page, with a weather file each (data/weather/<id>.json; scripts/update_data.py has their coordinates).
+  const CITIES = [["asenovgrad", "Асеновград", "Asenovgrad"], ["bankya", "Банкя", "Bankya"], ["bansko", "Банско", "Bansko"], ["bozhurishte", "Божурище", "Bozhurishte"],
+    ["bourgas", "Бургас", "Burgas"], ["butovo", "Бутово", "Butovo"], ["byala", "Бяла", "Byala"], ["tarnovo", "Велико Търново", "Veliko Tarnovo"], ["varna", "Варна", "Varna"],
+    ["goryahov", "Горна Оряховица", "Gorna Oryahovitsa"], ["isperih", "Исперих", "Isperih"], ["karnobat", "Карнобат", "Karnobat"], ["kubrat", "Кубрат", "Kubrat"],
+    ["kyustendil", "Кюстендил", "Kyustendil"], ["levski", "Левски", "Levski"], ["lovech", "Ловеч", "Lovech"], ["lyaskovets", "Лясковец", "Lyaskovets"], ["mezdra", "Мездра", "Mezdra"],
+    ["montana", "Монтана", "Montana"], ["nova_zagora", "Нова Загора", "Nova Zagora"], ["novi_pazar", "Нови Пазар", "Novi Pazar"], ["pavlikeni", "Павликени", "Pavlikeni"],
+    ["pazardzhik", "Пазарджик", "Pazardzhik"], ["petrich", "Петрич", "Petrich"], ["peshtera", "Пещера", "Peshtera"], ["popovo", "Попово", "Popovo"], ["parvomai", "Първомай", "Parvomay"],
+    ["razgrad", "Разград", "Razgrad"], ["razlog", "Разлог", "Razlog"], ["rousse", "Русе", "Ruse"], ["sofia", "София", "Sofia"], ["s_zagora", "Стара Загора", "Stara Zagora"], ["yambol", "Ямбол", "Yambol"]];
+  // The price lists of the smaller regions are for their own towns; Овергаз Мрежи covers all the others.
+  const REGION_CITIES = { "Общини Банско и Разлог": ["bansko", "razlog"], "Община Бяла": ["byala"], "Община Карнобат": ["karnobat"] };
+  const citiesOf = (region) => {
+    if (REGION_CITIES[region]) return CITIES.filter(([id]) => REGION_CITIES[region].includes(id));
+    const own = Object.values(REGION_CITIES).flat();
+    return CITIES.filter(([id]) => !own.includes(id));
+  };
+  // A region with one or two towns starts on its first; Овергаз Мрежи waits for a choice.
+  function fillCities() {
+    const sel = $("city"), list = citiesOf($("region").value), current = sel.dataset.v != null ? sel.dataset.v : saved.city || "";
+    sel.innerHTML = "";
+    if (list.length > 2) { const o = document.createElement("option"); o.value = ""; o.textContent = t("cityPick"); sel.appendChild(o); }
+    list.forEach(([id, bg, en]) => { const o = document.createElement("option"); o.value = id; o.textContent = lang === "bg" ? bg : en; sel.appendChild(o); });
+    // data-v is the town the user chose, kept while another region shows its own towns.
+    sel.value = list.some(([id]) => id === current) ? current : list.length > 2 ? "" : list[0][0];
   }
   fillRegions();
 
@@ -2062,7 +2097,8 @@
   $("stale-info").querySelector("button").addEventListener("click", () => $("stale-info").classList.toggle("open"));
 
   ids.forEach((id) => $(id).addEventListener("input", render));
-  $("region").addEventListener("change", render);
+  $("region").addEventListener("change", () => { fillCities(); render(); });
+  $("city").addEventListener("change", () => { $("city").dataset.v = $("city").value; render(); });
   $("start-date").addEventListener("change", () => { if (isGcvStale()) refreshGcv(); historyRequested = false; render(); });
   $("refresh").addEventListener("click", () => { refreshPrices(); refreshGcv(); });
   $("today-btn").addEventListener("click", () => {
@@ -2952,23 +2988,25 @@
   });
   syncScrollHint();
 
-  // ---- Forecast by the weather: daily mean temperatures in Veliko Tarnovo (data/weather.json, Open-Meteo, refreshed daily) ----
+  // ---- Forecast by the weather: daily mean temperatures in the chosen town (data/weather/<town>.json, Open-Meteo, refreshed daily) ----
   // Heating follows the cold: a month's m³ ≈ a × its days + b × its heating degree days (the sum of "base − temperature" over its days,
   // counting only days colder than the base). a, b and the base are fitted to the months in the history and their temperatures.
   // The rest of the period is then forecast from the temperatures the weather forecast expects (16 days ahead; after that the season's
   // average for those dates), scaled by how this period has gone so far against the model.
   const WX_KEY = "gas-bill-weather", WX_BASES = [14, 15, 16, 17, 18, 19, 20];
-  let wxOn = false, weather = null, wxState = "idle";
+  let wxOn = false, weather = null, wxState = "idle", wxCity = null;
   try { wxOn = localStorage.getItem(WX_KEY) === "1"; } catch (e) {}
   const wxClimCache = new Map();
-  async function loadWeather() {
-    wxState = "loading";
+  async function loadWeather(want) {
+    wxState = "loading"; wxCity = want; weather = null;
     try {
-      const w = await getJson(WEATHER_URL);
+      const w = await getJson(WEATHER_URL + want + ".json");
       if (!Array.isArray(w.t) || !w.t.length || !w.start || !w.observedTo) throw new Error("No temperatures in " + WEATHER_URL);
+      if (wxCity !== want) return;
       weather = w; wxState = "ready"; wxClimCache.clear();
     } catch (e) {
       console.warn("Couldn't load the weather:", e);
+      if (wxCity !== want) return;
       wxState = "failed";
     }
     render();
@@ -3029,7 +3067,10 @@
   // scaled by how much this period used against what the model says for its days so far (more so the more days have passed).
   function wxForecast(r) {
     if (!wxOn) return null;
-    if (!weather) { if (wxState === "idle") loadWeather(); return { state: wxState === "failed" ? "failed" : "loading" }; }
+    const city = $("city").value;
+    if (!city) return { state: "nocity" };
+    if (city !== wxCity) loadWeather(city);
+    if (!weather) return { state: wxState === "failed" ? "failed" : "loading" };
     const mdl = wxModel();
     if (!mdl.ok) return { state: "nomodel", mdl };
     const use = (x) => mdl.a + mdl.b * Math.max(0, mdl.base - x.t);
@@ -3053,12 +3094,15 @@
     note.hidden = !wx;
     if (!wx) return;
     const place = weather ? (lang === "bg" ? weather.place : weather.placeEn) : "";
+    // "Във Варна", "В София": във before в and ф.
+    const inPlace = (/^[вф]/i.test(place) ? "Във " : "В ") + place;
     const deg = (x) => num(x, 0, 1).replace("-", "−") + " °C";
     if (wx.state === "loading") note.textContent = t("wxLoading");
     else if (wx.state === "failed") note.textContent = t("wxFailed");
+    else if (wx.state === "nocity") note.textContent = t("wxNoCity");
     else if (wx.state === "nomodel") note.textContent = t("wxNoModel", { n: wx.mdl.n });
     else {
-      const days = wx.left ? t(wx.climDays ? "wxDaysClim" : "wxDays", { place, date: fcDate(end), t: deg(wx.avgT), fc: wx.fcDays, clim: wx.climDays }) : t("wxNoDays");
+      const days = wx.left ? t(wx.climDays ? "wxDaysClim" : "wxDays", { place, inPlace, date: fcDate(end), t: deg(wx.avgT), fc: wx.fcDays, clim: wx.climDays }) : t("wxNoDays");
       note.innerHTML = days + " " + t("wxPlain", { e: eur(plain.gross), m3: n1(plain.m3, "m³") }) + "<br>" +
         t("wxModel", { n: wx.mdl.n, r2: num(wx.mdl.r2, 2, 2) }) + ' · <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>';
     }

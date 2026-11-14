@@ -1,5 +1,5 @@
 // Bump VERSION on every release: a changed sw.js is what makes installed apps show "Update available".
-const VERSION = "2.10.23";
+const VERSION = "2.10.24";
 const CACHE = "gas-bill-" + VERSION;
 const SHELL = [
   "./",
@@ -16,7 +16,6 @@ const SHELL = [
   "./data/gcv.json",
   "./data/price-history.json",
   "./data/price-chart.json",
-  "./data/weather.json",
 ];
 
 self.addEventListener("install", (event) => {
@@ -42,8 +41,12 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
   // Always fetch the manifest and the price/kWh data fresh; the cached copy is only an offline fallback.
+  // A town's weather isn't in the install list (there are 33), so the last one fetched is kept for offline use.
   if (url.pathname.endsWith("/manifest.webmanifest") || url.pathname.includes("/data/")) {
-    event.respondWith(fetch(event.request).catch(() => caches.match(event.request, { ignoreSearch: true })));
+    event.respondWith(fetch(event.request).then((res) => {
+      if (res.ok && url.pathname.includes("/data/weather/")) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(url.pathname, copy)); }
+      return res;
+    }).catch(() => caches.match(event.request, { ignoreSearch: true })));
     return;
   }
   event.respondWith(

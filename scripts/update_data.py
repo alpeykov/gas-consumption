@@ -167,47 +167,96 @@ def add_to_history(regions: list[dict]) -> bool:
     return True
 
 
-# ---- Weather in Veliko Tarnovo (Open-Meteo): daily mean temperatures for the weather-based forecast ----
+# ---- Weather (Open-Meteo): daily mean temperatures in each gasified town, for the weather-based forecast ----
 
-WEATHER_PLACE = {"place": "Велико Търново", "placeEn": "Veliko Tarnovo", "lat": 43.0757, "lon": 25.6172}
+# The towns on Overgas's network page (https://www.overgas.bg/za-overgaz/produkti-i-uslugi/mrezha/). The app lists the same ids.
+CITIES = [
+    ("asenovgrad", "Асеновград", "Asenovgrad", 42.0167, 24.8667), ("bankya", "Банкя", "Bankya", 42.7069, 23.1450),
+    ("bansko", "Банско", "Bansko", 41.8361, 23.4874), ("bozhurishte", "Божурище", "Bozhurishte", 42.7630, 23.1973),
+    ("bourgas", "Бургас", "Burgas", 42.5065, 27.4689), ("butovo", "Бутово", "Butovo", 43.3000, 25.2333),
+    ("byala", "Бяла", "Byala", 43.4559, 25.7349), ("tarnovo", "Велико Търново", "Veliko Tarnovo", 43.0812, 25.6290),
+    ("varna", "Варна", "Varna", 43.2191, 27.9102), ("goryahov", "Горна Оряховица", "Gorna Oryahovitsa", 43.1278, 25.7017),
+    ("isperih", "Исперих", "Isperih", 43.7167, 26.8333), ("karnobat", "Карнобат", "Karnobat", 42.6500, 26.9833),
+    ("kubrat", "Кубрат", "Kubrat", 43.7966, 26.5006), ("kyustendil", "Кюстендил", "Kyustendil", 42.2831, 22.6922),
+    ("levski", "Левски", "Levski", 43.3667, 25.1333), ("lovech", "Ловеч", "Lovech", 43.1323, 24.7176),
+    ("lyaskovets", "Лясковец", "Lyaskovets", 43.1111, 25.7283), ("mezdra", "Мездра", "Mezdra", 43.1448, 23.7142),
+    ("montana", "Монтана", "Montana", 43.4128, 23.2217), ("nova_zagora", "Нова Загора", "Nova Zagora", 42.4833, 26.0167),
+    ("novi_pazar", "Нови Пазар", "Novi Pazar", 43.3500, 27.2000), ("pavlikeni", "Павликени", "Pavlikeni", 43.2428, 25.3219),
+    ("pazardzhik", "Пазарджик", "Pazardzhik", 42.1993, 24.3332), ("petrich", "Петрич", "Petrich", 41.3985, 23.2070),
+    ("peshtera", "Пещера", "Peshtera", 42.0337, 24.2999), ("popovo", "Попово", "Popovo", 43.3500, 26.2333),
+    ("parvomai", "Първомай", "Parvomay", 42.1000, 25.2167), ("razgrad", "Разград", "Razgrad", 43.5333, 26.5185),
+    ("razlog", "Разлог", "Razlog", 41.8863, 23.4671), ("rousse", "Русе", "Ruse", 43.8487, 25.9534),
+    ("sofia", "София", "Sofia", 42.6975, 23.3241), ("s_zagora", "Стара Загора", "Stara Zagora", 42.4320, 25.6426),
+    ("yambol", "Ямбол", "Yambol", 42.4824, 26.5001),
+]
 WEATHER_START = "2016-01-01"
+# A town's first file needs ten years from the archive, which Open-Meteo counts as ~280 requests; a few a day keeps us in its free limit.
+NEW_TOWNS_PER_RUN = 8
 
 
-def weather() -> dict:
+def weather(city: tuple, old: dict | None) -> dict:
     """Daily mean temperature (°C, in tenths) from WEATHER_START to 16 days ahead.
 
     Past days come from the Open-Meteo archive (ERA5); the last few days the archive doesn't have yet,
     today and the next 15 days come from the Open-Meteo forecast. Days after "observedTo" are forecast.
+    A town that already has a file only fetches the last 30 days again and keeps the rest.
     """
-    q = f"latitude={WEATHER_PLACE['lat']}&longitude={WEATHER_PLACE['lon']}&daily=temperature_2m_mean&timezone=Europe%2FSofia"
+    cid, bg, en, lat, lon = city
+    q = f"latitude={lat}&longitude={lon}&daily=temperature_2m_mean&timezone=Europe%2FSofia"
     today = dt.datetime.now(dt.timezone(dt.timedelta(hours=2))).date()
     yesterday = today - dt.timedelta(days=1)
-    arch = json.loads(get(f"https://archive-api.open-meteo.com/v1/archive?{q}&start_date={WEATHER_START}&end_date={yesterday}"))["daily"]
+    first = (yesterday - dt.timedelta(days=30)).isoformat() if old else WEATHER_START
+    arch = json.loads(get(f"https://archive-api.open-meteo.com/v1/archive?{q}&start_date={first}&end_date={yesterday}"))["daily"]
     fc = json.loads(get(f"https://api.open-meteo.com/v1/forecast?{q}&past_days=14&forecast_days=16"))["daily"]
-    temps = {d: t for d, t in zip(fc["time"], fc["temperature_2m_mean"]) if t is not None}
+    temps = {}
+    if old:
+        day = dt.date.fromisoformat(old["start"])
+        for v in old["t"][: (dt.date.fromisoformat(first) - day).days]:
+            temps[day.isoformat()] = v / 10
+            day += dt.timedelta(days=1)
+    temps.update({d: t for d, t in zip(fc["time"], fc["temperature_2m_mean"]) if t is not None})
     temps.update({d: t for d, t in zip(arch["time"], arch["temperature_2m_mean"]) if t is not None})
     day, end, t = dt.date.fromisoformat(WEATHER_START), dt.date.fromisoformat(max(temps)), []
     while day <= end:
         v = temps.get(day.isoformat())
         if v is None:
-            raise RuntimeError(f"No temperature for {day}")
+            raise RuntimeError(f"{cid}: no temperature for {day}")
         t.append(round(v * 10))
         day += dt.timedelta(days=1)
     if len(t) < 3000:
-        raise RuntimeError(f"Only {len(t)} days of temperatures")
-    return {**WEATHER_PLACE, "source": "https://open-meteo.com/", "start": WEATHER_START, "observedTo": yesterday.isoformat(), "t": t}
+        raise RuntimeError(f"{cid}: only {len(t)} days of temperatures")
+    return {"id": cid, "place": bg, "placeEn": en, "lat": lat, "lon": lon, "source": "https://open-meteo.com/",
+            "start": WEATHER_START, "observedTo": yesterday.isoformat(), "t": t}
 
 
-def write_weather(now: str) -> bool:
-    """Like write_if_changed, but compact: one line of ~4000 numbers instead of one per line."""
-    path, data = DATA / "weather.json", weather()
-    old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-    old.pop("updated", None)
-    if old == data:
-        return False
-    body = json.dumps({"updated": now, **{k: v for k, v in data.items() if k != "t"}}, ensure_ascii=False, indent=2)
-    path.write_text(body[:-2] + ',\n  "t": ' + json.dumps(data["t"], separators=(",", ":")) + "\n}\n", encoding="utf-8")
-    return True
+def write_weather(now: str) -> list[str]:
+    """data/weather/<town>.json for every town, compact: one line of ~4000 numbers instead of one per line.
+    Returns the towns that failed; a failure in one town doesn't stop the others."""
+    folder = DATA / "weather"
+    folder.mkdir(exist_ok=True)
+    failed, new = [], 0
+    for city in CITIES:
+        path = folder / f"{city[0]}.json"
+        old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        if not old:
+            if new >= NEW_TOWNS_PER_RUN:
+                print(f"weather/{path.name}: waiting for a later run")
+                continue
+            new += 1
+        try:
+            data = weather(city, old)
+        except Exception as e:
+            failed.append(city[0])
+            print(f"weather/{path.name}: FAILED: {e}", file=sys.stderr)
+            continue
+        if old:
+            old.pop("updated", None)
+        if old == data:
+            continue
+        body = json.dumps({"updated": now, **{k: v for k, v in data.items() if k != "t"}}, ensure_ascii=False, indent=2)
+        path.write_text(body[:-2] + ',\n  "t": ' + json.dumps(data["t"], separators=(",", ":")) + "\n}\n", encoding="utf-8")
+        print(f"weather/{path.name}: updated")
+    return failed
 
 
 def main() -> int:
@@ -215,10 +264,10 @@ def main() -> int:
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
     failed = False
     try:
-        print(f"weather.json: {'updated' if write_weather(now) else 'unchanged'}")
+        failed = bool(write_weather(now))
     except Exception as e:  # the prices still update if the weather service is down
         failed = True
-        print(f"weather.json: FAILED: {e}", file=sys.stderr)
+        print(f"weather: FAILED: {e}", file=sys.stderr)
     for path, fetch in ((DATA / "prices.json", lambda: {"regions": overgas_prices()}),
                         (DATA / "gcv.json", btg_representative)):
         try:
