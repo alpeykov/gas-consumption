@@ -167,10 +167,58 @@ def add_to_history(regions: list[dict]) -> bool:
     return True
 
 
+# ---- Weather in Veliko Tarnovo (Open-Meteo): daily mean temperatures for the weather-based forecast ----
+
+WEATHER_PLACE = {"place": "Велико Търново", "placeEn": "Veliko Tarnovo", "lat": 43.0757, "lon": 25.6172}
+WEATHER_START = "2016-01-01"
+
+
+def weather() -> dict:
+    """Daily mean temperature (°C, in tenths) from WEATHER_START to 16 days ahead.
+
+    Past days come from the Open-Meteo archive (ERA5); the last few days the archive doesn't have yet,
+    today and the next 15 days come from the Open-Meteo forecast. Days after "observedTo" are forecast.
+    """
+    q = f"latitude={WEATHER_PLACE['lat']}&longitude={WEATHER_PLACE['lon']}&daily=temperature_2m_mean&timezone=Europe%2FSofia"
+    today = dt.datetime.now(dt.timezone(dt.timedelta(hours=2))).date()
+    yesterday = today - dt.timedelta(days=1)
+    arch = json.loads(get(f"https://archive-api.open-meteo.com/v1/archive?{q}&start_date={WEATHER_START}&end_date={yesterday}"))["daily"]
+    fc = json.loads(get(f"https://api.open-meteo.com/v1/forecast?{q}&past_days=14&forecast_days=16"))["daily"]
+    temps = {d: t for d, t in zip(fc["time"], fc["temperature_2m_mean"]) if t is not None}
+    temps.update({d: t for d, t in zip(arch["time"], arch["temperature_2m_mean"]) if t is not None})
+    day, end, t = dt.date.fromisoformat(WEATHER_START), dt.date.fromisoformat(max(temps)), []
+    while day <= end:
+        v = temps.get(day.isoformat())
+        if v is None:
+            raise RuntimeError(f"No temperature for {day}")
+        t.append(round(v * 10))
+        day += dt.timedelta(days=1)
+    if len(t) < 3000:
+        raise RuntimeError(f"Only {len(t)} days of temperatures")
+    return {**WEATHER_PLACE, "source": "https://open-meteo.com/", "start": WEATHER_START, "observedTo": yesterday.isoformat(), "t": t}
+
+
+def write_weather(now: str) -> bool:
+    """Like write_if_changed, but compact: one line of ~4000 numbers instead of one per line."""
+    path, data = DATA / "weather.json", weather()
+    old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    old.pop("updated", None)
+    if old == data:
+        return False
+    body = json.dumps({"updated": now, **{k: v for k, v in data.items() if k != "t"}}, ensure_ascii=False, indent=2)
+    path.write_text(body[:-2] + ',\n  "t": ' + json.dumps(data["t"], separators=(",", ":")) + "\n}\n", encoding="utf-8")
+    return True
+
+
 def main() -> int:
     DATA.mkdir(exist_ok=True)
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
     failed = False
+    try:
+        print(f"weather.json: {'updated' if write_weather(now) else 'unchanged'}")
+    except Exception as e:  # the prices still update if the weather service is down
+        failed = True
+        print(f"weather.json: FAILED: {e}", file=sys.stderr)
     for path, fetch in ((DATA / "prices.json", lambda: {"regions": overgas_prices()}),
                         (DATA / "gcv.json", btg_representative)):
         try:

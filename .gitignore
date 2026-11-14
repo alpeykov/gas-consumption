@@ -1,3 +1,4 @@
 node_modules/
 .claude/
 gas-consumption-backup-*.json
+scripts/__pycache__/

@@ -1196,6 +1196,49 @@ async function sanity() {
     expect(!page.errors.length, page.errors.join(" | "));
     await page.close2();
   });
+  await test("sanity", "N54 forecast by the weather: off by default; needs history; from the history's m³ and temperatures plus the weather forecast; remembered; English; fits a phone", async () => {
+    // tests/fixtures/data/weather.json: made-up temperatures to 16 Oct 2026, a 5 °C forecast to 26 Oct, then the season's averages.
+    // The history below follows m³ = 0,3 × days + 0,45 × degree days under 18 °C exactly, and so does October so far (44,3 m³ in 17 days).
+    const H = { "2025-11": { start: 1000, end: 1164.16 }, "2025-12": { start: 1164.16, end: 1389.06 }, "2026-01": { start: 1389.06, end: 1633.71 },
+      "2026-02": { start: 1633.71, end: 1836.51 }, "2026-03": { start: 1836.51, end: 2007.23 }, "2026-04": { start: 2007.23, end: 2099.12 },
+      "2026-05": { start: 2099.12, end: 2122.51 }, "2026-06": { start: 2122.51, end: 2131.51 }, "2026-07": { start: 2131.51, end: 2140.81 },
+      "2026-08": { start: 2140.81, end: 2150.11 }, "2026-09": { start: 2150.11, end: 2171.76 } };
+    for (const m of Object.values(H)) Object.assign(m, { date: null, bill: null });
+    const fcM3 = async (p) => num((await text(p, "#out-fc-bgn")).split("·")[1]);
+    // Off: the tick is there, unticked, and the forecast is today's daily rate (44,3 / 17 × 31 = 80,8 m³).
+    let page = await open({ width: 390, storage: readings(2445, 2489.3, "2026-10-01", "2026-10-17") });
+    await settle(800);
+    expect(!(await page.$eval("#wx", (e) => e.hidden)) && !(await page.$eval("#wx-on", (e) => e.checked)) && (await text(page, ".wx-toggle")) === "Прогноза според времето", "the tick shows, unticked");
+    near(await fcM3(page), 80.8, 0.05, "off: by the daily rate");
+    // On, without history: says what it needs; the forecast stays as it was.
+    await page.click("#wx-on"); await settle(800);
+    expect(/^За прогноза според времето са нужни поне 3 месеца в „Моето потребление“, от които 2 отоплителни \(сега: 0\)/.test(await text(page, "#wx-note")), "no history: " + await text(page, "#wx-note"));
+    near(await fcM3(page), 80.8, 0.05, "no history: still by the daily rate");
+    await page.close2();
+    // On, with the history: 44,3 m³ so far + 14 days by the model (9 days at 5 °C, 5 at the season's average) ≈ 120,5 m³.
+    page = await open({ width: 390, storage: { ...readings(2445, 2489.3, "2026-10-01", "2026-10-17"), "gas-bill-months-v1": H, "gas-bill-weather": "1" } });
+    await settle(1000);
+    expect(await page.$eval("#wx-on", (e) => e.checked), "remembered: ticked");
+    near(await fcM3(page), 120.5, 0.15, "by the weather");
+    near(await page.$eval("#t-m3-fc", (e) => parseFloat(e.textContent.replace(",", "."))), 120.5, 0.15, "the breakdown uses it too");
+    const note = await text(page, "#wx-note");
+    expect(note.startsWith("Във Велико Търново до 1-ви ноември се очакват средно 6,6 °C (9 дни по прогнозата за времето, 5 – по средните за сезона). По средния разход досега: ") &&
+      note.includes("80,8 m³") && note.includes("Модел по 11 месеца от „Моето потребление“ и температурите в тях (R² 1,00)") && note.endsWith("Open-Meteo"), "note: " + note);
+    expect((await page.$eval("#wx-note a", (a) => a.href)) === "https://open-meteo.com/", "Open-Meteo is linked");
+    // The comparisons go by the same forecast: 120,5 m³ against 21,65 m³ in September (+456%).
+    await page.click("#cmp .cmp-tab[data-tab='qty']"); await settle(200);
+    expect((await page.$$eval("#cmp .cmp-row[data-m^='q']", (r) => r.map((e) => e.textContent))).join(" | ") === "↑ 456%Септември 2026›", "comparison: " + (await page.$$eval("#cmp .cmp-row", (r) => r.map((e) => e.textContent))).join(" | "));
+    await page.click('.lang button[data-lang="en"]'); await settle(200);
+    expect((await text(page, ".wx-toggle")) === "Forecast by the weather" && (await text(page, "#wx-note")).startsWith("Veliko Tarnovo expects an average of 6.6 °C until 1st Nov (9 days from the weather forecast, 5 from the season's averages)."), "English: " + await text(page, "#wx-note"));
+    await page.setViewport({ width: 320, height: 800 }); await settle(200);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.getElementById("wx-note").getBoundingClientRect().right <= innerWidth), "fits at 320px");
+    // Unticked: back to the daily rate, and remembered.
+    await page.click("#wx-on"); await settle(300);
+    near(numEn((await text(page, "#out-fc-bgn")).split("·")[1]), 80.8, 0.05, "unticked: by the daily rate");
+    expect((await page.evaluate(() => localStorage.getItem("gas-bill-weather"))) === "0" && await page.$eval("#wx-note", (e) => e.hidden), "unticked is saved, the note goes");
+    expect(!page.errors.length, page.errors.join(" | "));
+    await page.close2();
+  });
   await test("sanity", "N50 forecast card: the cost so far (left) and the forecast (right) at the same level, desktop and phone; larger cost so far on desktop; the comparisons under both", async () => {
     for (const width of [1280, 390]) {
       const page = await open({ width, storage: readings(2445, 2475, "2026-10-01", "2026-10-17") });

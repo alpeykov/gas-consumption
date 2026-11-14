@@ -2,6 +2,16 @@
   "note": "Newest first. Every release adds an entry; the app shows the entries newer than the version a phone is running.",
   "versions": [
     {
+      "version": "2.10.23",
+      "date": "2026-11-14",
+      "bg": [
+        "Прогноза: ново тикче „Прогноза според времето“ – прогнозата за месеца се смята по изразходваните m³ и температурите в месеците от „Моето потребление“, плюс прогнозата за времето във Велико Търново до края на месеца"
+      ],
+      "en": [
+        "Forecast: new “Forecast by the weather” tick – the month's forecast comes from the m³ and temperatures of the months in “My usage history”, plus the weather forecast for Veliko Tarnovo to the end of the month"
+      ]
+    },
+    {
       "version": "2.10.22",
       "date": "2026-11-08",
       "bg": [
