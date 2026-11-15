@@ -11,6 +11,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -26,10 +28,20 @@ BTG_PAGE = "https://bulgartransgaz.bg/pages/gas-quality-46.html"
 BTG_BASE = "https://bulgartransgaz.bg/"
 
 
-def get(url: str) -> bytes:
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read()
+def get(url: str, tries: int = 3) -> bytes:
+    """Retries a timeout, a dropped connection, 429 and 5xx: one slow handshake shouldn't fail the day's update."""
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if (e.code != 429 and e.code < 500) or attempt == tries - 1:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == tries - 1:
+                raise
+        time.sleep(10 * (attempt + 1))
 
 
 def pdf_text(url: str) -> str:
@@ -192,6 +204,7 @@ CITIES = [
 WEATHER_START = "2016-01-01"
 # A town's first file needs ten years from the archive, which Open-Meteo counts as ~280 requests; a few a day keeps us in its free limit.
 NEW_TOWNS_PER_RUN = 8
+STALE_DAYS = 3  # a town whose temperatures are older than this fails the run
 
 
 def weather(city: tuple, old: dict | None) -> dict:
@@ -231,32 +244,55 @@ def weather(city: tuple, old: dict | None) -> dict:
 
 def write_weather(now: str) -> list[str]:
     """data/weather/<town>.json for every town, compact: one line of ~4000 numbers instead of one per line.
-    Returns the towns that failed; a failure in one town doesn't stop the others."""
+    A failure in one town doesn't stop the others, and the failed towns get one more try at the end.
+    Returns only the towns that still fail and whose file is more than STALE_DAYS old: a town that keeps
+    yesterday's file after a network blip is fine, a town that stops updating fails the run.
+    """
     folder = DATA / "weather"
     folder.mkdir(exist_ok=True)
-    failed, new = [], 0
+    todo, new = [], 0
     for city in CITIES:
-        path = folder / f"{city[0]}.json"
-        old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
-        if not old:
+        if not (folder / f"{city[0]}.json").exists():
             if new >= NEW_TOWNS_PER_RUN:
-                print(f"weather/{path.name}: waiting for a later run")
+                print(f"weather/{city[0]}.json: waiting for a later run")
                 continue
             new += 1
-        try:
-            data = weather(city, old)
-        except Exception as e:
-            failed.append(city[0])
-            print(f"weather/{path.name}: FAILED: {e}", file=sys.stderr)
-            continue
-        if old:
-            old.pop("updated", None)
-        if old == data:
-            continue
-        body = json.dumps({"updated": now, **{k: v for k, v in data.items() if k != "t"}}, ensure_ascii=False, indent=2)
-        path.write_text(body[:-2] + ',\n  "t": ' + json.dumps(data["t"], separators=(",", ":")) + "\n}\n", encoding="utf-8")
-        print(f"weather/{path.name}: updated")
-    return failed
+        todo.append(city)
+    for round_ in range(2):
+        if round_:
+            if not todo:
+                break
+            time.sleep(60)  # give the service a minute before the second try
+        todo = [city for city in todo if not write_town(folder, city, now, last=round_ == 1)]
+    stale = []
+    for city in todo:
+        path = folder / f"{city[0]}.json"
+        old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        age = (dt.date.today() - dt.date.fromisoformat(old["observedTo"])).days if old else None
+        if age is None or age > STALE_DAYS:
+            stale.append(city[0])
+        else:
+            print(f"weather/{path.name}: kept the file from {old['observedTo']}")
+    return stale
+
+
+def write_town(folder: Path, city: tuple, now: str, last: bool) -> bool:
+    """Updates one town's file; False if the fetch failed."""
+    path = folder / f"{city[0]}.json"
+    old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    try:
+        data = weather(city, old)
+    except Exception as e:
+        print(f"weather/{path.name}: {'FAILED' if last else 'failed, will try again'}: {e}", file=sys.stderr)
+        return False
+    if old:
+        old.pop("updated", None)
+    if old == data:
+        return True
+    body = json.dumps({"updated": now, **{k: v for k, v in data.items() if k != "t"}}, ensure_ascii=False, indent=2)
+    path.write_text(body[:-2] + ',\n  "t": ' + json.dumps(data["t"], separators=(",", ":")) + "\n}\n", encoding="utf-8")
+    print(f"weather/{path.name}: updated")
+    return True
 
 
 def main() -> int:
